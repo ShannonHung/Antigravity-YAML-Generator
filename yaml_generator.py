@@ -72,41 +72,86 @@ def merge_nodes(source_nodes, override_nodes):
             
     return source_nodes
 
-def format_yaml_value(value, indent_level):
+def quoted_str_representer(dumper, data):
     """
-    Format a value as YAML. 
-    Simple scalar implementation. Complex objects/lists use PyYAML dump to ensure correctness.
+    Custom representer to enforce strict quoting rules.
+    """
+    needs_quotes = False
+    
+    if not data:
+        needs_quotes = True
+    elif re.match(r'^(true|false|yes|no|on|off)$', data, re.IGNORECASE):
+        needs_quotes = True
+    elif re.match(r'^[\d\.]+$', data): # Simple number check
+        needs_quotes = True
+    elif any(c in data for c in ":#[]{}/"):
+        needs_quotes = True
+    
+    if needs_quotes:
+        return dumper.represent_scalar('tag:yaml.org,2002:str', data, style='"')
+    else:
+        # Check if safe to print raw
+        if re.match(r'^[a-zA-Z0-9_\-\.]+$', data):
+             return dumper.represent_scalar('tag:yaml.org,2002:str', data)
+        else:
+             return dumper.represent_scalar('tag:yaml.org,2002:str', data, style='"')
+
+# Register the custom representer
+yaml.add_representer(str, quoted_str_representer)
+
+def format_yaml_value(value, indent_level, val_type=None):
+    """
+    Format a value as YAML using the custom representer.
     """
     prefix = "  " * indent_level
-    if isinstance(value, (bool, int, float, str)) or value is None:
-        # Use yaml.dump to handle quoting, escaping, etc.
-        # dump returns "value\n..." so we strip.
-        s = yaml.dump(value, default_flow_style=None, width=1000).strip()
-        if s.endswith('\n...'): s = s[:-4]
-        
-        # If multiline, indent subsequent lines
-        if '\n' in s:
-            lines = s.splitlines()
-            # First line is attached to key, so no prefix.
-            # Subsequent lines need prefix.
-            # BUT yaml.dump output for | already has indentation (2 chars default).
-            # We want to ADD our prefix to that.
-            return "\n".join([lines[0]] + [f"{prefix}{line}" for line in lines[1:]])
-        return s
-    else:
-        # List or Dict
-        # We need it to be indented correctly relative to the parent.
-        # But yaml.dump indents from 0.
-        # We'll dump it, then indent lines.
+    
+    # 1. Handle None
+    if value is None:
+        return ""
+
+    # 2. Handle strict types (bool, number) -> No quotes (standard YAML behavior)
+    if val_type == 'bool':
+        return str(value).lower()
+    if val_type == 'number':
+        return str(value)
+
+    # 3. Handle complex types (list, dict) AND Strings (via custom representer)
+    # Since we registered str representer, yaml.dump will use it for top-level strings too.
+    # But careful: yaml.dump adds \n... and indenting issues.
+    
+    if isinstance(value, (list, dict)):
         s = yaml.dump(value, default_flow_style=False, width=1000)
         lines = s.splitlines()
         indented_lines = []
-        for i, line in enumerate(lines):
-            # For complex types, usually starts on new line?
+        for line in lines:
             indented_lines.append(line)
-        
-        # We prefix ALL lines with indent, assuming they are placed on new line.
         return "\n" + "\n".join([f"{prefix}{line}" for line in indented_lines])
+
+    # 4. Handle Scala String directly using our logic to avoid yaml.dump overhead for simple strings?
+    # Actually, let's use the same logic pattern for consistency, or just call the logic directly.
+    # calling yaml.dump for a simple string adds a newline and "..." etc.
+    
+    # Re-use the representer logic for simple return? 
+    # Or just duplicate the logic here for performance/simplicity? 
+    # Let's duplicate logic for scalar string return to avoid yaml.dump artifacts.
+    
+    s_val = str(value)
+    
+    needs_quotes = False
+    if not s_val: needs_quotes = True
+    elif re.match(r'^(true|false|yes|no|on|off)$', s_val, re.IGNORECASE): needs_quotes = True
+    elif re.match(r'^[\d\.]+$', s_val): needs_quotes = True
+    elif any(c in s_val for c in ":#[]{}/"): needs_quotes = True
+    
+    if needs_quotes:
+        escaped = s_val.replace('"', '\\"')
+        return f'"{escaped}"'
+    else:
+        if re.match(r'^[a-zA-Z0-9_\-\.]+$', s_val):
+            return s_val
+        else:
+            escaped = s_val.replace('"', '\\"')
+            return f'"{escaped}"'
 
 def generate_yaml_from_schema(nodes, indent=0, config=None):
     """
@@ -117,7 +162,11 @@ def generate_yaml_from_schema(nodes, indent=0, config=None):
     
     override_hint_marker = ""
     override_hint_enabled = False
+    
+    top_level_spacing = 2
     if config:
+        top_level_spacing = config.get("top_level_spacing", 2)
+        
         # Prompt says style is "<=== [Override]", but output shows "# <=== [Override]"
         # We ensure it acts as a comment.
         style = config.get("override_hint_style", "<=== [Override]")
@@ -147,8 +196,8 @@ def generate_yaml_from_schema(nodes, indent=0, config=None):
         if description:
             if indent == 0:
                 if not is_first:
-                    lines.append("")
-                    lines.append("")
+                    for _ in range(top_level_spacing):
+                        lines.append("")
                 
                 banner_line = f"{prefix}# {'=' * 42}"
                 lines.append(banner_line)
@@ -172,7 +221,7 @@ def generate_yaml_from_schema(nodes, indent=0, config=None):
             if value is not None:
                 # Pass indent to format_yaml_value
                 # It returns string starting with \n for complex types (list/dict)
-                val = format_yaml_value(value, indent)
+                val = format_yaml_value(value, indent, val_type)
                 if val.strip(): # if not empty
                      lines.append(f"{line_content}{current_hint}{val}")
                 else:
@@ -220,7 +269,7 @@ def generate_yaml_from_schema(nodes, indent=0, config=None):
                     elif val_type == 'number': val_to_print = 0
             
             # Format value, pass indent
-            val_str = format_yaml_value(val_to_print, indent)
+            val_str = format_yaml_value(val_to_print, indent, val_type)
             
             # Check multiline
             if '\n' in val_str:
