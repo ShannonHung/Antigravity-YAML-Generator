@@ -1,0 +1,113 @@
+[
+    {
+        "key": "env",
+        "description": "deployment environment name",
+        "override_hint": false,
+        "type": "string",
+        "item_type": null,
+        "regex": "production",
+        "regex_enable": true,
+        "children": []
+    },
+    {
+        "key": "timezone",
+        "description": "system timezone",
+        "override_hint": false,
+        "type": "string",
+        "item_type": null,
+        "regex": "Asia/Taipei",
+        "regex_enable": true,
+        "children": []
+    },
+    {
+        "key": "ntp",
+        "description": "ntp configuration",
+        "override_hint": false,
+        "type": "object",
+        "regex": null,
+        "regex_enable": false,
+        "children": [
+            {
+                "key": "enabled",
+                "description": "enable ntp service",
+                "override_hint": false,
+                "type": "bool",
+                "item_type": null,
+                "regex": "true",
+                "regex_enable": true,
+                "children": []
+            },
+            {
+                "key": "servers",
+                "description": "ntp server list",
+                "override_hint": false,
+                "type": "list",
+                "item_type": "string",
+                "regex": null,
+                "regex_enable": false,
+                "children": [
+                    {
+                        "key": "item",
+                        "description": "ntp server entry",
+                        "override_hint": false,
+                        "type": "string",
+                        "item_type": null,
+                        "regex": "time.google.com|pool.ntp.org",
+                        "regex_enable": true,
+                        "children": []
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "key": "dns",
+        "description": "dns configuration",
+        "override_hint": false,
+        "type": "object",
+        "regex": null,
+        "regex_enable": false,
+        "children": [
+            {
+                "key": "search_domains",
+                "description": "dns search domains",
+                "override_hint": false,
+                "type": "list",
+                "item_type": "string",
+                "regex": null,
+                "regex_enable": false,
+                "children": [
+                    {
+                        "key": "item",
+                        "description": "search domain entry",
+                        "override_hint": false,
+                        "type": "string",
+                        "regex": "corp.example.com|svc.cluster.local",
+                        "regex_enable": true,
+                        "children": []
+                    }
+                ]
+            },
+            {
+                "key": "nameservers",
+                "description": "dns nameserver entry",
+                "override_hint": false,
+                "type": "list",
+                "item_type": "string",
+                "regex": null,
+                "regex_enable": false,
+                "children": [
+                    {
+                        "key": "item",
+                        "description": "nameserver entry",
+                        "override_hint": false,
+                        "type": "string",
+                        "regex": "8.8.8.8|1.1.1.1",
+                        "regex_enable": true,
+                        "children": []
+                    }
+                ]
+            }
+        ]
+    }
+]

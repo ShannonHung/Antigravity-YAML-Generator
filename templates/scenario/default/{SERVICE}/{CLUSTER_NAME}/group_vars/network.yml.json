@@ -1,0 +1,19 @@
+[
+    {
+        "key": "network_enabled",
+        "description": "Enable networking",
+        "override_hint": false,
+        "default_value": true,
+        "type": "bool"
+    },
+    {
+        "key": "dns_servers",
+        "description": "List of DNS servers",
+        "override_hint": true,
+        "default_value": [
+            "8.8.8.8",
+            "8.8.4.4"
+        ],
+        "type": "list"
+    }
+]

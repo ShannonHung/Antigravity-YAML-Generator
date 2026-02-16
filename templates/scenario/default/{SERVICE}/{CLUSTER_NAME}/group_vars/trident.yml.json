@@ -1,0 +1,43 @@
+[
+    {
+        "key": "trident_ssd",
+        "description": "should enable trident ssd",
+        "override_hint": true,
+        "type": "bool",
+        "item_type": null,
+        "regex": null,
+        "regex_enable": false,
+        "children": []
+    },
+    {
+        "key": "trident_ssd_object_ids",
+        "description": "ssd description",
+        "override_hint": false,
+        "type": "list",
+        "item_type": "object",
+        "regex": null,
+        "regex_enable": false,
+        "children": [
+            {
+                "key": "id",
+                "description": "should enable trident ssd object ids",
+                "override_hint": true,
+                "type": "number",
+                "item_type": null,
+                "regex": "[1|2|3]",
+                "regex_enable": true,
+                "children": []
+            },
+            {
+                "key": "vip",
+                "description": "trident ssd object vip",
+                "override": true,
+                "type": "string",
+                "item_type": "string",
+                "regex": "*/16$",
+                "regex_enable": true,
+                "children": []
+            }
+        ]
+    }
+]

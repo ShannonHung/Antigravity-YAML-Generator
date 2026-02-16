@@ -1,0 +1,43 @@
+[
+    {
+        "key": "cilium_network_cluster",
+        "description": "cilium network cluster configuration",
+        "override_hint": false,
+        "type": "object",
+        "item_type": null,
+        "regex": null,
+        "regex_enable": false,
+        "children": [
+            {
+                "key": "region",
+                "description": "cluster region",
+                "override_hint": false,
+                "type": "string",
+                "item_type": null,
+                "regex": "tw",
+                "regex_enable": true,
+                "children": []
+            },
+            {
+                "key": "vip",
+                "description": "cluster virtual ip cidr",
+                "override_hint": false,
+                "type": "string",
+                "item_type": null,
+                "regex": "172.168.0.0/16",
+                "regex_enable": true,
+                "children": []
+            },
+            {
+                "key": "fab_vars",
+                "description": "fabric variables dynamic object",
+                "override_hint": false,
+                "type": "string",
+                "item_type": null,
+                "regex": "{FAB}",
+                "regex_enable": true,
+                "children": []
+            }
+        ]
+    }
+]

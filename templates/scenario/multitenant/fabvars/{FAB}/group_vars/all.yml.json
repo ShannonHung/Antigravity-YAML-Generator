@@ -1,0 +1,14 @@
+[
+    {
+        "key": "fab_location",
+        "description": "Location of the fab",
+        "default_value": "{FAB}",
+        "override_hint": false
+    },
+    {
+        "key": "multitenant_fab",
+        "description": "Location of the multitenant fab",
+        "default_value": "{FAB}-prod",
+        "override_hint": false
+    }
+]
