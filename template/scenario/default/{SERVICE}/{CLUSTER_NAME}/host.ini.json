@@ -1,0 +1,19 @@
+{
+    "key": "all",
+    "description": "Global inventory",
+    "children": [
+        {
+            "key": "hosts",
+            "children": [
+                {
+                    "key": "node1",
+                    "value": "ansible_host=192.168.1.10"
+                },
+                {
+                    "key": "node2",
+                    "value": "ansible_host=192.168.1.11"
+                }
+            ]
+        }
+    ]
+}
