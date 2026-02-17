@@ -15,7 +15,7 @@
     {
         "key": "timezone",
         "description": "system timezone",
-        "override_hint": true,
+        "override_hint": false,
         "multi_type": [
             "string"
         ],
@@ -56,7 +56,7 @@
                     "list"
                 ],
                 "item_multi_type": [
-                    "object"
+                    "string"
                 ],
                 "regex": null,
                 "regex_enable": false,
@@ -98,7 +98,7 @@
                     "list"
                 ],
                 "item_multi_type": [
-                    "object"
+                    "string"
                 ],
                 "regex": null,
                 "regex_enable": false,
@@ -126,67 +126,7 @@
                     "list"
                 ],
                 "item_multi_type": [
-                    "object"
-                ],
-                "regex": null,
-                "regex_enable": false,
-                "children": [
-                    {
-                        "key": "item",
-                        "description": "nameserver entry",
-                        "override_hint": false,
-                        "multi_type": [
-                            "string"
-                        ],
-                        "regex": "8.8.8.8|1.1.1.1",
-                        "regex_enable": true,
-                        "children": [],
-                        "required": true
-                    }
-                ],
-                "required": true
-            }
-        ],
-        "required": true
-    },
-    {
-        "key": "dns_v2",
-        "description": "dns configuration",
-        "override_hint": false,
-        "multi_type": [
-            "object"
-        ],
-        "regex": null,
-        "regex_enable": false,
-        "children": [
-            {
-                "key": "search_domains",
-                "description": "dns search domains",
-                "override_hint": false,
-                "multi_type": [
-                    "list"
-                ],
-                "item_multi_type": [
                     "string"
-                ],
-                "default_value": [
-                    "corp.example.com",
-                    "svc.cluster.local"
-                ],
-                "regex": null,
-                "regex_enable": false,
-                "children": [],
-                "required": true
-            },
-            {
-                "key": "nameservers",
-                "description": "dns nameserver entry",
-                "override_hint": false,
-                "multi_type": [
-                    "list"
-                ],
-                "item_multi_type": [
-                    "object"
                 ],
                 "regex": null,
                 "regex_enable": false,

@@ -395,12 +395,31 @@ def process_scenario(config_path, base_path, output_root=None):
             validation_errors.append(f"{file_path} [{path_context}]: legacy 'item_type' field found. Use 'item_multi_type'.")
             
         multi_type = node.get('multi_type')
+        item_multi_type = node.get('item_multi_type', [])
+        
         if multi_type is not None:
             if not isinstance(multi_type, list):
                 validation_errors.append(f"{file_path} [{path_context}]: 'multi_type' must be a list.")
             else:
                  if "object" in multi_type and "list" in multi_type:
                      validation_errors.append(f"{file_path} [{path_context}]: 'multi_type' cannot contain both 'object' and 'list'.")
+                 
+                 # list validation
+                 if "list" in multi_type:
+                     if not item_multi_type:
+                         validation_errors.append(f"{file_path} [{path_context}]: 'multi_type' contains 'list' but 'item_multi_type' is empty.")
+                     # Rule: If list has children, items must be objects
+                     if node.get('children') and "object" not in item_multi_type:
+                          validation_errors.append(f"{file_path} [{path_context}]: 'multi_type' contains 'list' and has children, so 'item_multi_type' must contain 'object'.")
+                 
+                 # object validation
+                 if "object" in multi_type:
+                     if item_multi_type:
+                         validation_errors.append(f"{file_path} [{path_context}]: 'multi_type' contains 'object' but 'item_multi_type' is not empty.")
+                         
+                 # non-list validation (general cleanup)
+                 if "list" not in multi_type and item_multi_type:
+                      validation_errors.append(f"{file_path} [{path_context}]: 'multi_type' does not contain 'list' but 'item_multi_type' is set.")
 
         if 'item_multi_type' in node:
             if not isinstance(node['item_multi_type'], list):

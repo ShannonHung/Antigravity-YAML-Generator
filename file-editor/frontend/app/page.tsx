@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { api, FileInfo } from '@/lib/api';
 import {
   Folder, FileText, ChevronRight, Plus, Trash2, Save,
-  Search, Grid, List, ArrowUpDown, LayoutGrid, Moon, Sun, Monitor
+  Search, Grid, List, ArrowUpDown, LayoutGrid, Moon, Sun, Monitor, ArrowLeft
 } from 'lucide-react';
 import { Modal } from '@/components/ui/modal';
 import clsx from 'clsx';
@@ -25,7 +25,7 @@ export default function FileExplorer() {
   const [error, setError] = useState<string | null>(null);
 
   // UI State
-  const [viewMode, setViewMode] = useState<ViewMode>('grid');
+  const [viewMode, setViewMode] = useState<ViewMode>('list'); // Default to list
   const [searchQuery, setSearchQuery] = useState('');
   const [sortField, setSortField] = useState<SortField>('name');
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
@@ -43,9 +43,19 @@ export default function FileExplorer() {
   const [editingFile, setEditingFile] = useState<{ path: string; content: string } | null>(null);
   const [viewingJson, setViewingJson] = useState<{ path: string; content: string } | null>(null);
 
+  // Derived state for what folder content to show
+  // If currentPath is a file, we show its parent dir in the background
+  const isFilePath = (path: string) => {
+    const name = path.split('/').pop();
+    return name && name.includes('.') && !path.endsWith('/');
+  };
+
+  const activeFolderPath = isFilePath(currentPath)
+    ? (currentPath.substring(0, currentPath.lastIndexOf('/')) || '/')
+    : currentPath;
+
   useEffect(() => {
-    // Initial fetch
-    fetchFiles(currentPath);
+    handlePathChange(currentPath);
 
     // Check system preference for dark mode initially
     if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
@@ -55,8 +65,38 @@ export default function FileExplorer() {
   }, []);
 
   useEffect(() => {
-    fetchFiles(currentPath);
+    handlePathChange(currentPath);
   }, [currentPath]);
+
+  const handlePathChange = async (path: string) => {
+    const isFile = isFilePath(path);
+    const folderPath = isFile ? (path.substring(0, path.lastIndexOf('/')) || '/') : path;
+
+    // Always fetch folder content
+    fetchFiles(folderPath);
+
+    if (isFile) {
+      try {
+        // It's a file, try to open it
+        const data = await api.getFileContent(path);
+        if (path.endsWith('.yml.json')) {
+          setViewingJson({ path, content: data.content });
+          setEditingFile(null);
+        } else {
+          setEditingFile({ path, content: data.content });
+          setViewingJson(null);
+        }
+      } catch (e: any) {
+        console.error("Failed to open file from URL:", e);
+        // If failed, maybe it's a folder? fallback?
+        // alert(`Failed to open file: ${e.message}`);
+      }
+    } else {
+      // It's a folder, ensure modals are closed
+      setViewingJson(null);
+      setEditingFile(null);
+    }
+  };
 
   const toggleDarkMode = () => {
     setDarkMode(!darkMode);
@@ -85,33 +125,31 @@ export default function FileExplorer() {
     setSearchQuery('');
   };
 
+  const navigateUp = () => {
+    const current = currentPath;
+    if (current === '/') return;
+    const parent = current.substring(0, current.lastIndexOf('/')) || '/';
+    navigateTo(parent);
+  };
+
   const handleFolderClick = (folder: FileInfo) => {
-    const newPath = currentPath === '/' ? `/${folder.name}` : `${currentPath}/${folder.name}`;
+    const newPath = activeFolderPath === '/' ? `/${folder.name}` : `${activeFolderPath}/${folder.name}`;
     navigateTo(newPath);
   };
 
   const handleFileClick = async (file: FileInfo) => {
-    try {
-      const filePath = currentPath === '/' ? `/${file.name}` : `${currentPath}/${file.name}`;
-      const data = await api.getFileContent(filePath);
-
-      if (file.name.endsWith('.yml.json')) {
-        setViewingJson({ path: filePath, content: data.content });
-      } else {
-        setEditingFile({ path: filePath, content: data.content });
-      }
-    } catch (err: any) {
-      alert(`Failed to open file: ${err.message}`);
-    }
+    // Just navigate to the file URL, the useEffect will handle opening it
+    const filePath = activeFolderPath === '/' ? `/${file.name}` : `${activeFolderPath}/${file.name}`;
+    navigateTo(filePath);
   };
 
   const handleCreateFolder = async () => {
     if (!newItemName) return;
     try {
-      await api.createFolder(currentPath, newItemName);
+      await api.createFolder(activeFolderPath, newItemName);
       setIsFolderModalOpen(false);
       setNewItemName('');
-      fetchFiles(currentPath);
+      fetchFiles(activeFolderPath);
     } catch (err: any) {
       alert(err.message);
     }
@@ -120,11 +158,11 @@ export default function FileExplorer() {
   const handleCreateFile = async () => {
     if (!newItemName) return;
     try {
-      const filePath = currentPath === '/' ? `/${newItemName}` : `${currentPath}/${newItemName}`;
+      const filePath = activeFolderPath === '/' ? `/${newItemName}` : `${activeFolderPath}/${newItemName}`;
       await api.createFile(filePath, '');
       setIsFileModalOpen(false);
       setNewItemName('');
-      fetchFiles(currentPath);
+      fetchFiles(activeFolderPath);
     } catch (err: any) {
       alert(err.message);
     }
@@ -137,10 +175,10 @@ export default function FileExplorer() {
   const confirmDelete = async () => {
     if (!deletingItem) return;
     try {
-      const itemPath = currentPath === '/' ? `/${deletingItem.name}` : `${currentPath}/${deletingItem.name}`;
+      const itemPath = activeFolderPath === '/' ? `/${deletingItem.name}` : `${activeFolderPath}/${deletingItem.name}`;
       await api.deleteItem(itemPath);
       setDeletingItem(null);
-      fetchFiles(currentPath);
+      fetchFiles(activeFolderPath);
     } catch (err: any) {
       alert(err.message);
     }
@@ -151,10 +189,16 @@ export default function FileExplorer() {
     try {
       await api.createFile(editingFile.path, editingFile.content);
       alert('Saved!');
-      fetchFiles(currentPath);
+      fetchFiles(activeFolderPath);
     } catch (err: any) {
       alert(`Failed to save: ${err.message}`);
     }
+  };
+
+  const handleCloseEditor = () => {
+    // Navigate "up" to parent folder to close
+    const parent = editingFile?.path.substring(0, editingFile.path.lastIndexOf('/')) || '/';
+    navigateTo(parent);
   };
 
   // Filter and Sort
@@ -181,7 +225,7 @@ export default function FileExplorer() {
     return result;
   }, [files, searchQuery, sortField, sortOrder]);
 
-  const breadcrumbs = currentPath.split('/').filter(Boolean);
+  const breadcrumbs = activeFolderPath.split('/').filter(Boolean);
 
   const formatSize = (bytes?: number) => {
     if (bytes === undefined || bytes === null) return '-';
@@ -253,6 +297,13 @@ export default function FileExplorer() {
       {/* Toolbar & Breadcrumbs */}
       <div className="h-12 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between px-6 bg-zinc-50/50 dark:bg-zinc-900/50 backdrop-blur-sm">
         <div className="flex items-center text-sm text-zinc-500 dark:text-zinc-400 overflow-hidden">
+          <button
+            onClick={navigateUp}
+            className="mr-2 p-1 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded-full transition-colors"
+            title="Go Back"
+          >
+            <ArrowLeft className="w-4 h-4 text-zinc-600 dark:text-zinc-300" />
+          </button>
           <button onClick={() => navigateTo('/')} className="hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors px-1 rounded">Home</button>
           {breadcrumbs.map((segment, index) => (
             <div key={index} className="flex items-center">
@@ -380,7 +431,7 @@ export default function FileExplorer() {
       {editingFile && (
         <div className="fixed inset-0 z-50 flex flex-col animate-in slide-in-from-bottom duration-300">
           {/* Backdrop */}
-          <div className="absolute inset-0 bg-black/20 dark:bg-black/50 backdrop-blur-sm" onClick={() => setEditingFile(null)} />
+          <div className="absolute inset-0 bg-black/20 dark:bg-black/50 backdrop-blur-sm" onClick={handleCloseEditor} />
 
           {/* Content */}
           <div className="relative flex-1 m-4 md:m-12 bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden flex flex-col">
@@ -391,7 +442,7 @@ export default function FileExplorer() {
               </div>
               <div className="flex space-x-2">
                 <button
-                  onClick={() => setEditingFile(null)}
+                  onClick={handleCloseEditor}
                   className="px-4 py-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300 rounded-lg transition text-sm font-medium"
                 >
                   Close
@@ -422,7 +473,17 @@ export default function FileExplorer() {
         <JsonTreeViewer
           content={viewingJson.content}
           fileName={viewingJson.path.split('/').pop() || ''}
-          onClose={() => setViewingJson(null)}
+          onClose={() => {
+            // go to parent
+            const parent = viewingJson.path.substring(0, viewingJson.path.lastIndexOf('/')) || '/';
+            navigateTo(parent);
+          }}
+          onBack={() => {
+            // go to parent
+            const parent = viewingJson.path.substring(0, viewingJson.path.lastIndexOf('/')) || '/';
+            navigateTo(parent);
+          }}
+          onHome={() => navigateTo('/')}
         />
       )}
 

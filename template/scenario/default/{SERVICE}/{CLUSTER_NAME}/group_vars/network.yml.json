@@ -20,9 +20,6 @@
         "multi_type": [
             "list"
         ],
-        "item_multi_type": [
-            "string"
-        ],
         "required": true
     }
 ]

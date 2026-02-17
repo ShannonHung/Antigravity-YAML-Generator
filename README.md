@@ -12,6 +12,17 @@ Use the provided Makefile target to run the interactive generator script. This w
 make gen
 ```
 
+## Validation Logic
+The generator enforces strict validation rules on the JSON templates before processing:
+
+1. **Legacy Fields**: `type` and `item_type` are forbidden. Use `multi_type` and `item_multi_type` instead.
+2. **List Structure**: `multi_type` and `item_multi_type` must be lists.
+3. **Type Conflict**: `multi_type` cannot contain both `"object"` and `"list"`.
+4. **List Consistency**: If `multi_type` contains `"list"`, `item_multi_type` **must not be empty**.
+5. **Object Consistency**: If `multi_type` contains `"object"`, `item_multi_type` **must be empty**.
+6. **Non-List Consistency**: If `multi_type` does **not** contain `"list"`, `item_multi_type` **must be empty**.
+7. **List-Object Consistency**: If `multi_type` contains `"list"` AND the node has `children`, `item_multi_type` **must contain `"object"`**.
+
 Or run the script directly:
 
 ```bash

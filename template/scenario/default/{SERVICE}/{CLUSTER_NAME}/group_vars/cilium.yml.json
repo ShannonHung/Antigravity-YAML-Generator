@@ -4,7 +4,8 @@
         "description": "cilium network cluster configuration",
         "override_hint": false,
         "multi_type": [
-            "object"
+            "object",
+            "list"
         ],
         "item_multi_type": [],
         "regex": null,

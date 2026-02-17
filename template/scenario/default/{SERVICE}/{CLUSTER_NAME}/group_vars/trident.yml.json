@@ -45,7 +45,9 @@
                 "multi_type": [
                     "string"
                 ],
-                "item_multi_type": [],
+                "item_multi_type": [
+                    "string"
+                ],
                 "regex": "*/16$",
                 "regex_enable": true,
                 "children": [],
