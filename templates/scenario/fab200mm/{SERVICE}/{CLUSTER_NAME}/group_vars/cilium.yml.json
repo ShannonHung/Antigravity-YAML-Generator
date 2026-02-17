@@ -3,8 +3,8 @@
         "key": "cilium_network_cluster",
         "description": "cilium network cluster configuration",
         "override_hint": false,
-        "type": "object",
-        "item_type": null,
+        "multi_type": ["object"],
+        "item_multi_type": [],
         "regex": null,
         "regex_enable": false,
         "children": [
@@ -12,8 +12,8 @@
                 "key": "region",
                 "description": "cluster region",
                 "override_hint": false,
-                "type": "string",
-                "item_type": null,
+                "multi_type": ["string"],
+                "item_multi_type": [],
                 "regex": "f200mm",
                 "regex_enable": true,
                 "children": []

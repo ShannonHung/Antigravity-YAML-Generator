@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { Modal } from '@/components/ui/modal';
 import clsx from 'clsx';
+import JsonTreeViewer from '@/components/JsonTreeViewer';
 
 type ViewMode = 'grid' | 'list';
 type SortField = 'name' | 'mtime' | 'size';
@@ -40,6 +41,7 @@ export default function FileExplorer() {
 
   // Editor state
   const [editingFile, setEditingFile] = useState<{ path: string; content: string } | null>(null);
+  const [viewingJson, setViewingJson] = useState<{ path: string; content: string } | null>(null);
 
   useEffect(() => {
     // Initial fetch
@@ -92,7 +94,12 @@ export default function FileExplorer() {
     try {
       const filePath = currentPath === '/' ? `/${file.name}` : `${currentPath}/${file.name}`;
       const data = await api.getFileContent(filePath);
-      setEditingFile({ path: filePath, content: data.content });
+
+      if (file.name.endsWith('.yml.json')) {
+        setViewingJson({ path: filePath, content: data.content });
+      } else {
+        setEditingFile({ path: filePath, content: data.content });
+      }
     } catch (err: any) {
       alert(`Failed to open file: ${err.message}`);
     }
@@ -408,6 +415,15 @@ export default function FileExplorer() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* JSON Tree Viewer */}
+      {viewingJson && (
+        <JsonTreeViewer
+          content={viewingJson.content}
+          fileName={viewingJson.path.split('/').pop() || ''}
+          onClose={() => setViewingJson(null)}
+        />
       )}
 
       {/* Modals */}

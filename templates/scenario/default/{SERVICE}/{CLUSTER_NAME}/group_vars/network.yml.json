@@ -4,7 +4,7 @@
         "description": "Enable networking",
         "override_hint": false,
         "default_value": true,
-        "type": "bool"
+        "multi_type": ["bool"]
     },
     {
         "key": "dns_servers",
@@ -14,6 +14,6 @@
             "8.8.8.8",
             "8.8.4.4"
         ],
-        "type": "list"
+        "multi_type": ["list"]
     }
 ]

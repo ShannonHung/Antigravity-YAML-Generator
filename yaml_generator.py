@@ -180,7 +180,18 @@ def generate_yaml_from_schema(nodes, indent=0, config=None):
         if not key: continue
         
         description = node.get('description')
-        val_type = node.get('type')
+        
+        # Refactor: use multi_type
+        # Old: val_type = node.get('type')
+        multi_type = node.get('multi_type', [])
+        # Handle case where multi_type might be None (from some old override?)
+        if multi_type is None: multi_type = []
+        
+        # Validation 2: check object AND list conflict
+        if "object" in multi_type and "list" in multi_type:
+            print(f"\033[91m[ERROR] Invalid multi_type definition in key '{key}': 'object' and 'list' cannot simplify exist.\033[0m")
+            sys.exit(1)
+            
         override_hint = node.get('override_hint', False)
         
         # Logic: use default_value, fallback to regex if empty
@@ -217,59 +228,97 @@ def generate_yaml_from_schema(nodes, indent=0, config=None):
         if override_hint:
              current_hint = f" {override_hint_marker}"
 
-        if val_type == 'list' and children:
-            if value is not None:
-                # Pass indent to format_yaml_value
-                # It returns string starting with \n for complex types (list/dict)
-                val = format_yaml_value(value, indent, val_type)
-                if val.strip(): # if not empty
-                     lines.append(f"{line_content}{current_hint}{val}")
-                else:
-                     lines.append(f"{line_content} []{current_hint}")
-            else:
-                if children:
-                    lines.append(f"{line_content}{current_hint}")
-                    child_lines = generate_yaml_from_schema(children, indent + 1, config)
-                    
-                    if child_lines:
-                        first = True
-                        for child in children:
-                            c_lines = generate_yaml_from_schema([child], indent + 1, config) 
-                            processed_c_lines = []
-                            for j, cl in enumerate(c_lines):
-                                if first and cl.strip().startswith(child['key'] + ":"):
-                                    stripped = cl.lstrip()
-                                    processed_c_lines.append(f"{'  ' * indent}  - {stripped}")
-                                    first = False
-                                else:
-                                    if not first:
-                                        processed_c_lines.append(f"{'  ' * indent}    {cl.lstrip()}")
-                                    else:
-                                        processed_c_lines.append(cl)
-                            lines.extend(processed_c_lines)
+        # Logic for types
+        # Priority: list > object > others
+        # "Validation 3: ... future types ... treat as string"
+        
+        if "list" in multi_type:
+            # It's a list
+             if children:
+                if value is not None and isinstance(value, list) and len(value) > 0:
+                    # Pass indent to format_yaml_value
+                    # It returns string starting with \n for complex types (list/dict)
+                    val = format_yaml_value(value, indent, 'list')
+                    if val.strip(): # if not empty
+                         lines.append(f"{line_content}{current_hint}{val}")
                     else:
-                        lines.append(f"{prefix}  []")
+                         lines.append(f"{line_content} []{current_hint}")
                 else:
-                    lines.append(f"{line_content} []{current_hint}")
+                    # No value or empty, generate from children schema?
+                    # "children" in list type means schema for items.
+                    # We usually output empty list if no value provided?
+                    # Or do we generate example items?
+                    # In previous example, we traversed children to show structure.
+                    
+                    if children and not value:
+                        # Generate structure from schema (example item)
+                         lines.append(f"{line_content}{current_hint}")
+                         child_lines = generate_yaml_from_schema(children, indent + 1, config)
+                        
+                         if child_lines:
+                            first = True
+                            for child in children:
+                                c_lines = generate_yaml_from_schema([child], indent + 1, config) 
+                                processed_c_lines = []
+                                for j, cl in enumerate(c_lines):
+                                    if first and cl.strip().startswith(child['key'] + ":"):
+                                        stripped = cl.lstrip()
+                                        processed_c_lines.append(f"{'  ' * indent}  - {stripped}")
+                                        first = False
+                                    else:
+                                        if not first:
+                                            processed_c_lines.append(f"{'  ' * indent}    {cl.lstrip()}")
+                                        else:
+                                            processed_c_lines.append(cl)
+                                lines.extend(processed_c_lines)
+                         else:
+                            lines.append(f"{prefix}  []")
+                    else:
+                        lines.append(f"{line_content} []{current_hint}")
+             else:
+                  # List without children schema -> simple list value
+                 if value is not None:
+                      val = format_yaml_value(value, indent, 'list')
+                      lines.append(f"{line_content}{current_hint}{val}")
+                 else:
+                      lines.append(f"{line_content} []{current_hint}")
 
-        elif val_type == 'object' or (val_type is None and children):
-            # Object with properties
-            lines.append(f"{line_content}{current_hint}")
-            lines.extend(generate_yaml_from_schema(children, indent + 1, config))
+        elif "object" in multi_type:
+             # Object with properties
+             if children:
+                 lines.append(f"{line_content}{current_hint}")
+                 lines.extend(generate_yaml_from_schema(children, indent + 1, config))
+             else:
+                 # Object but no children?
+                 if value is not None:
+                      val = format_yaml_value(value, indent, 'object')
+                      lines.append(f"{line_content}{current_hint}{val}")
+                 else:
+                      lines.append(f"{line_content} {{}}{current_hint}")
             
         else:
-            # Primitive
+            # Primitive / Custom Types
+            # Logic 3: Treat as string (unless bool/number detected via multi_type?)
+            # Valid types: bool, number, string. Others -> string
+            
+            effective_type = 'string'
+            if "bool" in multi_type: effective_type = 'bool'
+            elif "number" in multi_type: effective_type = 'number'
+            
+            # Value
             val_to_print = value
             if val_to_print is None:
-                if node.get('regex'):
-                    val_to_print = node.get('regex')
-                else:
-                    if val_type == 'bool': val_to_print = False
-                    elif val_type == 'string': val_to_print = ""
-                    elif val_type == 'number': val_to_print = 0
+                # Fallback defaults?
+                if effective_type == 'bool': val_to_print = False
+                elif effective_type == 'number': val_to_print = 0
+                else: val_to_print = ""
+                # But requirement says: "if number produce default_value, if no default output regex"
+                # We already set value = default_value or regex above.
+                if val_to_print == "" and node.get('regex'):
+                     val_to_print = node.get('regex')
             
             # Format value, pass indent
-            val_str = format_yaml_value(val_to_print, indent, val_type)
+            val_str = format_yaml_value(val_to_print, indent, effective_type)
             
             # Check multiline
             if '\n' in val_str:
@@ -330,9 +379,73 @@ def process_scenario(config_path, base_path, output_root=None):
     
     print(f"Scenario: {current_scenario_name}, Path: {scenario_path}")
 
+    # 1.5 Validate templates
+    default_dir = os.path.join(os.path.dirname(config_path), "default")
+    # Use a set to avoid duplicates if scenario_path == default_dir
+    validation_dirs = {default_dir}
+    if scenario_path and os.path.exists(scenario_path):
+        validation_dirs.add(scenario_path)
+    
+    validation_errors = []
+    
+    def validate_node(node, file_path, path_context="root"):
+        if 'type' in node:
+            validation_errors.append(f"{file_path} [{path_context}]: legacy 'type' field found. Use 'multi_type'.")
+        if 'item_type' in node:
+            validation_errors.append(f"{file_path} [{path_context}]: legacy 'item_type' field found. Use 'item_multi_type'.")
+            
+        multi_type = node.get('multi_type')
+        if multi_type is not None:
+            if not isinstance(multi_type, list):
+                validation_errors.append(f"{file_path} [{path_context}]: 'multi_type' must be a list.")
+            else:
+                 if "object" in multi_type and "list" in multi_type:
+                     validation_errors.append(f"{file_path} [{path_context}]: 'multi_type' cannot contain both 'object' and 'list'.")
+
+        if 'item_multi_type' in node:
+            if not isinstance(node['item_multi_type'], list):
+                validation_errors.append(f"{file_path} [{path_context}]: 'item_multi_type' must be a list.")
+
+        # Recursive check
+        for child in node.get('children', []):
+            child_key = child.get('key', 'unknown')
+            validate_node(child, file_path, f"{path_context}.{child_key}")
+
+    for search_dir in validation_dirs:
+        for dirpath, _, filenames in os.walk(search_dir):
+            for f in filenames:
+                if f.endswith('.json') and f != "config.json":
+                    path = os.path.join(dirpath, f)
+                    try:
+                        with open(path, 'r') as jf:
+                            data = json.load(jf)
+                            
+                        nodes_to_check = []
+                        if isinstance(data, list):
+                            nodes_to_check = data
+                        elif isinstance(data, dict):
+                            nodes_to_check = [data]
+                            
+                        for node in nodes_to_check:
+                            key = node.get('key', 'root')
+                            validate_node(node, path, key)
+                            
+                    except json.JSONDecodeError as e:
+                        validation_errors.append(f"{path}: Invalid JSON - {e}")
+                    except Exception as e:
+                        validation_errors.append(f"{path}: Validation Error - {e}")
+
+    if validation_errors:
+        print(f"\033[91m[ERROR] Template Validation Failed:\033[0m")
+        for err in validation_errors:
+            print(f" - {err}")
+        sys.exit(1)
+        
+    print(f"Validation successful for {len(validation_dirs)} directories.")
+
     # 2. Collect files
     # Base templates
-    default_dir = os.path.join(os.path.dirname(config_path), "default")
+    # default_dir already defined above
     
     # We need to preserve relative paths but Resolve {VAR} in them?
     # Actually, we should collect paths as "templates/relative/path" strings
