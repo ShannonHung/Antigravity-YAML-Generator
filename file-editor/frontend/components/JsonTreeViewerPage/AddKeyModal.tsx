@@ -67,7 +67,7 @@ export default function AddKeyModal({ nodes, onClose, onSave }: any) {
     const [types, setTypes] = useState<string[]>([]);
     const [itemTypes, setItemTypes] = useState<string[]>([]);
     const [desc, setDesc] = useState('');
-    const [req, setReq] = useState(false);
+    const [req, setReq] = useState<boolean | null>(false);
 
     // Validation States
     const [parentError, setParentError] = useState<string | null>(null);
@@ -260,12 +260,43 @@ export default function AddKeyModal({ nodes, onClose, onSave }: any) {
                         <textarea value={desc} onChange={e => setDesc(e.target.value)} className="w-full px-3 py-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md outline-none text-xs min-h-[60px]" placeholder="..." />
                     </div>
 
-                    {/* Req */}
-                    <div className="flex items-center space-x-2 pt-1 relative z-0">
-                        <input type="checkbox" id="req-check-3" checked={req} onChange={e => setReq(e.target.checked)} className="w-3.5 h-3.5 rounded border-zinc-300 text-blue-600 focus:ring-blue-500" />
-                        <div className="flex items-center ">
-                            <label htmlFor="req-check-3" className="text-xs font-medium text-zinc-700 dark:text-zinc-300 select-none mr-1.5">Required Field</label>
-                            <InfoLabel label="" tooltip="Whether this field must be present in the configuration." placement="right" />
+                    {/* Required Status Selector */}
+                    <div className="w-full pt-1 relative z-0">
+                        <InfoLabel label="Field Status" tooltip="Define the requirement status of this field." placement="right" />
+                        <div className="flex bg-zinc-100 dark:bg-zinc-800 rounded-lg p-1 border border-zinc-200 dark:border-zinc-700">
+                            <button
+                                onClick={() => setReq(true)}
+                                className={clsx(
+                                    "flex-1 py-1.5 text-xs font-medium rounded-md transition-all flex items-center justify-center",
+                                    req === true
+                                        ? "bg-white dark:bg-zinc-700 shadow text-green-600 dark:text-green-400"
+                                        : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                                )}
+                            >
+                                Required
+                            </button>
+                            <button
+                                onClick={() => setReq(false)}
+                                className={clsx(
+                                    "flex-1 py-1.5 text-xs font-medium rounded-md transition-all flex items-center justify-center",
+                                    req === false
+                                        ? "bg-white dark:bg-zinc-700 shadow text-blue-600 dark:text-blue-400"
+                                        : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                                )}
+                            >
+                                Optional
+                            </button>
+                            <button
+                                onClick={() => setReq(null)}
+                                className={clsx(
+                                    "flex-1 py-1.5 text-xs font-medium rounded-md transition-all flex items-center justify-center",
+                                    req === null
+                                        ? "bg-white dark:bg-zinc-700 shadow text-red-600 dark:text-red-400"
+                                        : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                                )}
+                            >
+                                Deprecated
+                            </button>
                         </div>
                     </div>
                 </div>

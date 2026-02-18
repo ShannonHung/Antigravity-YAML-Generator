@@ -5,7 +5,7 @@ export function useKeyForm(initialData: any) {
     // Identity
     const [keyName, setKeyName] = useState('');
     const [description, setDescription] = useState('');
-    const [required, setRequired] = useState(false);
+    const [required, setRequired] = useState<boolean | null>(false);
     const [overrideHint, setOverrideHint] = useState(false);
     const [types, setTypes] = useState<string[]>([]);
     const [itemTypes, setItemTypes] = useState<string[]>([]);
@@ -24,7 +24,11 @@ export function useKeyForm(initialData: any) {
 
         setKeyName(initialData.key);
         setDescription(initialData.description || '');
-        setRequired(!!initialData.required);
+        if (initialData.required === null) {
+            setRequired(null);
+        } else {
+            setRequired(!!initialData.required);
+        }
         setOverrideHint(!!initialData.override_hint);
         setTypes(initialData.multi_type || (initialData.type ? [initialData.type] : []));
         setItemTypes(initialData.item_multi_type || []);

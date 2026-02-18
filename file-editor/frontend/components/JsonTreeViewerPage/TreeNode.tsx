@@ -1,5 +1,6 @@
 import { ChevronRight, ChevronDown, AlertTriangle, CheckCircle2, Ban, Edit, Trash2 } from 'lucide-react';
 import { JsonNode } from './types';
+import clsx from 'clsx';
 
 interface TreeNodeProps {
     node: JsonNode;
@@ -20,11 +21,16 @@ export default function TreeNode({
     toggleExpand,
     onDelete,
     onEdit,
-    parentPath
-}: TreeNodeProps) {
+    parentPath,
+    inheritedDeprecated = false
+}: TreeNodeProps & { inheritedDeprecated?: boolean }) {
     const hasChildren = node.children && node.children.length > 0;
     const isExpanded = expandedKeys.has(node.key);
     const myPath = parentPath ? `${parentPath}.${node.key}` : node.key;
+
+    // Deprecated Status
+    const isSelfDeprecated = node.required === null || inheritedDeprecated;
+    const isEffectiveDeprecated = isSelfDeprecated || inheritedDeprecated;
 
     // Format Type
     let typeDisplay = node.type || '-';
@@ -39,7 +45,12 @@ export default function TreeNode({
 
     return (
         <>
-            <tr className="border-b border-zinc-100 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors group">
+            <tr className={clsx(
+                "border-b border-zinc-100 dark:border-zinc-800 transition-colors group",
+                isSelfDeprecated
+                    ? "bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30"
+                    : "hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
+            )}>
 
                 {/* Key Column */}
                 <td className="py-2.5 px-4 whitespace-nowrap relative">
@@ -54,7 +65,14 @@ export default function TreeNode({
                         ) : (
                             <span className="w-5 mr-1 block"></span>
                         )}
-                        <span className="font-medium text-zinc-700 dark:text-zinc-300 font-mono text-xs md:text-sm mr-2">{node.key}</span>
+                        <span className={clsx(
+                            "font-medium font-mono text-xs md:text-sm mr-2",
+                            isEffectiveDeprecated
+                                ? "text-zinc-500 line-through opacity-70"
+                                : "text-zinc-700 dark:text-zinc-300"
+                        )}>
+                            {node.key}
+                        </span>
                     </div>
                 </td>
 
@@ -73,17 +91,25 @@ export default function TreeNode({
                                 </div>
                             </div>
                         )}
-                        <span>{typeDisplay}</span>
+                        <span className={isEffectiveDeprecated ? "line-through opacity-70" : ""}>{typeDisplay}</span>
                     </div>
                 </td>
 
                 {/* Required Column */}
                 <td className="py-2.5 px-4 text-center w-24">
-                    {node.required ? (
+                    {node.required === true ? (
                         <div className="inline-flex items-center justify-center group/req relative" title="Required">
                             <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
                             <div className="absolute bottom-full mb-1 hidden group-hover/req:block z-50 w-max px-2 py-1 bg-zinc-800 text-white text-[10px] rounded shadow-lg border border-zinc-700 pointer-events-none">
                                 Required Field
+                                <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-4 border-transparent border-t-zinc-800"></div>
+                            </div>
+                        </div>
+                    ) : node.required === null ? (
+                        <div className="inline-flex items-center justify-center group/req relative" title="Deprecated">
+                            <Ban className="w-3.5 h-3.5 text-red-500" />
+                            <div className="absolute bottom-full mb-1 hidden group-hover/req:block z-50 w-max px-2 py-1 bg-zinc-800 text-white text-[10px] rounded shadow-lg border border-zinc-700 pointer-events-none">
+                                Deprecated
                                 <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-4 border-transparent border-t-zinc-800"></div>
                             </div>
                         </div>
@@ -99,9 +125,9 @@ export default function TreeNode({
                         </div>
                     ) : (
                         <div className="inline-flex items-center justify-center group/req relative">
-                            <Ban className="w-3.5 h-3.5 text-zinc-300 dark:text-zinc-600" />
+                            <div className="w-3.5 h-3.5 rounded-full border border-zinc-300 dark:border-zinc-700"></div>
                             <div className="absolute bottom-full mb-1 hidden group-hover/req:block z-50 w-max px-2 py-1 bg-zinc-800 text-white text-[10px] rounded shadow-lg border border-zinc-700 pointer-events-none">
-                                Not Required
+                                Optional
                                 <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-4 border-transparent border-t-zinc-800"></div>
                             </div>
                         </div>
@@ -110,7 +136,7 @@ export default function TreeNode({
 
                 {/* Description Column */}
                 <td className="py-2.5 px-4 text-xs md:text-sm text-zinc-600 dark:text-zinc-400 max-w-xs xl:max-w-md">
-                    <div className="truncate cursor-help" title={node.description}>
+                    <div className={clsx("truncate cursor-help", isEffectiveDeprecated && "line-through opacity-70")} title={node.description}>
                         {node.description}
                     </div>
                 </td>
@@ -147,6 +173,7 @@ export default function TreeNode({
                         onDelete={onDelete}
                         onEdit={onEdit}
                         parentPath={myPath}
+                        inheritedDeprecated={isEffectiveDeprecated}
                     />
                 ))
             )}

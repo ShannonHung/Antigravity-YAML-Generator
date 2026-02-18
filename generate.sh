@@ -16,7 +16,7 @@ CONFIG_JSON=$(get_config)
 SCENARIO_ENV_KEY=$(echo "$CONFIG_JSON" | python3 -c "import sys, json; print(json.load(sys.stdin).get('senario_env_key', 'SCENARIO_TYPE'))")
 
 # Get Available Scenarios
-SCENARIOS=$(echo "$CONFIG_JSON" | python3 -c "import sys, json; print(' '.join([s['value'] for s in json.load(sys.stdin).get('senarios', [])]))")
+SCENARIOS=$(echo "$CONFIG_JSON" | python3 -c "import sys, json; print(' '.join([s['value'] for s in json.load(sys.stdin).get('senarios', []) if s.get('trigger', {}).get('source') in ['user', 'default']]))")
 
 echo "Select Scenario ($SCENARIO_ENV_KEY):"
 select SCENARIO in $SCENARIOS; do

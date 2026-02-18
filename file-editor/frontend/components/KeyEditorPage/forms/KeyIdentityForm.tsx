@@ -118,10 +118,50 @@ export default function KeyIdentityForm({
 
                 {/* Toggles */}
                 <div className="flex flex-wrap gap-3 pt-1">
-                    <label className="flex items-center space-x-3 p-3 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-700/30 transition-colors cursor-pointer border border-transparent hover:border-zinc-200 dark:hover:border-zinc-700">
-                        <input type="checkbox" checked={required} onChange={e => setRequired(e.target.checked)} className="w-4 h-4 rounded border-zinc-300 text-blue-600 focus:ring-blue-500" />
-                        <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300 select-none">Required Field</span>
-                    </label>
+                    {/* Required Status Selector */}
+                    <div className="w-full">
+                        <InfoLabel label="Field Status" tooltip="Define the requirement status of this field." placement="right" />
+                        <div className="flex bg-zinc-100 dark:bg-zinc-800 rounded-lg p-1 border border-zinc-200 dark:border-zinc-700">
+                            <button
+                                onClick={() => setRequired(true)}
+                                className={clsx(
+                                    "flex-1 py-1.5 text-xs font-medium rounded-md transition-all flex items-center justify-center",
+                                    required === true
+                                        ? "bg-white dark:bg-zinc-700 shadow text-green-600 dark:text-green-400"
+                                        : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                                )}
+                            >
+                                Required
+                            </button>
+                            <button
+                                onClick={() => setRequired(false)}
+                                className={clsx(
+                                    "flex-1 py-1.5 text-xs font-medium rounded-md transition-all flex items-center justify-center",
+                                    required === false
+                                        ? "bg-white dark:bg-zinc-700 shadow text-blue-600 dark:text-blue-400"
+                                        : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                                )}
+                            >
+                                Optional
+                            </button>
+                            <button
+                                onClick={() => setRequired(null)}
+                                className={clsx(
+                                    "flex-1 py-1.5 text-xs font-medium rounded-md transition-all flex items-center justify-center",
+                                    required === null
+                                        ? "bg-white dark:bg-zinc-700 shadow text-red-600 dark:text-red-400"
+                                        : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                                )}
+                            >
+                                Deprecated
+                            </button>
+                        </div>
+                        <p className="text-[10px] text-zinc-400 mt-2 px-1">
+                            {required === true && "Field must be present."}
+                            {required === false && "Field is optional."}
+                            {required === null && "Field is deprecated and should not be used."}
+                        </p>
+                    </div>
                     <label className="flex items-center space-x-3 p-3 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-700/30 transition-colors cursor-pointer border border-transparent hover:border-zinc-200 dark:hover:border-zinc-700">
                         <input type="checkbox" checked={overrideHint} onChange={e => setOverrideHint(e.target.checked)} className="w-4 h-4 rounded border-zinc-300 text-amber-600 focus:ring-amber-500" />
                         <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300 select-none">Show Override Hint</span>

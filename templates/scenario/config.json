@@ -1,6 +1,6 @@
 {
     "override_hint_style": "# <=== [Override]",
-    "senario_env_key": "SCENARIO_TYPE",
+    "senario_env_key": "source",
     "top_level_spacing": 2,
     "default_env_vars": [
         {
@@ -20,12 +20,26 @@
         {
             "value": "default",
             "path": "templates/scenario/default",
-            "required_env_vars": []
+            "required_env_vars": [],
+            "trigger": {
+                "source": "default"
+            }
         },
         {
             "value": "fab200mm",
             "path": "templates/scenario/fab200mm",
-            "required_env_vars": []
+            "required_env_vars": [],
+            "priority": 1,
+            "trigger": {
+                "source": "env",
+                "logic": "and",
+                "conditions": [
+                    {
+                        "key": "FAB",
+                        "regex": "200mm"
+                    }
+                ]
+            }
         },
         {
             "value": "tvm",
@@ -35,7 +49,11 @@
                     "key": "TVM_FAB",
                     "description": "This var is describe the where is tvm cluster."
                 }
-            ]
+            ],
+            "priority": 2,
+            "trigger": {
+                "source": "user"
+            }
         },
         {
             "value": "multitenant",
@@ -45,7 +63,11 @@
                     "key": "CILIUM_ID",
                     "description": "We have our customize cilium id for ansible generation."
                 }
-            ]
+            ],
+            "priority": 3,
+            "trigger": {
+                "source": "user"
+            }
         }
     ]
 }

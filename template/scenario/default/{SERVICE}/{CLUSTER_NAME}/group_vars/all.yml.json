@@ -173,6 +173,18 @@
                 ],
                 "required": true
             }
-        ]
+        ],
+        "required": false
+    },
+    {
+        "key": "dep_parent",
+        "description": "",
+        "multi_type": [
+            "object"
+        ],
+        "required": null,
+        "children": [],
+        "override_hint": false,
+        "regex_enable": false
     }
 ]

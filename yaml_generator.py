@@ -58,17 +58,28 @@ def merge_nodes(source_nodes, override_nodes):
         if key in source_map:
             # Update existing
             source_node = source_map[key]
-            # Recursively merge if children exist?
-            # The propmt example shows overriding "trident_ssd_object_ids"
-            # referencing a value list.
-            # If the override provides a 'value', it probably replaces the default value.
-            # If the override provides 'children', we might need deep merge options.
-            # For now, we'll do a shallow merge of properties, but if 'value' is present, it overwrites.
-            source_node.update(override)
+            
+            # Handle children specially to support deep merge
+            override_children = override.get('children')
+            source_children = source_node.get('children')
+            
+            # Prepare override data excluding children (to avoid overwriting list with update)
+            ov_data = override.copy()
+            if 'children' in ov_data:
+                del ov_data['children']
+                
+            source_node.update(ov_data)
+            
+            if override_children:
+                if source_children:
+                    # Recursive merge
+                    source_node['children'] = merge_nodes(source_children, override_children)
+                else:
+                    source_node['children'] = override_children
         else:
             # Append new
             source_nodes.append(override)
-            source_map[key] = override # Update map for subsequent lookups
+            source_map[key] = override
             
     return source_nodes
 
@@ -328,63 +339,141 @@ def generate_yaml_from_schema(nodes, indent=0, config=None):
 
     return lines
 
-def process_scenario(config_path, base_path, output_root=None):
-    # 1. Load configuration
+def load_json_nodes(path):
+    data = load_json(path)
+    if isinstance(data, dict):
+        return [data]
+    return data
+
+def process_scenarios(config_path):
+    # 1. Load config
     try:
         config = load_json(config_path)
     except Exception as e:
         print(f"Error loading config {config_path}: {e}")
         return
-
+    
+    # ---------------------------------------------------------
+    # NEW: Config Validation & Active Scenario Logic
+    # ---------------------------------------------------------
     scenario_env_key = config.get("senario_env_key", "SCENARIO_TYPE")
     env = load_env()
-    current_scenario_name = env.get(scenario_env_key)
-
-    # Validation: Check if SCENARIO_TYPE is provided
-    if not current_scenario_name:
-        print(f"\033[91m[ERROR] Environment variable {scenario_env_key} is missing.\033[0m")
-        sys.exit(1)
     
-    # Resolve scenario path and validate scenario existence
-    scenario_path = None
-    scenario_config = None
-    if current_scenario_name:
-        for s in config.get("senarios", []):
-            if s["value"] == current_scenario_name:
-                scenario_path = s["path"]
-                scenario_config = s
-                break
-    
-    if not scenario_config:
-        print(f"\033[91m[ERROR] Scenario '{current_scenario_name}' not found in configuration.\033[0m")
-        sys.exit(1)
+    # Validate Config Scenarios
+    scenarios_config = config.get("senarios", [])
+    for sc in scenarios_config:
+        name = sc.get("value")
+        trigger = sc.get("trigger", {})
+        source = trigger.get("source")
+        
+        # Validation Rule: source is user/default -> no conditions
+        if source in ["user", "default"]:
+            if trigger.get("conditions") or trigger.get("vars_trigger"): 
+                 print(f"\033[91m[ERROR] Config Error in scenario '{name}': source '{source}' must not have 'conditions'.\033[0m")
+                 sys.exit(1)
+        
+        # Validation Rule: source is env -> must have conditions
+        if source == "env":
+             if not trigger.get("conditions"):
+                 print(f"\033[91m[ERROR] Config Error in scenario '{name}': source 'env' must have 'conditions'.\033[0m")
+                 sys.exit(1)
 
-    # Validation: Check default environment variables
+    # Determine Active Scenarios
+    active_scenarios = []
+    user_selection = env.get(scenario_env_key)
+    
+    for sc in scenarios_config:
+        is_active = False
+        trigger = sc.get("trigger", {})
+        source = trigger.get("source")
+        
+        if source == "default":
+            is_active = True
+        elif source == "user":
+            if user_selection == sc.get("value"):
+                is_active = True
+        elif source == "env":
+            logic = trigger.get("logic", "and")
+            conditions = trigger.get("conditions", [])
+            
+            if not conditions:
+                is_active = False
+            else:
+                matches = []
+                for cond in conditions:
+                    key = cond.get("key")
+                    regex = cond.get("regex")
+                    val = env.get(key, "")
+                    if re.search(regex, val):
+                        matches.append(True)
+                    else:
+                        matches.append(False)
+                
+                if logic == "and":
+                    is_active = all(matches)
+                elif logic == "or":
+                    is_active = any(matches)
+        
+        if is_active:
+            # Sort by Priority Descending?
+            # User: "priority: 數字越小，優先序越大" -> Small number = High Priority = Wins last.
+            # So we apply logic: Base -> P2 -> P1.
+            # Sort Key: Priority Descending (Big number first).
+            # Default handling: source=default -> Priority 9999.
+            
+            p = sc.get("priority", 999)
+            if source == "default":
+                 p = 9999
+            
+            active_scenarios.append({
+                "name": sc.get("value"),
+                "path": sc.get("path"),
+                "priority": p,
+                "config": sc
+            })
+
+    # Sort Scenarios: Descending Priority (9999 -> 100 -> 2 -> 1)
+    # This implies we apply 9999 first, then 100, then... 1 last.
+    active_scenarios.sort(key=lambda x: x["priority"], reverse=True)
+    
+    if not active_scenarios:
+         print(f"\033[93m[WARNING] No active scenarios found.\033[0m")
+    
+    print("Active Scenarios (in order of application):")
+    for sc in active_scenarios:
+        print(f" - {sc['name']} (Priority: {sc['priority']})")
+
+    # Validate Required Env Vars for ALL active scenarios
     missing_vars = []
+    # Default globals
     for item in config.get("default_env_vars", []):
         var_name = item.get("key") if isinstance(item, dict) else item
         if var_name and var_name not in env:
             missing_vars.append(var_name)
-    
-    # Validation: Check scenario-specific environment variables
-    if scenario_config:
-        for item in scenario_config.get("required_env_vars", []):
+            
+    # Scenario specifics
+    for sc in active_scenarios:
+        s_conf = sc.get("config", {})
+        for item in s_conf.get("required_env_vars", []):
             var_name = item.get("key") if isinstance(item, dict) else item
             if var_name and var_name not in env:
                 missing_vars.append(var_name)
     
+    missing_vars = list(set(missing_vars))
+    
     if missing_vars:
         print(f"\033[91m[ERROR] Missing required environment variables: {', '.join(missing_vars)}\033[0m")
         sys.exit(1)
-    
-    print(f"Scenario: {current_scenario_name}, Path: {scenario_path}")
 
     # 1.5 Validate templates
-    default_dir = os.path.join(os.path.dirname(config_path), "default")
-    # Use a set to avoid duplicates if scenario_path == default_dir
-    validation_dirs = {default_dir}
-    if scenario_path and os.path.exists(scenario_path):
-        validation_dirs.add(scenario_path)
+    validation_dirs = set()
+    
+    # Always include default? Or only if active? 
+    # Logic: Validate all paths that WILL be used.
+    for sc in active_scenarios:
+        p = sc.get("path")
+        if p and os.path.exists(p):
+            validation_dirs.add(p)
     
     validation_errors = []
     
@@ -462,163 +551,104 @@ def process_scenario(config_path, base_path, output_root=None):
         
     print(f"Validation successful for {len(validation_dirs)} directories.")
 
-    # 2. Collect files
-    # Base templates
-    # default_dir already defined above
+    # 2. Collect files from ALL active scenarios
+    # We iterate active_scenarios which are sorted by PRIORITY DESCENDING (Base -> P2 -> P1)
     
-    # We need to preserve relative paths but Resolve {VAR} in them?
-    # Actually, we should collect paths as "templates/relative/path" strings
-    # But later replace {VAR} in the output path.
+    file_map = {} 
     
-    # Let's map: relative_path_template -> { 'default': abs_path, 'scenario': abs_path }
-    file_map = {}
-    
-    def walk_dir(root, source_type):
-        if not os.path.exists(root):
-            return
-        for dirpath, _, filenames in os.walk(root):
-            rel_dir = os.path.relpath(dirpath, root)
-            if rel_dir == ".": rel_dir = ""
-            
+    for sc in active_scenarios:
+        sc_path = sc.get("path")
+        if not sc_path or not os.path.exists(sc_path): continue
+        
+        for dirpath, _, filenames in os.walk(sc_path):
             for f in filenames:
-                rel_path = os.path.join(rel_dir, f)
-                if rel_path not in file_map:
-                    file_map[rel_path] = {}
-                file_map[rel_path][source_type] = os.path.join(dirpath, f)
-
-    walk_dir(default_dir, 'default')
-    if scenario_path:
-        # Resolve scenario_path relative to cwd? Or relative to config?
-        # config says "templates/scenario/tvm" which is relative to CWD usually.
-        # Let's assume relative to CWD.
-        if not os.path.exists(scenario_path):
-            print(f"Warning: Scenario path {scenario_path} not found.")
-        else:
-            walk_dir(scenario_path, 'scenario')
+                if f.startswith('.'): continue
+                full_path = os.path.join(dirpath, f)
+                rel_path_from_sc = os.path.relpath(full_path, sc_path)
+                
+                # Determine output relative path template
+                if f.endswith('.json'):
+                    out_rel = rel_path_from_sc[:-5]
+                    ftype = 'json'
+                else:
+                    out_rel = rel_path_from_sc
+                    ftype = 'raw'
+                
+                if out_rel not in file_map:
+                    file_map[out_rel] = []
+                
+                file_map[out_rel].append({
+                    "path": full_path,
+                    "type": ftype,
+                    "scenario": sc["name"]
+                })
 
     # 3. Process files
-    # Regroup by output_path_template to handle collisions (e.g. host.ini.json vs host.ini)
-    output_map = {}
-    
-    for rel_path, sources in file_map.items():
-        if rel_path.endswith('.json'):
-            out_tpl = rel_path[:-5]
-        else:
-            out_tpl = rel_path
-            
-        if out_tpl not in output_map:
-            output_map[out_tpl] = {'default': None, 'scenario': None}
-            
-        if sources.get('default'):
-            # If we already have a default for this output?
-            # e.g. default has host.ini AND host.ini.json?
-            # Prefer .json or raw?
-            # If both exist in default, it's ambiguous. Assume likely only one exists.
-            # But if collision, we update.
-            # Storing the SOURCE path
-            output_map[out_tpl]['default'] = sources['default']
-            
-        if sources.get('scenario'):
-            output_map[out_tpl]['scenario'] = sources['scenario']
-
-    for final_rel_path_tpl, sources in output_map.items():
-        # Resolve vars in the path
-
-        # Resolve vars in the path
-        # Example: templates/scenario/default/{CLUSTER_NAME}/...
-        # rel_path is "{CLUSTER_NAME}/group_vars/trident.yml.json"
+    for final_rel_path_tpl, sources in file_map.items():
+        # Resolve vars in the path template
+        try:
+            final_rel_path = resolve_path(final_rel_path_tpl, env)
+        except Exception as e:
+             print(f"Skipping {final_rel_path_tpl}: {e}")
+             continue
+             
+        final_output_path = os.path.join(os.getcwd(), final_rel_path)
         
-        final_rel_path = resolve_path(final_rel_path_tpl, env)
+        # Determine strategy
+        last_raw_index = -1
+        for i, s in enumerate(sources):
+            if s['type'] == 'raw':
+                last_raw_index = i
         
-        # Output path (relative to CWD or specific root?)
-        # Step 2.1 example output: "f12-k8s1-c1/group_vars/trident.yml"
-        # Since `default` is `templates/sample/default` (in example 2.1)
-        # But here we are at `templates/scenario/default`.
-        # The prompt examples imply the CWD is the root for output?
-        # "produces corresponding folder ... f12-k8s1-c1/..."
-        # So yes, output is relative to CWD.
+        if last_raw_index != -1 and last_raw_index < len(sources) - 1:
+             print(f"\033[91m[ERROR] Conflict for {final_rel_path}: Scenario '{sources[last_raw_index]['scenario']}' provides a RAW file, but higher priority scenario '{sources[-1]['scenario']}' provides a JSON schema. Cannot merge Schema onto Raw.\033[0m")
+             continue
         
-        output_file = final_rel_path
-        
-        # Decide process logic
-        source_default = sources.get('default')
-        source_scenario = sources.get('scenario')
-        
-        # Case 1: Scenario exists and is NOT json (and overrides default entirely)
-        # Or Just Scenario exists (new file)
-        
-        target_source = source_default
-        override_source = None
-        
-        if source_scenario:
-            if not source_scenario.endswith('.json'):
-                # Direct replacement/copy
-                # Even if default exists? Yes: "cover original"
-                print(f"Generating {output_file} from scenario (copy/template)")
-                # Just copy? Or substitute vars in content?
-                # Prompt doesn't explicitly say replace vars in content for raw files, 
-                # but "Dynamic Context Injection ... in output path, descriptions, NUMERIC CONTENT".
-                # So we should probably read and replace {VAR} in content too?
-                # "2. ... auto grab ... and in ... numerical content perform {VAR} replacement"
-                
-                content = ""
-                with open(source_scenario, 'r') as f:
-                    content = f.read()
-                
-                # Simple replacement
-                # (Might be risky for binary, but these are text files)
-                content = resolve_path(content, env)
-                save_file(output_file, content)
+        if last_raw_index == len(sources) - 1:
+             last_source = sources[-1]
+             print(f"Generating {final_rel_path} from scenario (copy/template) - Source: {last_source['scenario']}")
+             if os.path.exists(final_output_path):
+                print(f"\033[93m[WARNING] File {final_rel_path} already exists. Skipping.\033[0m")
                 continue
-                
-            else:
-                # Scenario is JSON.
-                override_source = source_scenario
-                # If default has a JSON source:
-                if source_default and source_default.endswith('.json'):
-                    target_source = source_default
-                # If default is raw?
-                elif source_default:
-                     # Raw default, JSON scenario override?
-                     # "network.yml.json indicates only covering some keys".
-                     # This implies we parse the raw default? No, usually we generate from json.
-                     # If raw default exists, we probably can't 'merge' a json schema into it easily without parsing YAML.
-                     # But prompts implies the templates ARE json definitions. 
-                     # "scan ... .json definition file convert to entity".
-                     # So likely the 'default' files are usually .json.
-                     pass 
-        
-        if not target_source:
-             # Scenario only, and it is JSON?
-             # Treat as new definition.
-             target_source = override_source
-             override_source = None
-        
-        # If we are here, we are processing a JSON definition (target_source) with optional json override (override_source).
-        if target_source and target_source.endswith('.json'):
-            print(f"Generating {output_file} from JSON schema")
-            
-            nodes = load_json(target_source)
-            if isinstance(nodes, dict):
-                nodes = [nodes]
 
-            if override_source:
-                overrides = load_json(override_source)
-                # Overrides might be a List (schema items) or Dict (single item override wrapper?)
-                # Example 6: trident.json is a DICT {"key":..., "value":...}
-                # Example merged list implies it supports merging.
-                nodes = merge_nodes(nodes, overrides)
+             content = ""
+             with open(last_source['path'], 'r') as f:
+                 content = f.read()
+             
+             try:
+                 content = resolve_path(content, env)
+             except KeyError as e:
+                 print(f"Error substituting vars in {final_rel_path}: Missing {e}")
+             
+             save_file(final_output_path, content)
+        
+        else:
+             start_index = 0
+             if last_raw_index != -1:
+                 # This case shouldn't happen due to check above, unless logic error.
+                 pass
+             
+             merged_nodes = []
+             print(f"Generating {final_rel_path} from JSON schema")
+             
+             if os.path.exists(final_output_path):
+                print(f"\033[93m[WARNING] File {final_rel_path} already exists. Skipping.\033[0m")
+                continue
+
+             for i in range(start_index, len(sources)):
+                 s = sources[i]
+                 try:
+                     nodes = load_json_nodes(s['path'])
+                     merged_nodes = merge_nodes(merged_nodes, nodes)
+                 except Exception as e:
+                     print(f"Error loading/merging {s['path']}: {e}")
             
-            # Generate YAML
-            yaml_lines = generate_yaml_from_schema(nodes, config=config)
-            content = "\n".join(yaml_lines) + "\n"
-            
-            # Post-process content for VAR replacement?
-            content = resolve_path(content, env)
-            
-            save_file(output_file, content)
+             yaml_lines = generate_yaml_from_schema(merged_nodes, config=config)
+             content = "\n".join(yaml_lines) + "\n"
+             content = resolve_path(content, env)
+             save_file(final_output_path, content)
 
 if __name__ == "__main__":
     # Ensure config path is flexible
     config_path = "templates/scenario/config.json"
-    process_scenario(config_path, "templates/scenario/default")
+    process_scenarios(config_path)

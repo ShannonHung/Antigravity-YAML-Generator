@@ -9,7 +9,7 @@ export interface JsonNode {
     item_multi_type?: string[];
     regex_enable?: boolean;
     regex?: string;
-    required?: boolean;
+    required?: boolean | null;
     condition?: any;
     children?: JsonNode[];
     [key: string]: any;
