@@ -60,4 +60,17 @@ export const api = {
         }
         return res.json();
     },
+
+    renameItem: async (path: string, newName: string) => {
+        const res = await fetch(`${API_BASE_URL}/rename`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path, new_name: newName }),
+        });
+        if (!res.ok) {
+            const error = await res.json();
+            throw new Error(error.detail || 'Failed to rename item');
+        }
+        return res.json();
+    },
 };

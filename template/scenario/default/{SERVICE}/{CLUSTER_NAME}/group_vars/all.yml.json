@@ -15,7 +15,7 @@
     {
         "key": "timezone",
         "description": "system timezone",
-        "override_hint": false,
+        "override_hint": true,
         "multi_type": [
             "string"
         ],
@@ -56,7 +56,7 @@
                     "list"
                 ],
                 "item_multi_type": [
-                    "string"
+                    "object"
                 ],
                 "regex": null,
                 "regex_enable": false,
@@ -98,7 +98,7 @@
                     "list"
                 ],
                 "item_multi_type": [
-                    "string"
+                    "object"
                 ],
                 "regex": null,
                 "regex_enable": false,
@@ -114,6 +114,18 @@
                         "regex_enable": true,
                         "children": [],
                         "required": true
+                    },
+                    {
+                        "key": "wayne",
+                        "description": "this is wayne ",
+                        "multi_type": [
+                            "number"
+                        ],
+                        "required": true,
+                        "children": [],
+                        "override_hint": false,
+                        "regex_enable": true,
+                        "regex": ""
                     }
                 ],
                 "required": true
@@ -126,7 +138,7 @@
                     "list"
                 ],
                 "item_multi_type": [
-                    "string"
+                    "object"
                 ],
                 "regex": null,
                 "regex_enable": false,

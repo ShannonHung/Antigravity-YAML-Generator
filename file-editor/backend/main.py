@@ -194,3 +194,34 @@ def get_file_content(path: str = Query(..., description="Path to file")):
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
+class RenameRequest(BaseModel):
+    path: str
+    new_name: str
+
+@app.post("/api/files/rename")
+def rename_item(request: RenameRequest):
+    try:
+        # Resolve current path
+        current_full_path = get_safe_path(request.path)
+        
+        if not current_full_path.exists():
+            raise HTTPException(status_code=404, detail="Item not found")
+            
+        # Construct new path
+        new_full_path = current_full_path.parent / request.new_name
+        
+        # Security check
+        if not str(new_full_path).startswith(str(ROOT_PATH)):
+             raise HTTPException(status_code=403, detail="Access denied: Path outside root directory")
+
+        if new_full_path.exists():
+            raise HTTPException(status_code=409, detail="Item with new name already exists")
+            
+        current_full_path.rename(new_full_path)
+        return {"message": "Item renamed successfully"}
+        
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
