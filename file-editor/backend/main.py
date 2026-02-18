@@ -138,6 +138,68 @@ def create_file(request: CreateFileRequest):
             
         return {"message": "File saved successfully"}
         
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+def validate_schema_node(node: dict, path: str = "root"):
+    # If node has children, it must be an object or a list of objects
+    children = node.get("children")
+    if children and len(children) > 0:
+        multi_type = node.get("multi_type", [])
+        item_multi_type = node.get("item_multi_type", [])
+        
+        is_object = "object" in multi_type
+        is_list_of_objects = "list" in multi_type and "object" in item_multi_type
+        
+        if not (is_object or is_list_of_objects):
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Validation Error at '{path}': Node has children but type configuration does not support it. "
+                       f"Must contain 'object' in multi_type, or 'list' in multi_type AND 'object' in item_multi_type. "
+                       f"Current: multi_type={multi_type}, item_multi_type={item_multi_type}"
+            )
+            
+        # Recurse
+        for child in children:
+            child_key = child.get("key", "unknown")
+            validate_schema_node(child, path=f"{path}.{child_key}")
+
+@app.post("/api/files/file")
+def create_file(request: CreateFileRequest):
+    try:
+        full_path = get_safe_path(request.path)
+        
+        # Ensure parent directory exists
+        if not full_path.parent.exists():
+             raise HTTPException(status_code=404, detail="Parent directory does not exist")
+
+        # Validation for schema files (.yml.json)
+        if full_path.name.endswith(".yml.json"):
+            import json
+            try:
+                content_json = json.loads(request.content)
+                # Content can be a list (root) or dict
+                nodes = content_json if isinstance(content_json, list) else [content_json]
+                for node in nodes:
+                    validate_schema_node(node)
+            except json.JSONDecodeError:
+                pass # Allow saving invalid JSON if user really wants to, or handle strictly? 
+                     # For now, if it's not valid JSON, we can't validate structure, so let it pass 
+                     # (or fail? frontend usually ensures valid JSON before save).
+                     # Let's assume frontend sends valid stringified JSON.
+            except HTTPException as ve:
+                raise ve
+            except Exception as e:
+                # Log internal error but maybe don't block save if validation crashes unpredictably?
+                # Better to be safe and block if we are sure it's a validation logic error.
+                print(f"Validation check failed: {e}")
+                pass
+
+        with open(full_path, "w") as f:
+            f.write(request.content)
+            
+        return {"message": "File saved successfully"}
+        
     except HTTPException as e:
         raise e
     except Exception as e:

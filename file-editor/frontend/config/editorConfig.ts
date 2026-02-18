@@ -10,7 +10,8 @@ export const DATA_TYPES = [
     "email",
     "url",
     "date",
-    "percentage"
+    "percentage",
+    "enum"
 ];
 
 export const ITEM_DATA_TYPES = [

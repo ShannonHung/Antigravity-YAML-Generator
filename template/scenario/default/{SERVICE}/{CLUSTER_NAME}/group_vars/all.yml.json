@@ -6,7 +6,6 @@
         "multi_type": [
             "string"
         ],
-        "item_multi_type": [],
         "regex": "production",
         "regex_enable": true,
         "children": [],
@@ -160,5 +159,31 @@
             }
         ],
         "required": true
+    },
+    {
+        "key": "test_enum_final",
+        "description": "",
+        "multi_type": [
+            "enum",
+            "string"
+        ],
+        "required": false,
+        "children": [],
+        "override_hint": false,
+        "regex_enable": false,
+        "regex": "[.f200.*,.multi.*]",
+        "default_value": "{\n    \"check\": true\n}"
+    },
+    {
+        "key": "test_list_key",
+        "description": "",
+        "multi_type": [
+            "list"
+        ],
+        "item_multi_type": [
+            "string"
+        ],
+        "required": false,
+        "children": []
     }
 ]

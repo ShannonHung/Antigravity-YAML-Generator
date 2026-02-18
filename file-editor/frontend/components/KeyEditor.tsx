@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Save, X, Check, AlertTriangle, Info } from 'lucide-react';
+import { ArrowLeft, Save, X, Check, AlertTriangle, Info, Edit3, Plus, Trash2 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { DATA_TYPES, ITEM_DATA_TYPES } from '../config/editorConfig';
+import clsx from 'clsx';
 
 interface KeyEditorProps {
     filePath: string;
@@ -31,6 +32,14 @@ export default function KeyEditor({ filePath, targetKey, onClose, onSave }: KeyE
 
     // UI State for Types
     const [isTypeDropdownOpen, setIsTypeDropdownOpen] = useState(false);
+
+    // Enum State
+    const [enumValues, setEnumValues] = useState<string[]>([]);
+    const [enumInput, setEnumInput] = useState('');
+
+    // Default Value Modal
+    const [isDefaultValueModalOpen, setIsDefaultValueModalOpen] = useState(false);
+    const [tempDefaultValue, setTempDefaultValue] = useState('');
 
     useEffect(() => {
         loadData();
@@ -69,7 +78,28 @@ export default function KeyEditor({ filePath, targetKey, onClose, onSave }: KeyE
             setItemTypes(node.item_multi_type || []);
 
             setRegexEnable(!!node.regex_enable);
+            setRegexEnable(!!node.regex_enable);
             setRegexPattern(node.regex || '');
+
+            // Initialize enum values if type is enum
+            if ((node.multi_type || []).includes('enum') && node.regex) {
+                try {
+                    // Try parsing as JSON array first [a,b,c]
+                    // If regex is just a string representation of list like "[a,b]", we parse it
+                    // If it's a raw regex string, we might not be able to parse it as enum list easily unless we define a standard.
+                    // The requirement says "store as string [a,b,c]". So we parse that string.
+                    const cleaned = node.regex.replace(/^\[|\]$/g, '');
+                    if (cleaned) {
+                        setEnumValues(cleaned.split(',').map((s: string) => s.trim()));
+                    } else {
+                        setEnumValues([]);
+                    }
+                } catch (e) {
+                    setEnumValues([]);
+                }
+            } else {
+                setEnumValues([]);
+            }
 
             // Format default value as JSON string if object/list, else string
             if (node.default_value !== undefined) {
@@ -92,12 +122,14 @@ export default function KeyEditor({ filePath, targetKey, onClose, onSave }: KeyE
     const handleSave = async () => {
         // Validate Default Value if it's supposed to be JSON
         let finalDefaultValue: any = defaultValue;
-        if (!regexEnable && defaultValue) {
+        if (defaultValue) {
             // Attempt to parse if it looks like JSON structure or needs type conversion
             try {
                 // If types include object or list, enforce JSON parsing
                 if (types.includes('object') || types.includes('list')) {
                     finalDefaultValue = JSON.parse(defaultValue);
+                    // Auto-format
+                    setDefaultValue(JSON.stringify(finalDefaultValue, null, 4));
                 } else if (types.includes('boolean')) {
                     finalDefaultValue = defaultValue === 'true';
                 } else if (types.includes('number')) {
@@ -132,19 +164,27 @@ export default function KeyEditor({ filePath, targetKey, onClose, onSave }: KeyE
                                 delete item.item_multi_type;
                             }
 
-                            // Update Logic (Regex vs Default)
-                            if (regexEnable) {
-                                item.regex_enable = true;
-                                item.regex = regexPattern;
-                                delete item.default_value;
+                            // Update Logic (Decoupled)
+                            if (types.includes('enum')) {
+                                // Enum Mode: Save as [a,b,c] string
+                                // User requested to keep regex_enable toggleable even for enum.
+                                // So we respecting regexEnable state.
+                                item.regex_enable = regexEnable;
+                                item.regex = `[${enumValues.join(',')}]`;
                             } else {
-                                item.regex_enable = false;
-                                delete item.regex;
-                                if (defaultValue !== '') {
-                                    item.default_value = finalDefaultValue;
+                                // Regex/Fixed Mode
+                                item.regex_enable = regexEnable;
+                                if (regexPattern) {
+                                    item.regex = regexPattern;
                                 } else {
-                                    delete item.default_value;
+                                    delete item.regex;
                                 }
+                            }
+
+                            if (defaultValue !== '') {
+                                item.default_value = finalDefaultValue;
+                            } else {
+                                delete item.default_value;
                             }
                             return;
                         }
@@ -172,16 +212,21 @@ export default function KeyEditor({ filePath, targetKey, onClose, onSave }: KeyE
         }
     }
 
-    const InfoLabel = ({ label, tooltip }: { label: string, tooltip: string }) => (
+    const InfoLabel = ({ label, tooltip, placement = 'right' }: { label: string, tooltip: string, placement?: 'top' | 'bottom' | 'right' }) => (
         <div className="flex items-center mb-1">
             <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100 mr-2">{label}</span>
             <div className="relative group cursor-help z-10">
                 <Info className="w-3.5 h-3.5 text-zinc-400 hover:text-blue-500" />
-                <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block z-50 w-max max-w-xs pointer-events-none">
-                    <div className="bg-zinc-800 text-white text-[10px] rounded px-3 py-2 shadow-xl border border-zinc-700 leading-relaxed z-50">
+                <div className={clsx(
+                    "absolute hidden group-hover:block z-50 w-max max-w-xs pointer-events-none",
+                    placement === 'top' && "left-0 bottom-full mb-2",
+                    placement === 'right' && "left-full top-1/2 -translate-y-1/2 ml-2"
+                )}>
+                    <div className="bg-zinc-800 text-white text-[10px] rounded px-3 py-2 shadow-xl border border-zinc-700 leading-relaxed z-50 relative">
                         {tooltip}
+                        {placement === 'top' && <div className="absolute left-1 top-full w-0 h-0 border-4 border-transparent border-t-zinc-800"></div>}
+                        {placement === 'right' && <div className="absolute right-full top-1/2 -translate-y-1/2 w-0 h-0 border-4 border-transparent border-r-zinc-800"></div>}
                     </div>
-                    <div className="absolute left-1 top-full w-0 h-0 border-4 border-transparent border-t-zinc-800"></div>
                 </div>
             </div>
         </div>
@@ -235,7 +280,7 @@ export default function KeyEditor({ filePath, targetKey, onClose, onSave }: KeyE
                         <div className="bg-zinc-50 dark:bg-zinc-900/50 rounded-xl border border-zinc-200 dark:border-zinc-800 p-5 space-y-5">
                             {/* Key Name */}
                             <div>
-                                <InfoLabel label="Key Name" tooltip="Unique identifier for this field." />
+                                <InfoLabel label="Key Name" tooltip="Unique identifier for this field." placement="right" />
                                 <input
                                     type="text"
                                     value={keyName}
@@ -251,7 +296,7 @@ export default function KeyEditor({ filePath, targetKey, onClose, onSave }: KeyE
                             {/* Constraints Row */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
                                 <div>
-                                    <InfoLabel label="Type(s)" tooltip="Allowed data types for this field." />
+                                    <InfoLabel label="Type(s)" tooltip="Allowed data types for this field." placement="right" />
                                     <div className="relative">
                                         <div className="w-full min-h-[42px] p-1.5 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg flex flex-wrap gap-2 cursor-text transition-all hover:border-zinc-300 dark:hover:border-zinc-600" onClick={() => setIsTypeDropdownOpen(true)}>
                                             {types.map(t => (
@@ -263,6 +308,7 @@ export default function KeyEditor({ filePath, targetKey, onClose, onSave }: KeyE
                                             <input readOnly type="text" className="flex-1 bg-transparent outline-none text-sm min-w-[100px] cursor-pointer h-7 px-1" placeholder={types.length === 0 ? "Select type..." : ""} />
                                         </div>
 
+                                        {/* Type Dropdown Content */}
                                         {isTypeDropdownOpen && (
                                             <>
                                                 <div className="fixed inset-0 z-20" onClick={() => setIsTypeDropdownOpen(false)} />
@@ -270,8 +316,23 @@ export default function KeyEditor({ filePath, targetKey, onClose, onSave }: KeyE
                                                     {DATA_TYPES.filter(o => !types.includes(o)).map(opt => (
                                                         <button
                                                             key={opt}
-                                                            className="w-full text-left px-4 py-2 text-sm hover:bg-zinc-50 dark:hover:bg-zinc-700/50 text-zinc-700 dark:text-zinc-200 font-mono transition-colors border-l-2 border-transparent hover:border-blue-500"
-                                                            onClick={() => { setTypes([...types, opt]); setIsTypeDropdownOpen(false); }}
+                                                            disabled={types.includes('enum') && opt !== 'enum'} // Disable others if enum selected
+                                                            className={clsx(
+                                                                "w-full text-left px-4 py-2 text-sm font-mono transition-colors border-l-2 border-transparent",
+                                                                (types.includes('enum') && opt !== 'enum')
+                                                                    ? "text-zinc-300 dark:text-zinc-600 cursor-not-allowed"
+                                                                    : "hover:bg-zinc-50 dark:hover:bg-zinc-700/50 text-zinc-700 dark:text-zinc-200 hover:border-blue-500"
+                                                            )}
+                                                            onClick={() => {
+                                                                if (types.includes('enum') && opt !== 'enum') return;
+
+                                                                if (opt === 'enum') {
+                                                                    setTypes(['enum']); // Enum is exclusive
+                                                                } else {
+                                                                    setTypes([...types, opt]);
+                                                                }
+                                                                setIsTypeDropdownOpen(false);
+                                                            }}
                                                         >
                                                             {opt}
                                                         </button>
@@ -284,28 +345,36 @@ export default function KeyEditor({ filePath, targetKey, onClose, onSave }: KeyE
 
                                 {types.includes('list') && (
                                     <div className="pl-6 border-l-2 border-purple-100 dark:border-purple-500/20">
-                                        <InfoLabel label="List Item Type(s)" tooltip="Allowed types for list items." />
-                                        <div className="flex flex-wrap gap-2 mb-2">
+                                        <InfoLabel label="List Item Type(s)" tooltip="Allowed types for list items." placement="right" />
+                                        <div className="w-full min-h-[42px] p-1.5 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg flex flex-wrap gap-2 cursor-text transition-all hover:border-zinc-300 dark:hover:border-zinc-600">
                                             {itemTypes.map(t => (
-                                                <span key={t} className="bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-300 text-xs px-2.5 py-1 rounded-md flex items-center font-medium border border-purple-100 dark:border-purple-500/20">
+                                                <span key={t} className="bg-purple-50 dark:bg-purple-900/40 text-purple-600 dark:text-purple-300 text-[10px] px-1.5 py-0.5 rounded flex items-center font-mono border border-purple-100 dark:border-purple-800">
                                                     {t}
                                                     <button onClick={() => setItemTypes(itemTypes.filter(x => x !== t))} className="ml-2 hover:text-purple-900 dark:hover:text-purple-100"><X className="w-3 h-3" /></button>
                                                 </span>
                                             ))}
+                                            <select
+                                                className="bg-transparent outline-none text-sm min-w-[10px] cursor-pointer h- px-1 text-zinc-900 dark:text-zinc-100"
+                                                onChange={(e) => {
+                                                    // Logic reuse from modal: Check duplicates
+                                                    if (e.target.value && !itemTypes.includes(e.target.value)) {
+                                                        setItemTypes([...itemTypes, e.target.value]);
+                                                    }
+                                                    e.target.value = '';
+                                                }}
+                                                onClick={(e) => e.stopPropagation()}
+                                            >
+                                                <option value="">+ Add</option>
+                                                {!itemTypes.includes('object') && <option value="object">object</option>}
+                                                {ITEM_DATA_TYPES.filter(o => !itemTypes.includes(o) && o !== 'object').map(o => <option key={o} value={o}>{o}</option>)}
+                                            </select>
                                         </div>
-                                        <select
-                                            className="w-full px-3 py-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm outline-none focus:ring-2 focus:ring-purple-500/20 transition-all cursor-pointer hover:border-zinc-300 dark:hover:border-zinc-600"
-                                            onChange={(e) => { if (e.target.value) setItemTypes([...itemTypes, e.target.value]); e.target.value = ''; }}
-                                        >
-                                            <option value="">+ Add item type</option>
-                                            {ITEM_DATA_TYPES.filter(o => !itemTypes.includes(o)).map(o => <option key={o} value={o}>{o}</option>)}
-                                        </select>
                                     </div>
                                 )}
                             </div>
 
                             {/* Toggles */}
-                            <div className="flex flex-wrap gap-6 pt-2">
+                            <div className="flex flex-wrap gap-3 pt-1">
                                 <label className="flex items-center space-x-3 p-3 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-700/30 transition-colors cursor-pointer border border-transparent hover:border-zinc-200 dark:hover:border-zinc-700">
                                     <input type="checkbox" checked={required} onChange={e => setRequired(e.target.checked)} className="w-4 h-4 rounded border-zinc-300 text-blue-600 focus:ring-blue-500" />
                                     <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300 select-none">Required Field</span>
@@ -325,54 +394,126 @@ export default function KeyEditor({ filePath, targetKey, onClose, onSave }: KeyE
                             Validation & Defaults
                         </h3>
 
+                        {/* Validation Block */}
                         <div className="bg-zinc-50 dark:bg-zinc-900/50 rounded-xl border border-zinc-200 dark:border-zinc-800 p-5">
-                            <div className="flex items-center justify-between mb-6">
-                                <div className="flex items-center space-x-3">
-                                    <span className={`text-sm font-bold ${regexEnable ? 'text-green-600 dark:text-green-400' : 'text-zinc-500'}`}>Regex Validation</span>
-                                    <button
-                                        onClick={() => setRegexEnable(!regexEnable)}
-                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${regexEnable ? 'bg-green-500' : 'bg-zinc-200 dark:bg-zinc-700'}`}
-                                    >
-                                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform shadow-sm ${regexEnable ? 'translate-x-6' : 'translate-x-1'}`} />
-                                    </button>
-                                </div>
-                                <span className="text-xs text-zinc-400">Toggle to switch between Pattern Matching or Default Value</span>
-                            </div>
+                            {types.includes('enum') ? (
+                                <div className="animate-in fade-in duration-300">
+                                    <InfoLabel label="Enum Values" tooltip="List of allowed string values. Input text and press Enter to add." placement="right" />
+                                    <div className="w-full min-h-[42px] p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg flex flex-wrap gap-2 transition-all focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500">
+                                        {enumValues.map((val, idx) => (
+                                            <span key={idx} className="bg-zinc-100 dark:bg-zinc-700 text-zinc-800 dark:text-zinc-200 text-xs px-2 py-1 rounded-md flex items-center border border-zinc-200 dark:border-zinc-600">
+                                                {val}
+                                                <button
+                                                    onClick={() => setEnumValues(enumValues.filter((_, i) => i !== idx))}
+                                                    className="ml-1.5 text-zinc-400 hover:text-red-500 transition-colors"
+                                                >
+                                                    <X className="w-3 h-3" />
+                                                </button>
+                                            </span>
+                                        ))}
+                                        <input
+                                            type="text"
+                                            className="flex-1 bg-transparent outline-none text-xs font-mono min-w-[80px] h-6"
+                                            placeholder="Add value..."
+                                            value={enumInput}
+                                            onChange={e => setEnumInput(e.target.value)}
+                                            onKeyDown={e => {
+                                                if (e.key === 'Enter' && enumInput.trim()) {
+                                                    setEnumValues([...enumValues, enumInput.trim()]);
+                                                    setEnumInput('');
+                                                }
+                                                if (e.key === 'Backspace' && !enumInput && enumValues.length > 0) {
+                                                    setEnumValues(enumValues.slice(0, -1));
+                                                }
+                                            }}
+                                        />
+                                    </div>
+                                    <p className="text-[10px] text-zinc-400 mt-2">Values will be stored as comma-separated string `[val1,val2]`</p>
 
-                            <div className="relative min-h-[80px]">
-                                {regexEnable ? (
-                                    <div className="animate-in fade-in slide-in-from-left-4 duration-300">
-                                        <InfoLabel label="Regex Pattern" tooltip="Regular expression pattern that values must match." />
+                                    {/* Enum Regex Toggle */}
+                                    <div className="mt-4 pt-4 border-t border-zinc-100 dark:border-zinc-700/50">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <div className="flex items-center space-x-3">
+                                                <span className={`text-xs font-bold ${regexEnable ? 'text-green-600 dark:text-green-400' : 'text-zinc-500'}`}>
+                                                    {regexEnable ? 'Regex Enabled' : 'Regex Disabled'}
+                                                </span>
+                                                <button
+                                                    onClick={() => setRegexEnable(!regexEnable)}
+                                                    className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${regexEnable ? 'bg-green-500' : 'bg-zinc-200 dark:bg-zinc-700'}`}
+                                                >
+                                                    <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform shadow-sm ${regexEnable ? 'translate-x-[18px]' : 'translate-x-1'}`} />
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <p className="text-[10px] text-zinc-400">If enabled, values will be treated as regex patterns during validation.</p>
+                                    </div>
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="flex items-center justify-between mb-3">
+                                        <div className="flex items-center space-x-3">
+                                            <span className={`text-xs font-bold ${regexEnable ? 'text-green-600 dark:text-green-400' : 'text-zinc-500'}`}>
+                                                {regexEnable ? 'Regex Pattern' : 'Fixed Value'}
+                                            </span>
+                                            <button
+                                                onClick={() => setRegexEnable(!regexEnable)}
+                                                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${regexEnable ? 'bg-green-500' : 'bg-zinc-200 dark:bg-zinc-700'}`}
+                                            >
+                                                <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform shadow-sm ${regexEnable ? 'translate-x-[18px]' : 'translate-x-1'}`} />
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div className="animate-in fade-in duration-300">
+                                        <InfoLabel
+                                            label={regexEnable ? "Pattern" : "Match Value"}
+                                            tooltip={regexEnable ? "Value must match this regex pattern." : "Value must exactly equal this string."}
+                                            placement="right"
+                                        />
                                         <div className="relative group">
-                                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 font-mono text-sm group-focus-within:text-green-500">/</span>
+                                            {regexEnable && <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 font-mono text-xs group-focus-within:text-green-500">/</span>}
                                             <input
                                                 type="text"
                                                 value={regexPattern}
                                                 onChange={e => setRegexPattern(e.target.value)}
-                                                className="w-full pl-8 pr-8 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs font-mono text-zinc-800 dark:text-zinc-200 focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none transition-all"
-                                                placeholder="^[a-z]+$"
+                                                className={`w-full ${regexEnable ? 'pl-6 pr-6' : 'px-3'} py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs font-mono text-zinc-800 dark:text-zinc-200 focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none transition-all`}
+                                                placeholder={regexEnable ? "^[a-z]+$" : "exact_value"}
                                             />
-                                            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 font-mono text-sm group-focus-within:text-green-500">/</span>
+                                            {regexEnable && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 font-mono text-xs group-focus-within:text-green-500">/</span>}
                                         </div>
                                     </div>
-                                ) : (
-                                    <div className="animate-in fade-in slide-in-from-right-4 duration-300">
-                                        <InfoLabel label="Default Value" tooltip="Initial value if none provided. Supports JSON for complex types." />
-                                        <textarea
-                                            value={defaultValue}
-                                            onChange={e => { setDefaultValue(e.target.value); validateDefaultValue(e.target.value); }}
-                                            className={`w-full px-3 py-2 rounded-lg border bg-white dark:bg-zinc-800 text-xs font-mono focus:ring-2 outline-none transition-all min-h-[60px] ${defaultValueError ? 'border-red-500 focus:ring-red-500/20' : 'border-zinc-200 dark:border-zinc-700 focus:ring-blue-500/20 focus:border-blue-500'}`}
-                                            placeholder='e.g. "default" or {"key": "val"}'
-                                        />
-                                        {defaultValueError && (
-                                            <div className="flex items-center mt-2 text-xs text-red-500 font-medium animate-in fade-in slide-in-from-top-1">
-                                                <AlertTriangle className="w-3.5 h-3.5 mr-1.5" />
-                                                {defaultValueError}
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
+                                </>
+                            )}
+                        </div>
+
+                        <div className="w-full h-px bg-zinc-200 dark:bg-zinc-800"></div>
+
+                        {/* Default Value Block */}
+                        <div className="bg-zinc-50 dark:bg-zinc-900/50 rounded-xl border border-zinc-200 dark:border-zinc-800 p-5">
+                            <div className="flex items-center justify-between mb-2">
+                                <InfoLabel label="Template Default Value" tooltip="Value used when generating the template. Supports JSON for object/list types. Auto-formats on save." placement="right" />
+                                <button
+                                    onClick={() => { setTempDefaultValue(defaultValue); setIsDefaultValueModalOpen(true); }}
+                                    className="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 hover:underline flex items-center"
+                                >
+                                    <Edit3 className="w-3 h-3 mr-1" />
+                                    Edit in Modal
+                                </button>
                             </div>
+
+                            <div
+                                onClick={() => { setTempDefaultValue(defaultValue); setIsDefaultValueModalOpen(true); }}
+                                className={`w-full px-3 py-2 rounded-lg border bg-zinc-50 dark:bg-zinc-900/50 text-xs font-mono min-h-[60px] cursor-pointer hover:border-blue-400 transition-all ${defaultValueError ? 'border-red-500' : 'border-zinc-200 dark:border-zinc-700'} text-zinc-600 dark:text-zinc-300 overflow-hidden text-ellipsis`}
+                            >
+                                {defaultValue || <span className="text-zinc-400 italic">No default value set...</span>}
+                            </div>
+
+                            {defaultValueError && (
+                                <div className="flex items-center mt-2 text-xs text-red-500 font-medium animate-in fade-in slide-in-from-top-1">
+                                    <AlertTriangle className="w-3.5 h-3.5 mr-1.5" />
+                                    {defaultValueError}
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -384,7 +525,7 @@ export default function KeyEditor({ filePath, targetKey, onClose, onSave }: KeyE
                         </h3>
                         <div className="bg-zinc-50 dark:bg-zinc-900/50 rounded-xl border border-zinc-200 dark:border-zinc-800 p-5">
                             <div>
-                                <InfoLabel label="Description" tooltip="Analysis of what this key is used for. displayed in tooltips." />
+                                <InfoLabel label="Description" tooltip="Analysis of what this key is used for. displayed in tooltips." placement="right" />
                                 <textarea
                                     value={description}
                                     onChange={e => setDescription(e.target.value)}
@@ -397,6 +538,63 @@ export default function KeyEditor({ filePath, targetKey, onClose, onSave }: KeyE
 
                 </div>
             </div>
-        </div>
+
+
+            {/* Default Value Modal Overlay */}
+            {
+                isDefaultValueModalOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+                        <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-2xl w-full max-w-3xl h-[80vh] flex flex-col border border-zinc-200 dark:border-zinc-800">
+                            <div className="flex items-center justify-between p-4 border-b border-zinc-200 dark:border-zinc-800">
+                                <h3 className="font-bold text-lg text-zinc-900 dark:text-zinc-100">Edit Default Value</h3>
+                                <button onClick={() => setIsDefaultValueModalOpen(false)} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors">
+                                    <X className="w-5 h-5 text-zinc-500" />
+                                </button>
+                            </div>
+                            <div className="flex-1 p-4 overflow-hidden relative">
+                                <textarea
+                                    value={tempDefaultValue}
+                                    onChange={e => setTempDefaultValue(e.target.value)}
+                                    className="w-full h-full bg-zinc-50 dark:bg-zinc-950 font-mono text-sm p-4 rounded-lg resize-none outline-none focus:ring-2 focus:ring-blue-500/20 border border-zinc-200 dark:border-zinc-800"
+                                    placeholder="Enter JSON or string value..."
+                                />
+                                <div className="absolute bottom-6 right-6 flex space-x-2">
+                                    <button
+                                        onClick={() => {
+                                            try {
+                                                // Auto format if json
+                                                const parsed = JSON.parse(tempDefaultValue);
+                                                setTempDefaultValue(JSON.stringify(parsed, null, 4));
+                                            } catch (e) { /* ignore */ }
+                                        }}
+                                        className="px-3 py-1.5 bg-zinc-200 dark:bg-zinc-800 text-xs font-medium rounded-md hover:bg-zinc-300 dark:hover:bg-zinc-700 transition"
+                                    >
+                                        Format JSON
+                                    </button>
+                                </div>
+                            </div>
+                            <div className="p-4 border-t border-zinc-200 dark:border-zinc-800 flex justify-end space-x-3 bg-zinc-50 dark:bg-zinc-900/50 rounded-b-xl">
+                                <button
+                                    onClick={() => setIsDefaultValueModalOpen(false)}
+                                    className="px-5 py-2.5 text-zinc-600 dark:text-zinc-400 font-medium hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded-lg transition"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setDefaultValue(tempDefaultValue);
+                                        validateDefaultValue(tempDefaultValue);
+                                        setIsDefaultValueModalOpen(false);
+                                    }}
+                                    className="px-5 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 shadow-lg hover:shadow-blue-500/20 transition"
+                                >
+                                    Apply Changes
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
+        </div >
     );
 }

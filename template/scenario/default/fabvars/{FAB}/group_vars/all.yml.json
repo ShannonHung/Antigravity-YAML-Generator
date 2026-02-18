@@ -2,7 +2,7 @@
     {
         "key": "fab_location",
         "description": "Location of the fab - up",
-        "default_value": "{FAB}",
+        "default_value": "{\"a\":   1,   \"b\":2}",
         "override_hint": false,
         "required": false,
         "multi_type": [
