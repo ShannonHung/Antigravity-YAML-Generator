@@ -116,7 +116,7 @@
                         "required": true
                     },
                     {
-                        "key": "wayne",
+                        "key": "wayne2",
                         "description": "this is wayne ",
                         "multi_type": [
                             "number"
@@ -144,7 +144,7 @@
                 "regex_enable": false,
                 "children": [
                     {
-                        "key": "item",
+                        "key": "item3",
                         "description": "nameserver entry",
                         "override_hint": false,
                         "multi_type": [

@@ -5,6 +5,7 @@ import { ChevronRight, ChevronDown, Search, ArrowLeft, Home, AlertTriangle, Chec
 import { Typeahead, Menu, MenuItem } from 'react-bootstrap-typeahead'; // Added Menu, MenuItem
 import 'react-bootstrap-typeahead/css/Typeahead.css';
 import { api } from '@/lib/api';
+import { DATA_TYPES, ITEM_DATA_TYPES } from '../config/editorConfig';
 import clsx from 'clsx';
 
 // Types
@@ -487,19 +488,25 @@ function AddKeyModalV3({ nodes, onClose, onSave }: any) {
     // Flatten valid parents
     const validParents = useMemo(() => getValidParents(nodes), [nodes]);
 
-    const OPTIONS = ['string', 'number', 'object', 'list', 'boolean', 'ntp', 'ip'];
-
     // Info Label Component
-    const InfoLabel = ({ label, tooltip }: { label: string, tooltip: string }) => (
+    const InfoLabel = ({ label, tooltip, placement = 'top' }: { label: string, tooltip: string, placement?: 'top' | 'bottom' }) => (
         <div className="flex items-center mb-1">
             <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300 mr-1.5">{label}</span>
-            <div className="relative group cursor-help z-10"> {/* Ensure tooltip icon isn't hidden */}
+            <div className="relative group cursor-help z-50"> {/* Ensure tooltip icon isn't hidden */}
                 <Info className="w-3 h-3 text-zinc-400 hover:text-blue-500" />
-                <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:block z-50 w-max max-w-xs pointer-events-none">
+                <div className={clsx(
+                    "absolute left-1/2 -translate-x-1/2 hidden group-hover:block z-[100] w-max max-w-xs pointer-events-none",
+                    placement === 'top' ? "bottom-full mb-2" : "top-full mt-2"
+                )}>
                     <div className="bg-zinc-800 text-white text-[10px] rounded px-2 py-1 shadow-lg border border-zinc-700">
                         {tooltip}
                     </div>
-                    <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-4 border-transparent border-t-zinc-800"></div>
+                    {placement === 'top' && (
+                        <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-4 border-transparent border-t-zinc-800"></div>
+                    )}
+                    {placement === 'bottom' && (
+                        <div className="absolute left-1/2 -translate-x-1/2 bottom-full w-0 h-0 border-4 border-transparent border-b-zinc-800"></div>
+                    )}
                 </div>
             </div>
         </div>
@@ -516,8 +523,8 @@ function AddKeyModalV3({ nodes, onClose, onSave }: any) {
 
                 <div className="p-5 space-y-4 overflow-y-auto custom-scrollbar relative">
                     {/* Parent Selector (Single Typeahead) - HIGH Z-INDEX */}
-                    <div className="relative z-20">
-                        <InfoLabel label="Parent" tooltip="The location in the JSON structure where this key will be added." />
+                    <div className="relative z-20 hover:z-[60]">
+                        <InfoLabel label="Parent" tooltip="The location in the JSON structure where this key will be added." placement="bottom" />
                         <Typeahead
                             id="parent-select"
                             options={validParents}
@@ -546,7 +553,7 @@ function AddKeyModalV3({ nodes, onClose, onSave }: any) {
                     </div>
 
                     {/* Key Name */}
-                    <div className="relative z-0">
+                    <div className="relative z-0 hover:z-[60]">
                         <InfoLabel label="Key Name" tooltip="The unique identifier for this field." />
                         <input
                             type="text"
@@ -575,7 +582,7 @@ function AddKeyModalV3({ nodes, onClose, onSave }: any) {
                                 <>
                                     <div className="fixed inset-0 z-10" onClick={() => setIsTypeDropdownOpen(false)} />
                                     <div className="absolute top-full left-0 w-full mt-1 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md shadow-lg z-20 max-h-40 overflow-y-auto py-1">
-                                        {OPTIONS.filter(o => !types.includes(o)).map(opt => (
+                                        {DATA_TYPES.filter(o => !types.includes(o)).map(opt => (
                                             <button
                                                 key={opt}
                                                 className="w-full text-left px-3 py-1.5 text-xs hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 font-mono"
@@ -592,7 +599,7 @@ function AddKeyModalV3({ nodes, onClose, onSave }: any) {
 
                     {/* Item Type (if list) */}
                     {types.includes('list') && (
-                        <div className="pl-3 border-l-2 border-blue-500/20 py-1 relative z-0">
+                        <div className="pl-3 border-l-2 border-blue-500/20 py-1 relative z-0 hover:z-[60]">
                             <InfoLabel label="List Item Type" tooltip="The data type(s) allowed for items within this list." />
                             <div className="flex flex-wrap gap-1.5 mb-1.5">
                                 {itemTypes.map(t => (
@@ -608,13 +615,13 @@ function AddKeyModalV3({ nodes, onClose, onSave }: any) {
                             >
                                 <option value="">Add item type...</option>
                                 <option value="object">object</option>
-                                {OPTIONS.filter(o => !itemTypes.includes(o) && o !== 'object').map(o => <option key={o} value={o}>{o}</option>)}
+                                {ITEM_DATA_TYPES.filter(o => !itemTypes.includes(o) && o !== 'object').map(o => <option key={o} value={o}>{o}</option>)}
                             </select>
                         </div>
                     )}
 
                     {/* Desc */}
-                    <div className="relative z-0">
+                    <div className="relative z-0 hover:z-[60]">
                         <InfoLabel label="Description" tooltip="A brief explanation of what this key is used for." />
                         <textarea value={desc} onChange={e => setDesc(e.target.value)} className="w-full px-3 py-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md outline-none text-xs min-h-[60px]" placeholder="..." />
                     </div>

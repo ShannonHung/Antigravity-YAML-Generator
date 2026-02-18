@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Save, X, Check, AlertTriangle, Info } from 'lucide-react';
 import { api } from '@/lib/api';
+import { DATA_TYPES, ITEM_DATA_TYPES } from '../config/editorConfig';
 
 interface KeyEditorProps {
     filePath: string;
@@ -30,7 +31,6 @@ export default function KeyEditor({ filePath, targetKey, onClose, onSave }: KeyE
 
     // UI State for Types
     const [isTypeDropdownOpen, setIsTypeDropdownOpen] = useState(false);
-    const OPTIONS_TYPES = ['string', 'number', 'object', 'list', 'boolean', 'ntp', 'ip'];
 
     useEffect(() => {
         loadData();
@@ -175,10 +175,10 @@ export default function KeyEditor({ filePath, targetKey, onClose, onSave }: KeyE
     const InfoLabel = ({ label, tooltip }: { label: string, tooltip: string }) => (
         <div className="flex items-center mb-1">
             <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100 mr-2">{label}</span>
-            <div className="relative group cursor-help">
+            <div className="relative group cursor-help z-10">
                 <Info className="w-3.5 h-3.5 text-zinc-400 hover:text-blue-500" />
                 <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block z-50 w-max max-w-xs pointer-events-none">
-                    <div className="bg-zinc-800 text-white text-[10px] rounded px-3 py-2 shadow-xl border border-zinc-700 leading-relaxed">
+                    <div className="bg-zinc-800 text-white text-[10px] rounded px-3 py-2 shadow-xl border border-zinc-700 leading-relaxed z-50">
                         {tooltip}
                     </div>
                     <div className="absolute left-1 top-full w-0 h-0 border-4 border-transparent border-t-zinc-800"></div>
@@ -222,17 +222,17 @@ export default function KeyEditor({ filePath, targetKey, onClose, onSave }: KeyE
             </div>
 
             {/* Form */}
-            <div className="flex-1 overflow-y-auto p-8 w-full custom-scrollbar">
-                <div className="max-w-5xl mx-auto space-y-8 pb-20">
+            <div className="flex-1 overflow-y-auto p-5 w-full custom-scrollbar">
+                <div className="max-w-4xl mx-auto space-y-5 pb-20">
 
                     {/* Identity Section */}
                     <div className="space-y-4">
-                        <h3 className="text-sm font-bold uppercase tracking-wider text-zinc-400 flex items-center mb-6">
+                        <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400 flex items-center mb-3">
                             <span className="w-8 h-px bg-zinc-300 dark:bg-zinc-700 mr-3"></span>
                             Identity & Properties
                         </h3>
 
-                        <div className="bg-zinc-50 dark:bg-zinc-900/50 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6 space-y-6">
+                        <div className="bg-zinc-50 dark:bg-zinc-900/50 rounded-xl border border-zinc-200 dark:border-zinc-800 p-5 space-y-5">
                             {/* Key Name */}
                             <div>
                                 <InfoLabel label="Key Name" tooltip="Unique identifier for this field." />
@@ -240,7 +240,7 @@ export default function KeyEditor({ filePath, targetKey, onClose, onSave }: KeyE
                                     type="text"
                                     value={keyName}
                                     onChange={e => setKeyName(e.target.value)}
-                                    className="w-full px-4 py-2.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none font-mono"
+                                    className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none font-mono"
                                 />
                                 <p className="text-xs text-amber-600/70 mt-2 flex items-center">
                                     <AlertTriangle className="w-3 h-3 mr-1" />
@@ -267,7 +267,7 @@ export default function KeyEditor({ filePath, targetKey, onClose, onSave }: KeyE
                                             <>
                                                 <div className="fixed inset-0 z-20" onClick={() => setIsTypeDropdownOpen(false)} />
                                                 <div className="absolute top-full left-0 w-full mt-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl shadow-xl z-30 max-h-56 overflow-y-auto py-2">
-                                                    {OPTIONS_TYPES.filter(o => !types.includes(o)).map(opt => (
+                                                    {DATA_TYPES.filter(o => !types.includes(o)).map(opt => (
                                                         <button
                                                             key={opt}
                                                             className="w-full text-left px-4 py-2 text-sm hover:bg-zinc-50 dark:hover:bg-zinc-700/50 text-zinc-700 dark:text-zinc-200 font-mono transition-colors border-l-2 border-transparent hover:border-blue-500"
@@ -298,7 +298,7 @@ export default function KeyEditor({ filePath, targetKey, onClose, onSave }: KeyE
                                             onChange={(e) => { if (e.target.value) setItemTypes([...itemTypes, e.target.value]); e.target.value = ''; }}
                                         >
                                             <option value="">+ Add item type</option>
-                                            {OPTIONS_TYPES.filter(o => !itemTypes.includes(o)).map(o => <option key={o} value={o}>{o}</option>)}
+                                            {ITEM_DATA_TYPES.filter(o => !itemTypes.includes(o)).map(o => <option key={o} value={o}>{o}</option>)}
                                         </select>
                                     </div>
                                 )}
@@ -320,12 +320,12 @@ export default function KeyEditor({ filePath, targetKey, onClose, onSave }: KeyE
 
                     {/* Logic Section */}
                     <div className="space-y-4">
-                        <h3 className="text-sm font-bold uppercase tracking-wider text-zinc-400 flex items-center mb-6">
+                        <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400 flex items-center mb-3">
                             <span className="w-8 h-px bg-zinc-300 dark:bg-zinc-700 mr-3"></span>
                             Validation & Defaults
                         </h3>
 
-                        <div className="bg-zinc-50 dark:bg-zinc-900/50 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6">
+                        <div className="bg-zinc-50 dark:bg-zinc-900/50 rounded-xl border border-zinc-200 dark:border-zinc-800 p-5">
                             <div className="flex items-center justify-between mb-6">
                                 <div className="flex items-center space-x-3">
                                     <span className={`text-sm font-bold ${regexEnable ? 'text-green-600 dark:text-green-400' : 'text-zinc-500'}`}>Regex Validation</span>
@@ -349,7 +349,7 @@ export default function KeyEditor({ filePath, targetKey, onClose, onSave }: KeyE
                                                 type="text"
                                                 value={regexPattern}
                                                 onChange={e => setRegexPattern(e.target.value)}
-                                                className="w-full pl-8 pr-8 py-3 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-sm font-mono text-zinc-800 dark:text-zinc-200 focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none transition-all"
+                                                className="w-full pl-8 pr-8 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs font-mono text-zinc-800 dark:text-zinc-200 focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none transition-all"
                                                 placeholder="^[a-z]+$"
                                             />
                                             <span className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 font-mono text-sm group-focus-within:text-green-500">/</span>
@@ -361,7 +361,7 @@ export default function KeyEditor({ filePath, targetKey, onClose, onSave }: KeyE
                                         <textarea
                                             value={defaultValue}
                                             onChange={e => { setDefaultValue(e.target.value); validateDefaultValue(e.target.value); }}
-                                            className={`w-full px-4 py-3 rounded-lg border bg-white dark:bg-zinc-800 text-sm font-mono focus:ring-2 outline-none transition-all min-h-[100px] ${defaultValueError ? 'border-red-500 focus:ring-red-500/20' : 'border-zinc-200 dark:border-zinc-700 focus:ring-blue-500/20 focus:border-blue-500'}`}
+                                            className={`w-full px-3 py-2 rounded-lg border bg-white dark:bg-zinc-800 text-xs font-mono focus:ring-2 outline-none transition-all min-h-[60px] ${defaultValueError ? 'border-red-500 focus:ring-red-500/20' : 'border-zinc-200 dark:border-zinc-700 focus:ring-blue-500/20 focus:border-blue-500'}`}
                                             placeholder='e.g. "default" or {"key": "val"}'
                                         />
                                         {defaultValueError && (
@@ -378,17 +378,17 @@ export default function KeyEditor({ filePath, targetKey, onClose, onSave }: KeyE
 
                     {/* Documentation Section */}
                     <div className="space-y-4">
-                        <h3 className="text-sm font-bold uppercase tracking-wider text-zinc-400 flex items-center mb-6">
+                        <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400 flex items-center mb-3">
                             <span className="w-8 h-px bg-zinc-300 dark:bg-zinc-700 mr-3"></span>
                             Documentation
                         </h3>
-                        <div className="bg-zinc-50 dark:bg-zinc-900/50 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6">
+                        <div className="bg-zinc-50 dark:bg-zinc-900/50 rounded-xl border border-zinc-200 dark:border-zinc-800 p-5">
                             <div>
                                 <InfoLabel label="Description" tooltip="Analysis of what this key is used for. displayed in tooltips." />
                                 <textarea
                                     value={description}
                                     onChange={e => setDescription(e.target.value)}
-                                    className="w-full px-4 py-3 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-sm focus:ring-2 focus:ring-yellow-500/20 focus:border-yellow-500 outline-none min-h-[150px] align-top transition-colors resize-y"
+                                    className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs focus:ring-2 focus:ring-yellow-500/20 focus:border-yellow-500 outline-none min-h-[100px] align-top transition-colors resize-y"
                                     placeholder="Enter a detailed description..."
                                 />
                             </div>

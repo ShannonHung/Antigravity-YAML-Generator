@@ -12,6 +12,7 @@ import clsx from 'clsx';
 import JsonTreeViewer from '@/components/JsonTreeViewer';
 import KeyEditor from '@/components/KeyEditor';
 import CodeEditor from '@/components/CodeEditor';
+import Toast from '@/components/ui/Toast';
 
 type ViewMode = 'grid' | 'list';
 type SortField = 'name' | 'mtime' | 'size';
@@ -53,6 +54,9 @@ export default function FileExplorer() {
   // 404 State
   const [is404, setIs404] = useState(false);
 
+  // Toast State
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
   // Derived state for what folder content to show
   const isFilePath = (path: string) => {
     const name = path.split('/').pop();
@@ -75,7 +79,7 @@ export default function FileExplorer() {
 
   useEffect(() => {
     handlePathChange(currentPath);
-  }, [currentPath]);
+  }, [currentPath, currentKey]); // Added currentKey dependency to refresh when closing editor
 
   const handlePathChange = async (path: string) => {
     const isFile = isFilePath(path);
@@ -234,11 +238,25 @@ export default function FileExplorer() {
   const handleSaveFile = async () => {
     if (!editingFile) return;
     try {
-      await api.createFile(editingFile.path, editingFile.content);
-      alert('Saved!');
+      let contentToSave = editingFile.content;
+      // Auto-format JSON if standard json file
+      if (editingFile.path.endsWith('.json') && !editingFile.path.endsWith('.yml.json')) {
+        try {
+          const parsed = JSON.parse(contentToSave);
+          contentToSave = JSON.stringify(parsed, null, 4);
+        } catch (e) {
+          // Ignore format errors, just save as is
+        }
+      }
+
+      await api.createFile(editingFile.path, contentToSave);
+      setToast({ message: 'Saved successfully!', type: 'success' });
+
+      // Update local state to show formatted content immediately
+      setEditingFile({ ...editingFile, content: contentToSave });
       fetchFiles(activeFolderPath);
     } catch (err: any) {
-      alert(`Failed to save: ${err.message}`);
+      setToast({ message: `Failed to save: ${err.message}`, type: 'error' });
     }
   };
 
@@ -583,12 +601,14 @@ export default function FileExplorer() {
           <KeyEditor
             filePath={viewingJson.path}
             targetKey={currentKey}
-            onClose={() => navigateTo(viewingJson.path)}
+            onClose={() => {
+              navigateTo(viewingJson.path);
+              // handlePathChange will be triggered by useEffect when key param is removed
+            }}
             onSave={() => {
               // Reload content by navigating successfully back
               navigateTo(viewingJson.path);
-            }}
-          />
+            }} />
         </div>
       )}
 
@@ -637,6 +657,7 @@ export default function FileExplorer() {
             value={newItemName}
             onChange={(e) => setNewItemName(e.target.value)}
             autoFocus
+            onKeyDown={(e) => e.key === 'Enter' && handleCreateFile()}
           />
           <div className="flex justify-end space-x-2">
             <button
@@ -695,6 +716,7 @@ export default function FileExplorer() {
             value={renameValue}
             onChange={(e) => setRenameValue(e.target.value)}
             autoFocus
+            onKeyDown={(e) => e.key === 'Enter' && handleRename()}
           />
           <div className="flex justify-end space-x-2">
             <button
@@ -713,6 +735,14 @@ export default function FileExplorer() {
         </div>
       </Modal>
 
+      {/* Toast Notification */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 }

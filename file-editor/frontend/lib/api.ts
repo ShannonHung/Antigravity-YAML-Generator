@@ -10,7 +10,7 @@ export interface FileInfo {
 
 export const api = {
     listFiles: async (path: string = '/'): Promise<FileInfo[]> => {
-        const res = await fetch(`${API_BASE_URL}?path=${encodeURIComponent(path)}`);
+        const res = await fetch(`${API_BASE_URL}?path=${encodeURIComponent(path)}&t=${Date.now()}`);
         if (!res.ok) throw new Error('Failed to fetch files');
         return res.json();
     },
@@ -53,7 +53,7 @@ export const api = {
     },
 
     getFileContent: async (path: string): Promise<{ content: string }> => {
-        const res = await fetch(`${API_BASE_URL}/content?path=${encodeURIComponent(path)}`);
+        const res = await fetch(`${API_BASE_URL}/content?path=${encodeURIComponent(path)}&t=${Date.now()}`);
         if (!res.ok) {
             const error = await res.json();
             throw new Error(error.detail || 'Failed to read file');

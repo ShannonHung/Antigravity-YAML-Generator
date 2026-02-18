@@ -1,9 +1,13 @@
 [
     {
         "key": "fab_location",
-        "description": "Location of the fab",
+        "description": "Location of the fab - up",
         "default_value": "{FAB}",
         "override_hint": false,
-        "required": true
+        "required": false,
+        "multi_type": [
+            "string"
+        ],
+        "regex_enable": false
     }
 ]
