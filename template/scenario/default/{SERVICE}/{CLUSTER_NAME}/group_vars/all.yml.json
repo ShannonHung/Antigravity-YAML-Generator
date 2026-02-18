@@ -146,14 +146,14 @@
                         "regex_enable": false,
                         "children": [
                             {
-                                "key": "item3",
+                                "key": "region_new",
                                 "description": "nameserver entry",
                                 "override_hint": false,
                                 "multi_type": [
-                                    "string"
+                                    "enum"
                                 ],
-                                "regex": "8.8.8.8|1.1.1.1",
-                                "regex_enable": true,
+                                "regex": "[tw,us,jp]",
+                                "regex_enable": false,
                                 "children": [],
                                 "required": true
                             }
