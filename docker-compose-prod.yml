@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  backend:
+    image: shannonhung/file-editor-backend:latest
+    ports:
+      - "8000:8000"
+    volumes:
+      - ${TEMPLATE_DIR:-./templates}:/app/template
+    environment:
+      - ROOT_PATH=/app/template
+
+  frontend:
+    image: shannonhung/file-editor-frontend:latest
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend

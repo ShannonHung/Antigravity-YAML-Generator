@@ -9,7 +9,7 @@ export function useFileNavigation() {
     // Helper to determine if path is file or folder
     const isFilePath = (path: string) => {
         const name = path.split('/').pop();
-        return name && name.includes('.') && !path.endsWith('/');
+        return !!(name && name.includes('.') && !path.endsWith('/'));
     };
 
     const activeFolderPath = isFilePath(currentPath)

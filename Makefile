@@ -10,3 +10,41 @@ backend:
 
 frontend:
 	cd file-editor/frontend && npm run dev
+
+web-down:
+	@echo "Stopping frontend (port 3000)..."
+	-lsof -ti:3000 | xargs kill -9
+	@echo "Stopping backend (port 8000)..."
+	-lsof -ti:8000 | xargs kill -9
+
+# Docker commands
+build-front:
+	docker build -t my-frontend ./file-editor/frontend
+
+build-back:
+	docker build -t my-backend ./file-editor/backend
+
+web-dev:
+	docker-compose up -d
+
+web-dev-down:
+	docker-compose down
+
+# Docker push commands
+# Usage: make push-front TAG=latest
+TAG ?= latest
+
+push-front:
+	docker tag my-frontend shannonhung/file-editor-frontend:$(TAG)
+	docker push shannonhung/file-editor-frontend:$(TAG)
+
+push-back:
+	docker tag my-backend shannonhung/file-editor-backend:$(TAG)
+	docker push shannonhung/file-editor-backend:$(TAG)
+
+# Production commands
+web-prod:
+	docker-compose -f docker-compose-prod.yml up -d
+
+web-prod-down:
+	docker-compose -f docker-compose-prod.yml down
