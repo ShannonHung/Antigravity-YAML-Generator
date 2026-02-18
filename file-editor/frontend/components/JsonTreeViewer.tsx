@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { ChevronRight, ChevronDown, Search, ArrowLeft, Home, AlertTriangle, CheckCircle2, Moon, Sun, Plus, X, Save, ArrowUpDown, Trash2, Edit, Info, Maximize2, Minimize2 } from 'lucide-react';
+import { ChevronRight, ChevronDown, Search, ArrowLeft, Home, AlertTriangle, CheckCircle2, Moon, Sun, Plus, X, Save, ArrowUpDown, Trash2, Edit, Info, Maximize2, Minimize2, Ban } from 'lucide-react';
 import { Typeahead, Menu, MenuItem } from 'react-bootstrap-typeahead'; // Added Menu, MenuItem
 import 'react-bootstrap-typeahead/css/Typeahead.css';
 import { api } from '@/lib/api';
@@ -141,9 +141,31 @@ const TreeNode = ({
 
                 {/* Required Column */}
                 <td className="py-2.5 px-4 text-center w-24">
-                    {node.required && (
-                        <div className="inline-flex items-center justify-center" title="Required">
+                    {node.required ? (
+                        <div className="inline-flex items-center justify-center group/req relative" title="Required">
                             <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
+                            <div className="absolute bottom-full mb-1 hidden group-hover/req:block z-50 w-max px-2 py-1 bg-zinc-800 text-white text-[10px] rounded shadow-lg border border-zinc-700 pointer-events-none">
+                                Required Field
+                                <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-4 border-transparent border-t-zinc-800"></div>
+                            </div>
+                        </div>
+                    ) : (node.condition && node.condition.conditions && node.condition.conditions.length > 0) ? (
+                        <div className="inline-flex items-center justify-center group/req relative">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-amber-500" />
+                            <div className="absolute bottom-full mb-1 hidden group-hover/req:block z-50 w-max max-w-xs px-2 py-1 bg-zinc-800 text-white text-[10px] rounded shadow-lg border border-zinc-700 pointer-events-none text-left">
+                                <div className="font-semibold mb-0.5 text-amber-400">Conditionally Required</div>
+                                <div>Logic: <span className="font-mono uppercase">{node.condition.logical}</span></div>
+                                <div>Conditions: {node.condition.conditions.length}</div>
+                                <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-4 border-transparent border-t-zinc-800"></div>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="inline-flex items-center justify-center group/req relative">
+                            <Ban className="w-3.5 h-3.5 text-zinc-300 dark:text-zinc-600" />
+                            <div className="absolute bottom-full mb-1 hidden group-hover/req:block z-50 w-max px-2 py-1 bg-zinc-800 text-white text-[10px] rounded shadow-lg border border-zinc-700 pointer-events-none">
+                                Not Required
+                                <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-4 border-transparent border-t-zinc-800"></div>
+                            </div>
                         </div>
                     )}
                 </td>

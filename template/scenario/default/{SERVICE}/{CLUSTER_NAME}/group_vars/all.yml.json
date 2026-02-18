@@ -29,9 +29,9 @@
         "description": "ntp configuration",
         "override_hint": false,
         "multi_type": [
-            "object"
+            "object",
+            "string"
         ],
-        "regex": null,
         "regex_enable": false,
         "children": [
             {
@@ -74,116 +74,105 @@
                         "required": true
                     }
                 ],
-                "required": true
-            }
-        ],
-        "required": true
-    },
-    {
-        "key": "dns",
-        "description": "dns configuration",
-        "override_hint": false,
-        "multi_type": [
-            "object"
-        ],
-        "regex": null,
-        "regex_enable": false,
-        "children": [
-            {
-                "key": "search_domains",
-                "description": "dns search domains",
-                "override_hint": false,
-                "multi_type": [
-                    "list"
-                ],
-                "item_multi_type": [
-                    "object"
-                ],
-                "regex": null,
-                "regex_enable": false,
-                "children": [
-                    {
-                        "key": "item",
-                        "description": "search domain entry",
-                        "override_hint": false,
-                        "multi_type": [
-                            "string"
-                        ],
-                        "regex": "corp.example.com|svc.cluster.local",
-                        "regex_enable": true,
-                        "children": [],
-                        "required": true
-                    },
-                    {
-                        "key": "wayne2",
-                        "description": "this is wayne ",
-                        "multi_type": [
-                            "number"
-                        ],
-                        "required": true,
-                        "children": [],
-                        "override_hint": false,
-                        "regex_enable": true,
-                        "regex": ""
-                    }
-                ],
-                "required": true
+                "required": false,
+                "condition": {
+                    "logical": "and",
+                    "conditions": [
+                        {
+                            "key": "ntp.enabled",
+                            "operator": "eq",
+                            "value": "true"
+                        }
+                    ]
+                }
             },
             {
-                "key": "nameservers",
-                "description": "dns nameserver entry",
+                "key": "dns",
+                "description": "dns configuration",
                 "override_hint": false,
                 "multi_type": [
-                    "list"
-                ],
-                "item_multi_type": [
                     "object"
                 ],
                 "regex": null,
                 "regex_enable": false,
                 "children": [
                     {
-                        "key": "item3",
-                        "description": "nameserver entry",
+                        "key": "search_domains",
+                        "description": "dns search domains",
                         "override_hint": false,
                         "multi_type": [
-                            "string"
+                            "list"
                         ],
-                        "regex": "8.8.8.8|1.1.1.1",
-                        "regex_enable": true,
-                        "children": [],
-                        "required": true
+                        "item_multi_type": [
+                            "object"
+                        ],
+                        "regex_enable": false,
+                        "children": [
+                            {
+                                "key": "item",
+                                "description": "search domain entry",
+                                "override_hint": false,
+                                "multi_type": [
+                                    "string"
+                                ],
+                                "regex": "corp.example.com|svc.cluster.local",
+                                "regex_enable": true,
+                                "children": [],
+                                "required": true
+                            }
+                        ],
+                        "required": false,
+                        "condition": {
+                            "logical": "and",
+                            "conditions": [
+                                {
+                                    "key": "ntp.enabled",
+                                    "operator": "eq",
+                                    "value": "true"
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "key": "nameservers",
+                        "description": "dns nameserver entry",
+                        "override_hint": false,
+                        "multi_type": [
+                            "list"
+                        ],
+                        "item_multi_type": [
+                            "object"
+                        ],
+                        "regex_enable": false,
+                        "children": [
+                            {
+                                "key": "item3",
+                                "description": "nameserver entry",
+                                "override_hint": false,
+                                "multi_type": [
+                                    "string"
+                                ],
+                                "regex": "8.8.8.8|1.1.1.1",
+                                "regex_enable": true,
+                                "children": [],
+                                "required": true
+                            }
+                        ],
+                        "required": false,
+                        "condition": {
+                            "logical": "and",
+                            "conditions": [
+                                {
+                                    "key": "ntp.enabled",
+                                    "operator": "eq",
+                                    "value": "true"
+                                }
+                            ]
+                        }
                     }
                 ],
                 "required": true
             }
-        ],
-        "required": true
-    },
-    {
-        "key": "test_enum_final",
-        "description": "",
-        "multi_type": [
-            "enum",
-            "string"
-        ],
-        "required": false,
-        "children": [],
-        "override_hint": false,
-        "regex_enable": false,
-        "regex": "[.f200.*,.multi.*]",
-        "default_value": "{\n    \"check\": true\n}"
-    },
-    {
-        "key": "test_list_key",
-        "description": "",
-        "multi_type": [
-            "list"
-        ],
-        "item_multi_type": [
-            "string"
-        ],
-        "required": false,
-        "children": []
+        ]
     }
 ]

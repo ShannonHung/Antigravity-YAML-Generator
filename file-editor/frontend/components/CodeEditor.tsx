@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Braces } from 'lucide-react';
 
 interface CodeEditorProps {
     content: string;
@@ -51,6 +51,19 @@ export default function CodeEditor({ content, filePath, onChange }: CodeEditorPr
         }
     };
 
+    const formatJson = () => {
+        try {
+            const parsed = JSON.parse(text);
+            const formatted = JSON.stringify(parsed, null, 4);
+            setText(formatted);
+            setLineCount(formatted.split('\n').length);
+            onChange(formatted);
+            validateJson(formatted);
+        } catch (e) {
+            // Should be handled by validation already
+        }
+    };
+
     const handleScroll = () => {
         if (textareaRef.current) {
             // Sync scroll if we had a separate line number div, but here we might use a flex row
@@ -60,7 +73,7 @@ export default function CodeEditor({ content, filePath, onChange }: CodeEditorPr
     return (
         <div className="flex flex-col h-full bg-white dark:bg-zinc-950 font-mono text-sm">
             {/* Status Bar */}
-            <div className={`h-10 flex items-center px-4 border-b ${errorMsg ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800' : 'bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800'}`}>
+            <div className={`h-10 flex items-center justify-between px-4 border-b ${errorMsg ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800' : 'bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800'}`}>
                 {errorMsg ? (
                     <div className="flex items-center text-red-600 dark:text-red-400 text-xs">
                         <AlertTriangle className="w-4 h-4 mr-2" />
@@ -72,6 +85,19 @@ export default function CodeEditor({ content, filePath, onChange }: CodeEditorPr
                         <span>Valid JSON</span>
                     </div>
                 )}
+
+                <button
+                    onClick={formatJson}
+                    disabled={!!errorMsg}
+                    className={`flex items-center space-x-1.5 px-2 py-1 rounded text-xs font-medium transition-colors ${errorMsg
+                            ? 'text-zinc-400 cursor-not-allowed'
+                            : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-200'
+                        }`}
+                    title={errorMsg ? "Fix JSON errors to format" : "Format JSON"}
+                >
+                    <Braces className="w-3.5 h-3.5" />
+                    <span>Format</span>
+                </button>
             </div>
 
             {/* Editor Area */}
