@@ -18,6 +18,9 @@ web-down:
 	-lsof -ti:8000 | xargs kill -9
 
 # Docker commands
+# Usage: make push-front TAG=latest
+TAG ?= latest
+
 build-front:
 	docker build -t my-frontend ./file-editor/frontend
 
@@ -30,10 +33,11 @@ web-dev:
 web-dev-down:
 	docker-compose down
 
+# Docker image remove
+remove-all: 
+	docker rmi -f my-frontend my-backend shannonhung/file-editor-frontend:latest shannonhung/file-editor-backend:latest
+	
 # Docker push commands
-# Usage: make push-front TAG=latest
-TAG ?= latest
-
 push-front:
 	docker tag my-frontend shannonhung/file-editor-frontend:$(TAG)
 	docker push shannonhung/file-editor-frontend:$(TAG)
