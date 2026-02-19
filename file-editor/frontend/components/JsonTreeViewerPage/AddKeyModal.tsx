@@ -214,8 +214,23 @@ export default function AddKeyModal({ nodes, onClose, onSave }: any) {
                                         {DATA_TYPES.filter(o => !types.includes(o)).map(opt => (
                                             <button
                                                 key={opt}
-                                                className="w-full text-left px-3 py-1.5 text-xs hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 font-mono"
-                                                onClick={() => { setTypes([...types, opt]); setIsTypeDropdownOpen(false); }}
+                                                disabled={types.includes('enum') && opt !== 'enum'}
+                                                className={clsx(
+                                                    "w-full text-left px-3 py-1.5 text-xs font-mono",
+                                                    (types.includes('enum') && opt !== 'enum')
+                                                        ? "text-zinc-300 dark:text-zinc-600 cursor-not-allowed"
+                                                        : "hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200"
+                                                )}
+                                                onClick={() => {
+                                                    if (types.includes('enum') && opt !== 'enum') return;
+
+                                                    if (opt === 'enum') {
+                                                        setTypes(['enum']);
+                                                    } else {
+                                                        setTypes([...types, opt]);
+                                                    }
+                                                    setIsTypeDropdownOpen(false);
+                                                }}
                                             >
                                                 {opt}
                                             </button>

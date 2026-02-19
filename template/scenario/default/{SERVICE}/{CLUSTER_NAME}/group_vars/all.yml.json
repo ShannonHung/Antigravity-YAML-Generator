@@ -206,6 +206,15 @@
                 "required": true
             }
         ],
-        "required": false
+        "required": null
+    },
+    {
+        "key": "region",
+        "description": "",
+        "multi_type": [
+            "enum"
+        ],
+        "required": true,
+        "children": []
     }
 ]
