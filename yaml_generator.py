@@ -12,8 +12,8 @@ def load_env():
     """Load environment variables into a dictionary."""
     return dict(os.environ)
 
-def resolve_path(path_template, env):
-    """Substitute {VAR} in path_template with values from env."""
+def resolve_path_vars(path_template, env):
+    """Substitute {VAR} in path_template with values from env (for file paths)."""
     for key, value in env.items():
         placeholder = f"{{{key}}}"
         if placeholder in path_template:
@@ -23,6 +23,24 @@ def resolve_path(path_template, env):
     if re.search(r"\{[A-Z0-9_]+\}", path_template):
         print(f"Warning: Unresolved placeholders in path: {path_template}")
     return path_template
+
+def resolve_content_vars(content, env):
+    """Substitute ${VAR} in content with values from env (for file content)."""
+    # Use Regex to find ${VAR}
+    # We iterate env keys to avoid complex regex logic, or use re.sub with callback.
+    # Iteration is safer for known env vars, but strict user request "requires $".
+    
+    # Strategy 1: Iterate env vars
+    for key, value in env.items():
+        placeholder = f"${{{key}}}"
+        if placeholder in content:
+            content = content.replace(placeholder, str(value))
+            
+    # Strategy 2: Warn on unresolved ${...}
+    if re.search(r"\$\{[A-Z0-9_]+\}", content):
+        print(f"Warning: Unresolved variable placeholders in content.")
+        
+    return content
 
 def load_json(path):
     with open(path, 'r') as f:
@@ -163,7 +181,47 @@ def format_yaml_value(value, indent_level, val_type=None):
         else:
             escaped = s_val.replace('"', '\\"')
             return f'"{escaped}"'
+def get_override_hint_style(config, default_style="<=== [Override]"):
+    """
+    Get the override hint style from config, ensuring it starts with a valid comment character.
+    """
+    if config:
+        style = config.get("override_hint_style", default_style)
+        if not style.strip().startswith("#") and not style.strip().startswith(";"):
+            # Default to # if not specified
+            return f"# {style}"
+        return style
+    return f"# {default_style}"
 
+def get_override_hint(node, style_marker):
+    """
+    Return the formatted override hint string if enabled in the node.
+    """
+    if node.get('override_hint', False):
+        return f" {style_marker}"
+    return ""
+
+def generate_banner(description, indent=0, width=42, comment_char="#"):
+    """
+    Generate a standard banner with description.
+    """
+    prefix = "  " * indent
+    lines = []
+    lines.append(f"{prefix}{comment_char} {'=' * width}")
+    lines.append(f"{prefix}{comment_char} {description}")
+    lines.append(f"{prefix}{comment_char} {'=' * width}")
+    return lines
+
+def resolve_node_value(node):
+    """
+    Resolve the value to print: default_value (if present/not empty) OR regex.
+    """
+    default_value = node.get('default_value')
+    # If default_value is explicitly set (even False or 0), use it.
+    # If it's None or empty string, fallback to regex.
+    if default_value is not None and default_value != "":
+        return default_value
+    return node.get('regex')
 def generate_yaml_from_schema(nodes, indent=0, config=None):
     """
     Generate YAML content strings from the schema list.
@@ -171,19 +229,12 @@ def generate_yaml_from_schema(nodes, indent=0, config=None):
     lines = []
     prefix = "  " * indent
     
-    override_hint_marker = ""
-    override_hint_enabled = False
+    override_hint_marker = get_override_hint_style(config)
     
+    # We still check "top_level_spacing"
     top_level_spacing = 2
     if config:
         top_level_spacing = config.get("top_level_spacing", 2)
-        
-        # Prompt says style is "<=== [Override]", but output shows "# <=== [Override]"
-        # We ensure it acts as a comment.
-        style = config.get("override_hint_style", "<=== [Override]")
-        if not style.strip().startswith("#"):
-            style = f"# {style}"
-        override_hint_marker = style
     
     is_first = True
     for node in nodes:
@@ -203,14 +254,10 @@ def generate_yaml_from_schema(nodes, indent=0, config=None):
             print(f"\033[91m[ERROR] Invalid multi_type definition in key '{key}': 'object' and 'list' cannot simplify exist.\033[0m")
             sys.exit(1)
             
-        override_hint = node.get('override_hint', False)
+        current_hint = get_override_hint(node, override_hint_marker)
         
         # Logic: use default_value, fallback to regex if empty
-        default_value = node.get('default_value')
-        if default_value is None or default_value == "":
-            value = node.get('regex')
-        else:
-            value = default_value
+        value = resolve_node_value(node)
 
         children = node.get('children', [])
         
@@ -221,10 +268,8 @@ def generate_yaml_from_schema(nodes, indent=0, config=None):
                     for _ in range(top_level_spacing):
                         lines.append("")
                 
-                banner_line = f"{prefix}# {'=' * 42}"
-                lines.append(banner_line)
-                lines.append(f"{prefix}# {description}")
-                lines.append(banner_line)
+                banner_lines = generate_banner(description, indent=indent)
+                lines.extend(banner_lines)
             else:
                 lines.append(f"{prefix}# {description}")
         
@@ -233,11 +278,6 @@ def generate_yaml_from_schema(nodes, indent=0, config=None):
             
         # 2. Output Key-Value
         line_content = f"{prefix}{key}:"
-        
-        # Determine value to print
-        current_hint = ""
-        if override_hint:
-             current_hint = f" {override_hint_marker}"
 
         # Logic for types
         # Priority: list > object > others
@@ -336,6 +376,103 @@ def generate_yaml_from_schema(nodes, indent=0, config=None):
                  lines.append(f"{line_content}{current_hint} {val_str}")
             else:
                  lines.append(f"{line_content} {val_str}{current_hint}")
+
+    return lines
+
+def generate_ini_from_schema(nodes, config=None):
+    """
+    Generate INI content strings from the schema list.
+    Specifically handles 'global_vars', 'groups', and 'aggregations'.
+    """
+    lines = []
+    
+    override_hint_marker = get_override_hint_style(config)
+    
+    # 1. global_vars -> [all:vars]
+    for node in nodes:
+        if node.get('key') == 'global_vars':
+            # Header
+            description = node.get('description', 'all:vars section')
+            lines.extend(generate_banner(description, width=42))
+            lines.append("[all:vars]")
+            
+            # Values
+            default_value = resolve_node_value(node)
+            # Ensure it is a dict
+            if isinstance(default_value, dict):
+                for k, v in default_value.items():
+                    lines.append(f"{k}={v}")
+            lines.append("") # Newline
+            
+    # 2. groups -> [group_name]
+    for node in nodes:
+        if node.get('key') == 'groups':
+            groups_val = resolve_node_value(node) or {}
+            children_schema = node.get('children', [])
+            
+            # Map children schema for hints/descriptions
+            schema_map = {c['key']: c for c in children_schema}
+            
+            if isinstance(groups_val, dict):
+                for group_name, hosts in groups_val.items():
+                    # Get schema info
+                    g_schema = schema_map.get(group_name, {})
+                    desc = g_schema.get('description', f"{group_name} nodes")
+                    hint = get_override_hint(g_schema, override_hint_marker)
+                    
+                    lines.extend(generate_banner(desc, width=42))
+                    lines.append(f"[{group_name}]{hint}")
+                    
+                    if isinstance(hosts, list):
+                        for host in hosts:
+                            if isinstance(host, dict):
+                                # Determine primary key (first one?) or strictly 'hostname'?
+                                # Prompt example: hostname is first, then other vars.
+                                # Let's assume 'hostname' is the key, or the first key.
+                                
+                                # Use list(host.keys())[0] if 'hostname' not present?
+                                # Prefer 'hostname' if exists.
+                                primary_key = "hostname"
+                                primary_val = host.get(primary_key)
+                                
+                                if not primary_val:
+                                    # Fallback to first key
+                                    if host:
+                                        primary_key = list(host.keys())[0]
+                                        primary_val = host[primary_key]
+                                    else:
+                                        continue
+                                
+                                line_parts = [str(primary_val)]
+                                
+                                for k, v in host.items():
+                                    if k == primary_key: continue
+                                    line_parts.append(f"{k}={v}")
+                                
+                                lines.append(" ".join(line_parts))
+                            elif isinstance(host, str):
+                                lines.append(host)
+                    lines.append("")
+
+    # 3. aggregations -> [group:children]
+    for node in nodes:
+        if node.get('key') == 'aggregations':
+            agg_val = resolve_node_value(node) or {}
+            children_schema = node.get('children', [])
+            schema_map = {c['key']: c for c in children_schema}
+
+            if isinstance(agg_val, dict):
+                for group, children_groups in agg_val.items():
+                     g_schema = schema_map.get(group, {})
+                     desc = g_schema.get('description', f"{group} children")
+                     
+                     lines.extend(generate_banner(desc, width=42))
+                     lines.append(f"[{group}:children]")
+                     
+                     if isinstance(children_groups, list):
+                         for child in children_groups:
+                             lines.append(str(child))
+                     lines.append("")
 
     return lines
 
@@ -567,7 +704,10 @@ def process_scenarios(config_path):
                 rel_path_from_sc = os.path.relpath(full_path, sc_path)
                 
                 # Determine output relative path template
-                if f.endswith('.json'):
+                if f.endswith('.ini.json'):
+                    out_rel = rel_path_from_sc[:-5] # remove .json, keep .ini
+                    ftype = 'json'
+                elif f.endswith('.yml.json'):
                     out_rel = rel_path_from_sc[:-5]
                     ftype = 'json'
                 else:
@@ -587,7 +727,7 @@ def process_scenarios(config_path):
     for final_rel_path_tpl, sources in file_map.items():
         # Resolve vars in the path template
         try:
-            final_rel_path = resolve_path(final_rel_path_tpl, env)
+            final_rel_path = resolve_path_vars(final_rel_path_tpl, env)
         except Exception as e:
              print(f"Skipping {final_rel_path_tpl}: {e}")
              continue
@@ -616,7 +756,7 @@ def process_scenarios(config_path):
                  content = f.read()
              
              try:
-                 content = resolve_path(content, env)
+                 content = resolve_content_vars(content, env)
              except KeyError as e:
                  print(f"Error substituting vars in {final_rel_path}: Missing {e}")
              
@@ -629,7 +769,13 @@ def process_scenarios(config_path):
                  pass
              
              merged_nodes = []
-             print(f"Generating {final_rel_path} from JSON schema")
+             
+             if final_rel_path.endswith('.ini'):
+                 print(f"Generating {final_rel_path} from INI schema")
+                 schema_func = generate_ini_from_schema
+             else:
+                 print(f"Generating {final_rel_path} from YAML schema")
+                 schema_func = generate_yaml_from_schema
              
              if os.path.exists(final_output_path):
                 print(f"\033[93m[WARNING] File {final_rel_path} already exists. Skipping.\033[0m")
@@ -643,9 +789,12 @@ def process_scenarios(config_path):
                  except Exception as e:
                      print(f"Error loading/merging {s['path']}: {e}")
             
-             yaml_lines = generate_yaml_from_schema(merged_nodes, config=config)
-             content = "\n".join(yaml_lines) + "\n"
-             content = resolve_path(content, env)
+             output_lines = schema_func(merged_nodes, config=config)
+             content = "\n".join(output_lines)
+             # Basic trim or ensure single newline at end
+             content = content.strip() + "\n"
+             
+             content = resolve_content_vars(content, env)
              save_file(final_output_path, content)
 
 if __name__ == "__main__":

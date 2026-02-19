@@ -2,7 +2,7 @@
     {
         "key": "fab_location",
         "description": "Location of the fab",
-        "default_value": "{{FAB}}",
+        "default_value": "${FAB}",
         "override_hint": false,
         "required": true
     }

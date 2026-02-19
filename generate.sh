@@ -9,6 +9,41 @@ get_config() {
     python3 -c "import sys, json; config=json.load(open('$CONFIG_FILE')); print(json.dumps(config))"
 }
 
+check_dependencies() {
+    # Colors
+    YELLOW='\033[1;33m'
+    RED='\033[0;31m'
+    NC='\033[0m' # No Color
+
+    if ! command -v python3 &> /dev/null; then
+        echo -e "${RED}[ERROR]: python3 is not installed. Please install Python 3 to continue.${NC}"
+        exit 1
+    fi
+
+    # Check for PyYAML
+    if ! python3 -c "import yaml" &> /dev/null; then
+        echo -e "${YELLOW}[WARNING]: PyYAML module not found. It is required to run the generator.${NC}"
+        read -p "Do you want to install it now? (y/n) " choice
+        case "$choice" in 
+          y|Y ) 
+            echo "Installing PyYAML..."
+            if ! pip3 install pyyaml; then
+                 echo -e "${RED}[ERROR]: Failed to install PyYAML. Please install it manually: pip3 install pyyaml${NC}"
+                 exit 1
+            fi
+            echo "PyYAML installed successfully."
+            ;;
+          * ) 
+            echo -e "${RED}[ERROR]: PyYAML is required. Exiting.${NC}"
+            exit 1
+            ;;
+        esac
+    fi
+}
+
+check_dependencies
+
+
 # 1. Parse Config
 CONFIG_JSON=$(get_config)
 
