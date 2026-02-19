@@ -81,8 +81,8 @@ export default function JsonTreeViewer({ content, fileName, filePath, onClose, o
 
             {/* Content */}
             <div className="flex-1 overflow-auto bg-white dark:bg-zinc-950 p-8 md:p-12">
-                <div className="border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden shadow-sm max-w-7xl mx-auto">
-                    <table className="w-full text-left table-fixed">
+                <div className="border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden shadow-sm max-w-7xl mx-auto overflow-x-auto">
+                    <table className="w-full text-left table-fixed min-w-[1000px]">
                         <thead className="bg-zinc-50 dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 select-none">
                             <tr>
                                 <th onClick={() => handleSort('key')} className="py-3 px-6 font-medium text-sm text-zinc-500 dark:text-zinc-400 w-1/3 cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">Key</th>
