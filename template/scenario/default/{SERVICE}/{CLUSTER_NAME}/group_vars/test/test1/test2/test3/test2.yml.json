@@ -1,0 +1,11 @@
+[
+    {
+        "key": "test_key",
+        "description": "",
+        "multi_type": [
+            "string"
+        ],
+        "required": false,
+        "children": []
+    }
+]

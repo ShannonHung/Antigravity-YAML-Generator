@@ -1,18 +1,20 @@
 'use client';
 
 import React from 'react';
-import { Search, ArrowLeft, Home, Moon, Sun, Plus, Maximize2, Minimize2 } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 
 // Hooks
 import { useJsonData } from './hooks/useJsonData';
 import { useJsonUiState } from './hooks/useJsonUiState';
 import { useJsonSortFilter } from './hooks/useJsonSortFilter';
 import { useJsonMutations } from './hooks/useJsonMutations';
-import { useTheme } from '../FileSystemPage/hooks/useTheme'; // Reuse global theme hook if possible, or create local
+import { useTheme } from '../FileSystemPage/hooks/useTheme';
 
 // Components
 import TreeNode from './TreeNode';
 import AddKeyModal from './AddKeyModal';
+import JsonTreeHeader from './JsonTreeHeader';
+import JsonTreeToolbar from './JsonTreeToolbar';
 
 interface JsonTreeViewerProps {
     content: string;
@@ -22,9 +24,10 @@ interface JsonTreeViewerProps {
     onBack: () => void;
     onHome: () => void;
     onEditKey: (keyPath: string) => void;
+    onNavigate: (path: string) => void;
 }
 
-export default function JsonTreeViewer({ content, fileName, filePath, onClose, onBack, onHome, onEditKey }: JsonTreeViewerProps) {
+export default function JsonTreeViewer({ content, fileName, filePath, onClose, onBack, onHome, onEditKey, onNavigate }: JsonTreeViewerProps) {
     // 1. Data Store
     const { nodes, setNodes, error } = useJsonData(content);
 
@@ -56,47 +59,25 @@ export default function JsonTreeViewer({ content, fileName, filePath, onClose, o
     return (
         <div className="fixed inset-0 z-50 flex flex-col bg-white dark:bg-zinc-950 animate-in fade-in zoom-in-95 duration-200">
             {/* Header */}
-            <div className="h-14 flex items-center justify-between px-6 border-b border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md">
-                <div className="flex items-center space-x-4">
-                    <button onClick={onBack} className="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-300 transition-colors">
-                        <ArrowLeft className="w-5 h-5" />
-                    </button>
-                    <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100 flex items-center">
-                        <span className="bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-300 text-[10px] px-1.5 py-0.5 rounded mr-2 font-mono uppercase tracking-wider">JSON</span>
-                        {fileName}
-                    </h2>
-                    <div className="h-5 w-px bg-zinc-200 dark:bg-zinc-800"></div>
-                    <div className="relative group w-64">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 group-focus-within:text-blue-500 transition-colors" />
-                        <input
-                            type="text"
-                            placeholder="Filter keys..."
-                            className="w-full bg-zinc-100 dark:bg-zinc-800 border-none rounded-full py-1.5 pl-9 pr-4 text-xs md:text-sm focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
-                            value={filterText}
-                            onChange={(e) => setFilterText(e.target.value)}
-                        />
-                    </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                    <button onClick={expandAll} className="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-300 transition-colors" title="Expand All">
-                        <Maximize2 className="w-4 h-4" />
-                    </button>
-                    <button onClick={collapseAll} className="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-300 transition-colors" title="Collapse All">
-                        <Minimize2 className="w-4 h-4" />
-                    </button>
-                    <div className="h-5 w-px bg-zinc-200 dark:bg-zinc-800 mx-2"></div>
-                    <button onClick={() => setIsAddKeyModalOpen(true)} className="flex items-center px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-full text-xs font-medium transition-colors shadow-sm">
-                        <Plus className="w-3.5 h-3.5 mr-1.5" /> Add Key
-                    </button>
-                    <div className="h-5 w-px bg-zinc-200 dark:bg-zinc-800 mx-2"></div>
-                    <button onClick={toggleDarkMode} className="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full text-zinc-500" title="Toggle Theme">
-                        {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-                    </button>
-                    <button onClick={onHome} className="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full text-zinc-500" title="Home">
-                        <Home className="w-4 h-4" />
-                    </button>
-                </div>
-            </div>
+            {/* Header */}
+            <JsonTreeHeader
+                fileName={fileName}
+                filterText={filterText}
+                setFilterText={setFilterText}
+                isAddKeyModalOpen={isAddKeyModalOpen}
+                setIsAddKeyModalOpen={setIsAddKeyModalOpen}
+                darkMode={darkMode}
+                toggleDarkMode={toggleDarkMode}
+            />
+
+            {/* Toolbar */}
+            <JsonTreeToolbar
+                filePath={filePath}
+                onBack={onBack}
+                onNavigate={onNavigate}
+                expandAll={expandAll}
+                collapseAll={collapseAll}
+            />
 
             {/* Content */}
             <div className="flex-1 overflow-auto bg-white dark:bg-zinc-950 p-8 md:p-12">

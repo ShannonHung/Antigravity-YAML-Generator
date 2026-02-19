@@ -233,6 +233,7 @@ export default function FileExplorer() {
             // Deep link to key editor
             navigateTo(viewingJson.path, key);
           }}
+          onNavigate={navigateTo}
         />
       )}
 
@@ -250,7 +251,9 @@ export default function FileExplorer() {
               // Reload content and navigate back
               refreshEditor();
               navigateTo(viewingJson.path);
-            }} />
+            }}
+            onNavigate={navigateTo}
+          />
         </div>
       )}
 

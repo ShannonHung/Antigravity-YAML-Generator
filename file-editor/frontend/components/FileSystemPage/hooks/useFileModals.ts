@@ -27,7 +27,11 @@ export function useFileModals(activeFolderPath: string, refresh: () => void) {
         if (!newItemName) return;
         try {
             const filePath = activeFolderPath === '/' ? `/${newItemName}` : `${activeFolderPath}/${newItemName}`;
-            await api.createFile(filePath, '');
+            let content = '';
+            if (newItemName.endsWith('.yml.json') || newItemName.endsWith('.ini.json')) {
+                content = '[]';
+            }
+            await api.createFile(filePath, content);
             setIsFileModalOpen(false);
             setNewItemName('');
             refresh();

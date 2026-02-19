@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Save, AlertTriangle, X } from 'lucide-react';
+import { AlertTriangle, X } from 'lucide-react';
 
 // Hooks
 import { useKeyData } from './hooks/useKeyData';
@@ -11,15 +11,18 @@ import KeyIdentityForm from './forms/KeyIdentityForm';
 import KeyConditionForm from './forms/KeyConditionForm';
 import KeyValidationForm from './forms/KeyValidationForm';
 import KeyDocumentationForm from './forms/KeyDocumentationForm';
+import KeyEditorHeader from './KeyEditorHeader';
+import KeyEditorToolbar from './KeyEditorToolbar';
 
 interface KeyEditorProps {
     filePath: string;
     targetKey: string;
     onClose: () => void;
     onSave: () => void;
+    onNavigate: (path: string) => void;
 }
 
-export default function KeyEditor({ filePath, targetKey, onClose, onSave }: KeyEditorProps) {
+export default function KeyEditor({ filePath, targetKey, onClose, onSave, onNavigate }: KeyEditorProps) {
     // 1. Data Store
     const { loading, error, fullContent, initialData, availableKeys } = useKeyData(filePath, targetKey);
 
@@ -50,26 +53,19 @@ export default function KeyEditor({ filePath, targetKey, onClose, onSave }: KeyE
     return (
         <div className="flex flex-col h-full bg-white dark:bg-zinc-950 animate-in fade-in slide-in-from-right-8 duration-500">
             {/* Header */}
-            <div className="h-16 flex items-center justify-between px-8 border-b border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md flex-shrink-0 z-10 sticky top-0">
-                <div className="flex items-center space-x-4">
-                    <button onClick={onClose} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-300 transition-colors">
-                        <ArrowLeft className="w-5 h-5" />
-                    </button>
-                    <div>
-                        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight">Edit Key</h2>
-                        <p className="text-xs text-zinc-500 font-mono mt-0.5">{targetKey}</p>
-                    </div>
-                </div>
-                <div className="flex space-x-3">
-                    <button onClick={onClose} className="px-4 py-2 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors text-sm font-medium">
-                        Cancel
-                    </button>
-                    <button onClick={onSaveClick} className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-sm hover:shadow transition-all text-sm font-medium">
-                        <Save className="w-4 h-4 mr-2" />
-                        Save Changes
-                    </button>
-                </div>
-            </div>
+            {/* Header */}
+            <KeyEditorHeader
+                targetKey={targetKey}
+                onClose={onClose}
+                onSave={onSaveClick}
+            />
+
+            {/* Toolbar */}
+            <KeyEditorToolbar
+                filePath={filePath}
+                onClose={onClose}
+                onNavigate={onNavigate}
+            />
 
             {/* Form */}
             <div className="flex-1 overflow-y-auto p-5 w-full custom-scrollbar">
