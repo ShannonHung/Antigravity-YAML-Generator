@@ -34,9 +34,9 @@ web-dev-down:
 	docker-compose down
 
 # Docker image remove
-remove-all: 
+remove-all-img: 
 	docker rmi -f my-frontend my-backend shannonhung/file-editor-frontend:latest shannonhung/file-editor-backend:latest
-	
+
 # Docker push commands
 push-front:
 	docker tag my-frontend shannonhung/file-editor-frontend:$(TAG)
