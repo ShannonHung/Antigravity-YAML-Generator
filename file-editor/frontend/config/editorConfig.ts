@@ -6,11 +6,8 @@ export const DATA_TYPES = [
     "list",
     "ntp",
     "ip",
-    "cidr",
     "email",
     "url",
-    "date",
-    "percentage",
     "enum"
 ];
 
@@ -21,7 +18,6 @@ export const ITEM_DATA_TYPES = [
     "object",
     "ntp",
     "ip",
-    "cidr",
     "email",
     "url"
 ];

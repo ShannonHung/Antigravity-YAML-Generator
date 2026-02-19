@@ -215,6 +215,10 @@
             "enum"
         ],
         "required": true,
-        "children": []
+        "children": [],
+        "override_hint": true,
+        "regex_enable": false,
+        "regex": "[tw,us,jp]",
+        "default_value": "tw"
     }
 ]
