@@ -156,7 +156,6 @@
         "multi_type": [
             "object"
         ],
-        "regex": null,
         "regex_enable": false,
         "children": [
             {
@@ -207,6 +206,6 @@
                 "required": true
             }
         ],
-        "required": true
+        "required": false
     }
 ]

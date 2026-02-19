@@ -222,6 +222,16 @@ def resolve_node_value(node):
     if default_value is not None and default_value != "":
         return default_value
     return node.get('regex')
+def is_node_enabled(node):
+    """
+    Check if node is enabled based on 'required' field.
+    Deprecated if required is None, empty string, or missing.
+    """
+    req = node.get('required')
+    if req is None or req == "":
+        return False
+    return True
+
 def generate_yaml_from_schema(nodes, indent=0, config=None):
     """
     Generate YAML content strings from the schema list.
@@ -238,6 +248,10 @@ def generate_yaml_from_schema(nodes, indent=0, config=None):
     
     is_first = True
     for node in nodes:
+        # Check deprecation/enabled status
+        if not is_node_enabled(node):
+            continue
+            
         key = node.get('key')
         if not key: continue
         
@@ -390,6 +404,7 @@ def generate_ini_from_schema(nodes, config=None):
     
     # 1. global_vars -> [all:vars]
     for node in nodes:
+        if not is_node_enabled(node): continue
         if node.get('key') == 'global_vars':
             # Header
             description = node.get('description', 'all:vars section')
@@ -406,6 +421,7 @@ def generate_ini_from_schema(nodes, config=None):
             
     # 2. groups -> [group_name]
     for node in nodes:
+        if not is_node_enabled(node): continue
         if node.get('key') == 'groups':
             groups_val = resolve_node_value(node) or {}
             children_schema = node.get('children', [])
@@ -417,6 +433,11 @@ def generate_ini_from_schema(nodes, config=None):
                 for group_name, hosts in groups_val.items():
                     # Get schema info
                     g_schema = schema_map.get(group_name, {})
+                    
+                    # Check deprecation for the group node
+                    if not is_node_enabled(g_schema):
+                        continue
+                        
                     desc = g_schema.get('description', f"{group_name} nodes")
                     hint = get_override_hint(g_schema, override_hint_marker)
                     
@@ -456,6 +477,7 @@ def generate_ini_from_schema(nodes, config=None):
 
     # 3. aggregations -> [group:children]
     for node in nodes:
+        if not is_node_enabled(node): continue
         if node.get('key') == 'aggregations':
             # Parent default_value (fallback if child logic not used, but prompt says use child)
             # Actually, the structure is: aggregations -> children (list of groups)
@@ -464,6 +486,9 @@ def generate_ini_from_schema(nodes, config=None):
             children_schema = node.get('children', [])
             
             for child in children_schema:
+                # Check deprecation for the child aggregation node
+                if not is_node_enabled(child): continue
+                
                 group_name = child.get('key')
                 if not group_name: continue
                 
