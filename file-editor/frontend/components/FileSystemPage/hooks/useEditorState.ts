@@ -36,7 +36,7 @@ export function useEditorState(
             setEditorError(null);
             const data = await api.getFileContent(path);
 
-            if (path.endsWith('.yml.json')) {
+            if (path.endsWith('.yml.json') || path.endsWith('.ini.json')) {
                 setViewingJson({ path, content: data.content });
                 setEditingFile(null);
             } else {

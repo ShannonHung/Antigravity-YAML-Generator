@@ -2,16 +2,14 @@
     {
         "key": "fab_location",
         "description": "Location of the fab",
-        "regex": "{FAB}",
-        "default_value": null,
-        "regex_enable": true,
+        "default_value": "${FAB}",
         "override_hint": false,
         "required": true
     },
     {
-        "key": "multitenant_fab",
+        "key": "tvm_fabvar",
         "description": "Location of the multitenant fab",
-        "default_value": "${FAB}-prod",
+        "default_value": "${TVM_FAB}",
         "override_hint": false,
         "required": true
     }
