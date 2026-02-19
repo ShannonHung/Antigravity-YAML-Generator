@@ -23,7 +23,7 @@
     "senarios": [
         {
             "value": "default",
-            "path": "templates/scenario/default",
+            "path": "template/scenario/default",
             "required_env_vars": [],
             "trigger": {
                 "source": "default"
@@ -31,7 +31,7 @@
         },
         {
             "value": "fab200mm",
-            "path": "templates/scenario/fab200mm",
+            "path": "template/scenario/fab200mm",
             "required_env_vars": [],
             "priority": 1,
             "trigger": {
@@ -47,11 +47,15 @@
         },
         {
             "value": "tvm",
-            "path": "templates/scenario/tvm",
+            "path": "template/scenario/tvm",
             "required_env_vars": [
                 {
                     "key": "TVM_FAB",
                     "description": "This var is describe the where is tvm cluster."
+                },
+                {
+                    "key": "TVM_CILIUM",
+                    "description": "This var is describe the where is tvm's cilium."
                 }
             ],
             "priority": 2,
@@ -61,7 +65,7 @@
         },
         {
             "value": "multitenant",
-            "path": "templates/scenario/multitenant",
+            "path": "template/scenario/multitenant",
             "required_env_vars": [
                 {
                     "key": "CILIUM_ID",

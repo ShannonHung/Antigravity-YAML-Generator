@@ -18,7 +18,7 @@
                     "string"
                 ],
                 "item_multi_type": [],
-                "regex": "f200mm",
+                "regex": "${FAB}-customized",
                 "regex_enable": true,
                 "children": [],
                 "required": true

@@ -457,23 +457,30 @@ def generate_ini_from_schema(nodes, config=None):
     # 3. aggregations -> [group:children]
     for node in nodes:
         if node.get('key') == 'aggregations':
-            agg_val = resolve_node_value(node) or {}
+            # Parent default_value (fallback if child logic not used, but prompt says use child)
+            # Actually, the structure is: aggregations -> children (list of groups)
+            # We iterate children to find the group definition.
+            
             children_schema = node.get('children', [])
-            schema_map = {c['key']: c for c in children_schema}
-
-            if isinstance(agg_val, dict):
-                for group, children_groups in agg_val.items():
-                     g_schema = schema_map.get(group, {})
-                     desc = g_schema.get('description', f"{group} children")
-                     
-                     lines.extend(generate_banner(desc, width=42))
-                     lines.append(f"[{group}:children]")
-                     
-                     if isinstance(children_groups, list):
-                         for child in children_groups:
-                             lines.append(str(child))
-                     lines.append("")
-
+            
+            for child in children_schema:
+                group_name = child.get('key')
+                if not group_name: continue
+                
+                desc = child.get('description', f"{group_name} children")
+                
+                # Resolve value from CHILD node
+                # Expected value is a list of strings (children groups)
+                child_val = resolve_node_value(child)
+                
+                lines.extend(generate_banner(desc, width=42))
+                lines.append(f"[{group_name}:children]")
+                
+                if isinstance(child_val, list):
+                    for item in child_val:
+                         lines.append(str(item))
+                lines.append("")
+    
     return lines
 
 def load_json_nodes(path):
@@ -705,7 +712,7 @@ def process_scenarios(config_path):
                 
                 # Determine output relative path template
                 if f.endswith('.ini.json'):
-                    out_rel = rel_path_from_sc[:-5] # remove .json, keep .ini
+                    out_rel = rel_path_from_sc[:-9] # remove .ini.json, keep base name
                     ftype = 'json'
                 elif f.endswith('.yml.json'):
                     out_rel = rel_path_from_sc[:-5]
@@ -770,7 +777,15 @@ def process_scenarios(config_path):
              
              merged_nodes = []
              
-             if final_rel_path.endswith('.ini'):
+             # Detect if we should use INI generator based on input sources
+             # If ANY source ends with .ini.json, use INI generator
+             is_ini = False
+             for s in sources:
+                 if s['path'].endswith('.ini.json'):
+                     is_ini = True
+                     break
+             
+             if is_ini or final_rel_path.endswith('.ini'):
                  print(f"Generating {final_rel_path} from INI schema")
                  schema_func = generate_ini_from_schema
              else:
@@ -799,5 +814,8 @@ def process_scenarios(config_path):
 
 if __name__ == "__main__":
     # Ensure config path is flexible
-    config_path = "templates/scenario/config.json"
+    if len(sys.argv) > 1:
+        config_path = sys.argv[1]
+    else:
+        config_path = "template/scenario/config.json"
     process_scenarios(config_path)

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Configuration
-CONFIG_FILE="templates/scenario/config.json"
+CONFIG_FILE="template/scenario/config.json"
 GENERATOR_SCRIPT="yaml_generator.py"
 
 # Function to get JSON value using python (avoiding jq dependency if possible, but python is guaranteed here)
@@ -131,4 +131,4 @@ echo "--------------------------------------------------"
 echo "Running Generator..."
 echo "--------------------------------------------------"
 
-python3 $GENERATOR_SCRIPT
+python3 $GENERATOR_SCRIPT "$CONFIG_FILE"

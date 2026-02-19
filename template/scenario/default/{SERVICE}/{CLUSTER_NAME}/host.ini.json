@@ -216,6 +216,12 @@
                 ],
                 "regex": "^(master|worker|l4lb)$",
                 "regex_enable": true,
+                "default_value": [
+                    "master",
+                    "worker",
+                    "l4lb",
+                    "hi"
+                ],
                 "required": true,
                 "children": []
             }
