@@ -4,6 +4,7 @@
         "description": "Location of the fab",
         "default_value": "${FAB}",
         "override_hint": false,
-        "required": true
+        "required": true,
+        "override_strategy": "merge"
     }
 ]

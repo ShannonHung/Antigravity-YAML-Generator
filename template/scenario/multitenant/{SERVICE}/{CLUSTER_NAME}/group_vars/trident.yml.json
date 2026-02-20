@@ -9,6 +9,7 @@
                 "vip": "192.168.1.1/16"
             }
         ],
-        "required": true
+        "required": true,
+        "override_strategy": "merge"
     }
 ]

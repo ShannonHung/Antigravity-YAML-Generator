@@ -10,7 +10,8 @@
         "regex": null,
         "regex_enable": false,
         "children": [],
-        "required": true
+        "required": true,
+        "override_strategy": "merge"
     },
     {
         "key": "trident_ssd_object_ids",
@@ -36,7 +37,8 @@
                 "regex": "[1|2|3]",
                 "regex_enable": true,
                 "children": [],
-                "required": true
+                "required": true,
+                "override_strategy": "merge"
             },
             {
                 "key": "vip",
@@ -49,9 +51,11 @@
                 "regex": "*/16$",
                 "regex_enable": true,
                 "children": [],
-                "required": true
+                "required": true,
+                "override_strategy": "merge"
             }
         ],
-        "required": true
+        "required": true,
+        "override_strategy": "merge"
     }
 ]

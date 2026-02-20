@@ -3,6 +3,7 @@
         "key": "cilium_network_cluster",
         "description": "cilium network cluster configuration",
         "override_hint": false,
+        "override_strategy": "replace",
         "multi_type": [
             "object"
         ],
@@ -18,10 +19,11 @@
                     "string"
                 ],
                 "item_multi_type": [],
-                "regex": "${FAB}-customized",
+                "regex": "global",
                 "regex_enable": true,
                 "children": [],
-                "required": true
+                "required": true,
+                "override_strategy": "merge"
             }
         ],
         "required": true

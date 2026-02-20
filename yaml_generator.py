@@ -6,7 +6,7 @@ import shutil
 import yaml
 
 # Ensure consistent ordering in output if possible, though PyYAML handles dicts well.
-# We are generating text manually for the complex schema-based JSONs to support comments.
+# We are [INFO] Generating text manually for the complex schema-based JSONs to support comments.
 
 def load_env():
     """Load environment variables into a dictionary."""
@@ -88,12 +88,16 @@ def merge_nodes(source_nodes, override_nodes):
                 
             source_node.update(ov_data)
             
-            if override_children:
-                if source_children:
-                    # Recursive merge
-                    source_node['children'] = merge_nodes(source_children, override_children)
-                else:
+            if override_children is not None:
+                strategy = override.get('override_strategy', 'merge')
+                if strategy == 'replace':
                     source_node['children'] = override_children
+                else:
+                    if source_children:
+                        # Recursive merge
+                        source_node['children'] = merge_nodes(source_children, override_children)
+                    else:
+                        source_node['children'] = override_children
         else:
             # Append new
             source_nodes.append(override)
@@ -430,12 +434,19 @@ def generate_ini_from_schema(nodes, config=None):
             schema_map = {c['key']: c for c in children_schema}
             
             if isinstance(groups_val, dict):
-                for group_name, hosts in groups_val.items():
+                # Ensure we process groups in schema even if not in default_value
+                ordered_group_names = [c['key'] for c in children_schema]
+                for g in groups_val.keys():
+                    if g not in ordered_group_names:
+                        ordered_group_names.append(g)
+
+                for group_name in ordered_group_names:
+                    hosts = groups_val.get(group_name, [])
                     # Get schema info
                     g_schema = schema_map.get(group_name, {})
                     
                     # Check deprecation for the group node
-                    if not is_node_enabled(g_schema):
+                    if g_schema and not is_node_enabled(g_schema):
                         continue
                         
                     desc = g_schema.get('description', f"{group_name} nodes")
@@ -444,15 +455,22 @@ def generate_ini_from_schema(nodes, config=None):
                     lines.extend(generate_banner(desc, width=42))
                     lines.append(f"[{group_name}]{hint}")
                     
+                    # Fallback to schema to generate an example host if empty
+                    if not hosts and g_schema:
+                        example_host = {}
+                        for item_schema in g_schema.get('children', []):
+                            val = item_schema.get('default_value')
+                            if not val and item_schema.get('regex'):
+                                v = item_schema.get('regex')
+                                example_host[item_schema['key']] = f'"{v}"'
+                            else:
+                                example_host[item_schema['key']] = val if val is not None else ""
+                        if example_host:
+                            hosts = [example_host]
+
                     if isinstance(hosts, list):
                         for host in hosts:
                             if isinstance(host, dict):
-                                # Determine primary key (first one?) or strictly 'hostname'?
-                                # Prompt example: hostname is first, then other vars.
-                                # Let's assume 'hostname' is the key, or the first key.
-                                
-                                # Use list(host.keys())[0] if 'hostname' not present?
-                                # Prefer 'hostname' if exists.
                                 primary_key = "hostname"
                                 primary_val = host.get(primary_key)
                                 
@@ -718,7 +736,7 @@ def process_scenarios(config_path):
             print(f" - {err}")
         sys.exit(1)
         
-    print(f"Validation successful for {len(validation_dirs)} directories.")
+    print(f"Validation successful for {len(validation_dirs)} directories.\n")
 
     # 2. Collect files from ALL active scenarios
     # We iterate active_scenarios which are sorted by PRIORITY DESCENDING (Base -> P2 -> P1)
@@ -778,7 +796,7 @@ def process_scenarios(config_path):
         
         if last_raw_index == len(sources) - 1:
              last_source = sources[-1]
-             print(f"Generating {final_rel_path} from scenario (copy/template) - Source: {last_source['scenario']}")
+             print(f"[INFO] Generating {final_rel_path} from scenario (copy/template) - Source: {last_source['scenario']}")
              if os.path.exists(final_output_path):
                 print(f"\033[93m[WARNING] File {final_rel_path} already exists. Skipping.\033[0m")
                 continue
@@ -811,10 +829,10 @@ def process_scenarios(config_path):
                      break
              
              if is_ini or final_rel_path.endswith('.ini'):
-                 print(f"Generating {final_rel_path} from INI schema")
+                 print(f"[INFO] Generating {final_rel_path} from INI schema")
                  schema_func = generate_ini_from_schema
              else:
-                 print(f"Generating {final_rel_path} from YAML schema")
+                 print(f"[INFO] Generating {final_rel_path} from YAML schema")
                  schema_func = generate_yaml_from_schema
              
              if os.path.exists(final_output_path):

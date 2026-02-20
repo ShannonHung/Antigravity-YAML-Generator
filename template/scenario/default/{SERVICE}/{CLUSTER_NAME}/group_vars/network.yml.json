@@ -7,7 +7,8 @@
         "multi_type": [
             "bool"
         ],
-        "required": true
+        "required": true,
+        "override_strategy": "merge"
     },
     {
         "key": "dns_servers",
@@ -23,6 +24,7 @@
         "item_multi_type": [
             "string"
         ],
-        "required": true
+        "required": true,
+        "override_strategy": "merge"
     }
 ]

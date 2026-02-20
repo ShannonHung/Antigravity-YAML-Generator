@@ -4,6 +4,7 @@
         "description": "TVM disabled ssd",
         "default_value": false,
         "override_hint": false,
-        "required": true
+        "required": true,
+        "override_strategy": "merge"
     }
 ]

@@ -3,16 +3,21 @@
         "key": "fab_location",
         "description": "Location of the fab",
         "regex": "{FAB}",
-        "default_value": null,
+        "default_value": "null",
         "regex_enable": true,
         "override_hint": false,
-        "required": true
+        "required": true,
+        "multi_type": [
+            "string"
+        ],
+        "override_strategy": "merge"
     },
     {
         "key": "multitenant_fab",
         "description": "Location of the multitenant fab",
         "default_value": "${FAB}-prod",
         "override_hint": false,
-        "required": true
+        "required": true,
+        "override_strategy": "merge"
     }
 ]

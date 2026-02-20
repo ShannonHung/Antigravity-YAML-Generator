@@ -54,42 +54,6 @@
         "multi_type": [
             "object"
         ],
-        "default_value": {
-            "master": [
-                {
-                    "hostname": "master-01",
-                    "ansible_host": "10.0.0.11"
-                },
-                {
-                    "hostname": "master-02",
-                    "ansible_host": "10.0.0.12"
-                },
-                {
-                    "hostname": "master-03",
-                    "ansible_host": "10.0.0.13"
-                }
-            ],
-            "worker": [
-                {
-                    "hostname": "worker-01",
-                    "ansible_host": "10.0.1.11"
-                },
-                {
-                    "hostname": "worker-02",
-                    "ansible_host": "10.0.1.12"
-                },
-                {
-                    "hostname": "worker-03",
-                    "ansible_host": "10.0.1.13"
-                }
-            ],
-            "l4lb": [
-                {
-                    "hostname": "lb-01",
-                    "ansible_host": "10.0.2.10"
-                }
-            ]
-        },
         "children": [
             {
                 "key": "master",
@@ -186,7 +150,7 @@
                             "string"
                         ],
                         "regex": "^lb-[0-9]+$",
-                        "default_value": "lb-1",
+                        "default_value": "lb-1-${USERNAME}",
                         "regex_enable": true,
                         "required": true,
                         "children": [],

@@ -27,7 +27,7 @@ check_dependencies() {
         case "$choice" in 
           y|Y ) 
             echo "Installing PyYAML..."
-            if ! pip3 install pyyaml; then
+            if ! python3 -m pip install pyyaml; then
                  echo -e "${RED}[ERROR]: Failed to install PyYAML. Please install it manually: pip3 install pyyaml${NC}"
                  exit 1
             fi
@@ -58,7 +58,7 @@ select SCENARIO in $SCENARIOS; do
     if [ -n "$SCENARIO" ]; then
         break
     else
-        echo "Invalid selection. Please try again."
+        echo -e "${YELLOW}[WARNING] Invalid selection. Please try again.${NC}"
     fi
 done
 
@@ -115,13 +115,16 @@ while IFS='|' read -r -u 3 VAR DESC; do
         echo "Description: $DESC"
     fi
     
-    read -p "$VAR: " USER_VAL
-    
-    if [ -n "$USER_VAL" ]; then
-        export $VAR="$USER_VAL"
-    else
-        echo "Warning: $VAR not set."
-    fi
+    while true; do
+        read -p "$VAR: " USER_VAL
+        
+        if [ -n "$USER_VAL" ]; then
+            export $VAR="$USER_VAL"
+            break
+        else
+            echo -e "${YELLOW}[WARNING] $VAR cannot be empty. Please enter a value.${NC}"
+        fi
+    done
     echo "" # Newline for readability
 done 3< "$TEMP_VARS"
 

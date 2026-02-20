@@ -10,7 +10,8 @@
         "regex": "production",
         "regex_enable": true,
         "children": [],
-        "required": true
+        "required": true,
+        "override_strategy": "merge"
     },
     {
         "key": "timezone",
@@ -23,7 +24,8 @@
         "regex": "Asia/Taipei",
         "regex_enable": true,
         "children": [],
-        "required": true
+        "required": true,
+        "override_strategy": "merge"
     },
     {
         "key": "ntp",
@@ -46,7 +48,8 @@
                 "regex": "true",
                 "regex_enable": true,
                 "children": [],
-                "required": true
+                "required": true,
+                "override_strategy": "merge"
             },
             {
                 "key": "servers",
@@ -56,7 +59,8 @@
                     "list"
                 ],
                 "item_multi_type": [
-                    "object"
+                    "object",
+                    "ip"
                 ],
                 "regex": null,
                 "regex_enable": false,
@@ -72,13 +76,16 @@
                         "regex": "time.google.com|pool.ntp.org",
                         "regex_enable": true,
                         "children": [],
-                        "required": true
+                        "required": true,
+                        "override_strategy": "merge"
                     }
                 ],
-                "required": true
+                "required": true,
+                "override_strategy": "merge"
             }
         ],
-        "required": true
+        "required": true,
+        "override_strategy": "merge"
     },
     {
         "key": "dns",
@@ -113,10 +120,12 @@
                         "regex": "corp.example.com|svc.cluster.local",
                         "regex_enable": true,
                         "children": [],
-                        "required": true
+                        "required": true,
+                        "override_strategy": "merge"
                     }
                 ],
-                "required": true
+                "required": true,
+                "override_strategy": "merge"
             },
             {
                 "key": "nameservers",
@@ -141,17 +150,20 @@
                         "regex": "8.8.8.8|1.1.1.1",
                         "regex_enable": true,
                         "children": [],
-                        "required": true
+                        "required": true,
+                        "override_strategy": "merge"
                     }
                 ],
-                "required": true
+                "required": true,
+                "override_strategy": "merge"
             }
         ],
-        "required": true
+        "required": true,
+        "override_strategy": "merge"
     },
     {
         "key": "dns_v2",
-        "description": "dns configuration",
+        "description": "[Deprecated] Due to new dns key \nby @yhhungx",
         "override_hint": false,
         "multi_type": [
             "object"
@@ -175,7 +187,8 @@
                 "regex": null,
                 "regex_enable": false,
                 "children": [],
-                "required": true
+                "required": true,
+                "override_strategy": "merge"
             },
             {
                 "key": "nameservers",
@@ -200,13 +213,16 @@
                         "regex": "8.8.8.8|1.1.1.1",
                         "regex_enable": true,
                         "children": [],
-                        "required": true
+                        "required": true,
+                        "override_strategy": "merge"
                     }
                 ],
-                "required": true
+                "required": true,
+                "override_strategy": "merge"
             }
         ],
-        "required": null
+        "required": null,
+        "override_strategy": "merge"
     },
     {
         "key": "region",
@@ -219,6 +235,7 @@
         "override_hint": true,
         "regex_enable": false,
         "regex": "[tw,us,jp]",
-        "default_value": "tw"
+        "default_value": "tw",
+        "override_strategy": "merge"
     }
 ]

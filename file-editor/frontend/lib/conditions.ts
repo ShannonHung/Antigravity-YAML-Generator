@@ -24,11 +24,11 @@ export const TYPE_OPERATORS: Record<string, string[]> = {
     [FieldType.BOOL]: [OperationTypes.EQ, OperationTypes.NE],
     [FieldType.STR]: [OperationTypes.EQ, OperationTypes.NE, OperationTypes.NOT_EMPTY, OperationTypes.EMPTY],
     [FieldType.NUM]: [OperationTypes.EQ, OperationTypes.NE, OperationTypes.GT, OperationTypes.LT, OperationTypes.GE, OperationTypes.LE],
-    [FieldType.EMAIL]: [OperationTypes.EQ, OperationTypes.NE],
-    [FieldType.IP]: [OperationTypes.EQ, OperationTypes.NE],
+    [FieldType.EMAIL]: [OperationTypes.EQ, OperationTypes.NE, OperationTypes.NOT_EMPTY, OperationTypes.EMPTY],
+    [FieldType.IP]: [OperationTypes.EQ, OperationTypes.NE, OperationTypes.NOT_EMPTY, OperationTypes.EMPTY],
     [FieldType.OBJ]: [OperationTypes.NOT_EMPTY, OperationTypes.EMPTY],
     [FieldType.LIST]: [OperationTypes.NOT_EMPTY, OperationTypes.EMPTY],
-    [FieldType.ENUM]: [OperationTypes.EQ, OperationTypes.NE],
+    [FieldType.ENUM]: [OperationTypes.EQ, OperationTypes.NE, OperationTypes.NOT_EMPTY, OperationTypes.EMPTY],
 };
 
 export interface ConditionItem {

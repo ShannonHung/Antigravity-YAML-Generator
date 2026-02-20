@@ -21,7 +21,8 @@
                 "regex": "tw",
                 "regex_enable": true,
                 "children": [],
-                "required": true
+                "required": true,
+                "override_strategy": "merge"
             },
             {
                 "key": "vip",
@@ -34,7 +35,8 @@
                 "regex": "172.168.0.0/16",
                 "regex_enable": true,
                 "children": [],
-                "required": true
+                "required": true,
+                "override_strategy": "merge"
             },
             {
                 "key": "fab_vars",
@@ -47,9 +49,11 @@
                 "regex": "{FAB}",
                 "regex_enable": true,
                 "children": [],
-                "required": true
+                "required": true,
+                "override_strategy": "merge"
             }
         ],
-        "required": true
+        "required": true,
+        "override_strategy": "merge"
     }
 ]

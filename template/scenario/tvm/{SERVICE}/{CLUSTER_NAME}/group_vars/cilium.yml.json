@@ -21,7 +21,8 @@
                 "regex": "200mm-tvm",
                 "regex_enable": true,
                 "children": [],
-                "required": true
+                "required": true,
+                "override_strategy": "merge"
             },
             {
                 "key": "global",
@@ -34,9 +35,11 @@
                 "regex": "tvm",
                 "regex_enable": true,
                 "children": [],
-                "required": true
+                "required": true,
+                "override_strategy": "merge"
             }
         ],
-        "required": true
+        "required": true,
+        "override_strategy": "merge"
     }
 ]
