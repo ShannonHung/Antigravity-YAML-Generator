@@ -7,6 +7,7 @@ export function useKeyForm(initialData: any) {
     const [description, setDescription] = useState('');
     const [required, setRequired] = useState<boolean | null>(false);
     const [overrideHint, setOverrideHint] = useState(false);
+    const [overrideStrategy, setOverrideStrategy] = useState<'merge' | 'replace'>('merge');
     const [types, setTypes] = useState<string[]>([]);
     const [itemTypes, setItemTypes] = useState<string[]>([]);
 
@@ -30,6 +31,7 @@ export function useKeyForm(initialData: any) {
             setRequired(!!initialData.required);
         }
         setOverrideHint(!!initialData.override_hint);
+        setOverrideStrategy(initialData.override_strategy || 'merge');
         setTypes(initialData.multi_type || (initialData.type ? [initialData.type] : []));
         setItemTypes(initialData.item_multi_type || []);
 
@@ -76,6 +78,7 @@ export function useKeyForm(initialData: any) {
         description, setDescription,
         required, setRequired,
         overrideHint, setOverrideHint,
+        overrideStrategy, setOverrideStrategy,
         types, setTypes,
         itemTypes, setItemTypes,
         regexEnable, setRegexEnable,

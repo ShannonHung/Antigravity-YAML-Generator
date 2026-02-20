@@ -7,6 +7,7 @@ export interface JsonNode {
     type?: string;
     multi_type?: string[];
     item_multi_type?: string[];
+    override_strategy?: 'merge' | 'replace';
     regex_enable?: boolean;
     regex?: string;
     required?: boolean | null;

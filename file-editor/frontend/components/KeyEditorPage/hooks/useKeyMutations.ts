@@ -9,7 +9,7 @@ export function useKeyMutations(
 
     const handleSave = async (formData: any) => {
         const {
-            keyName, description, required, overrideHint, types, itemTypes,
+            keyName, description, required, overrideHint, overrideStrategy, types, itemTypes,
             regexEnable, regexPattern, enumValues, defaultValue, condition
         } = formData;
 
@@ -45,6 +45,13 @@ export function useKeyMutations(
                             item.description = description;
                             item.required = required;
                             item.override_hint = overrideHint;
+
+                            if (overrideStrategy && overrideStrategy !== 'merge') {
+                                item.override_strategy = overrideStrategy;
+                            } else {
+                                delete item.override_strategy; // default is merge, so we can omit it if it's merge
+                            }
+
                             item.multi_type = types;
 
                             if (types.includes('list')) {

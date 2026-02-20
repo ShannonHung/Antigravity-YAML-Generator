@@ -9,7 +9,8 @@ export default function KeyIdentityForm({
     types, setTypes,
     itemTypes, setItemTypes,
     required, setRequired,
-    overrideHint, setOverrideHint
+    overrideHint, setOverrideHint,
+    overrideStrategy, setOverrideStrategy
 }: any) {
     const [isTypeDropdownOpen, setIsTypeDropdownOpen] = useState(false);
 
@@ -119,7 +120,7 @@ export default function KeyIdentityForm({
                 {/* Toggles */}
                 <div className="flex flex-wrap gap-3 pt-1">
                     {/* Required Status Selector */}
-                    <div className="w-full">
+                    <div className="w-full md:w-[48%]">
                         <InfoLabel label="Field Status" tooltip="Define the requirement status of this field." placement="right" />
                         <div className="flex bg-zinc-100 dark:bg-zinc-800 rounded-lg p-1 border border-zinc-200 dark:border-zinc-700">
                             <button
@@ -162,10 +163,46 @@ export default function KeyIdentityForm({
                             {required === null && "Field is deprecated and should not be used."}
                         </p>
                     </div>
-                    <label className="flex items-center space-x-3 p-3 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-700/30 transition-colors cursor-pointer border border-transparent hover:border-zinc-200 dark:hover:border-zinc-700">
-                        <input type="checkbox" checked={overrideHint} onChange={e => setOverrideHint(e.target.checked)} className="w-4 h-4 rounded border-zinc-300 text-amber-600 focus:ring-amber-500" />
-                        <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300 select-none">Show Override Hint</span>
-                    </label>
+
+                    {/* Override Strategy Selector */}
+                    <div className="w-full md:w-[48%]">
+                        <InfoLabel label="Override Strategy" tooltip="How this array/object merges across inventory files." placement="right" />
+                        <div className="flex bg-zinc-100 dark:bg-zinc-800 rounded-lg p-1 border border-zinc-200 dark:border-zinc-700">
+                            <button
+                                onClick={() => setOverrideStrategy('merge')}
+                                className={clsx(
+                                    "flex-1 py-1.5 text-xs font-medium rounded-md transition-all flex items-center justify-center",
+                                    overrideStrategy === 'merge'
+                                        ? "bg-white dark:bg-zinc-700 shadow text-zinc-900 dark:text-zinc-100"
+                                        : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                                )}
+                            >
+                                Merge
+                            </button>
+                            <button
+                                onClick={() => setOverrideStrategy('replace')}
+                                className={clsx(
+                                    "flex-1 py-1.5 text-xs font-medium rounded-md transition-all flex items-center justify-center",
+                                    overrideStrategy === 'replace'
+                                        ? "bg-white dark:bg-zinc-700 shadow text-amber-600 dark:text-amber-400"
+                                        : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                                )}
+                            >
+                                Replace
+                            </button>
+                        </div>
+                        <p className="text-[10px] text-zinc-400 mt-2 px-1">
+                            {overrideStrategy === 'merge' && "Combine with parent values."}
+                            {overrideStrategy === 'replace' && "Completely overwrite parent values."}
+                        </p>
+                    </div>
+
+                    <div className="w-full mt-2">
+                        <label className="inline-flex items-center space-x-3 p-3 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-700/30 transition-colors cursor-pointer border border-transparent hover:border-zinc-200 dark:hover:border-zinc-700">
+                            <input type="checkbox" checked={overrideHint} onChange={e => setOverrideHint(e.target.checked)} className="w-4 h-4 rounded border-zinc-300 text-amber-600 focus:ring-amber-500" />
+                            <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300 select-none">Show Override Hint</span>
+                        </label>
+                    </div>
                 </div>
             </div>
         </div>

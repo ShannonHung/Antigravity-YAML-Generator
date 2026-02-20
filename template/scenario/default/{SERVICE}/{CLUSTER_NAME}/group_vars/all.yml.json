@@ -94,7 +94,6 @@
         "multi_type": [
             "object"
         ],
-        "regex": null,
         "regex_enable": false,
         "children": [
             {
@@ -159,7 +158,7 @@
             }
         ],
         "required": true,
-        "override_strategy": "merge"
+        "override_strategy": "replace"
     },
     {
         "key": "dns_v2",

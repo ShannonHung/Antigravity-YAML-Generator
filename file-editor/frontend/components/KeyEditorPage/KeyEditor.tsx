@@ -76,6 +76,7 @@ export default function KeyEditor({ filePath, targetKey, onClose, onSave, onNavi
                         itemTypes={form.itemTypes} setItemTypes={form.setItemTypes}
                         required={form.required} setRequired={form.setRequired}
                         overrideHint={form.overrideHint} setOverrideHint={form.setOverrideHint}
+                        overrideStrategy={form.overrideStrategy} setOverrideStrategy={form.setOverrideStrategy}
                     />
 
                     {!form.required && (
