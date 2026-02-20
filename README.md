@@ -1,132 +1,131 @@
-# YAML Generator Tool
+# Antigravity Arsenal: YAML Generator & File Editor
 
-This tool generates Ansible YAML files from JSON templates and raw files, supporting environment variable substitution, complex schema definitions, and strict output formatting.
+This repository contains two main components:
+1. **YAML Generator Tool**: Generates Ansible YAML files from structured JSON templates.
+2. **File Editor**: A Web UI to visually edit and manage the JSON templates.
 
-## Usage
+---
 
-### Interactive Mode (Recommended)
+# 1. YAML Generator
 
-Use the provided Makefile target to run the interactive generator script. This will prompt you for the required environment variables based on the selected scenario, displaying descriptions for each.
+This tool generates Ansible YAML (or INI) files from JSON templates and raw files. It supports environment variable substitution, complex schema definitions, conditional generation, and strict formatting.
 
-```bash
-make gen
-```
+## Getting Started
 
-## Validation Logic
-The generator enforces strict validation rules on the JSON templates before processing:
+### Prerequisites
+1. **Python 3**: Ensure Python 3.x is installed on your system.
+2. **PyYAML**: The python script depends on the `pyyaml` package. Install it via pip:
+   ```bash
+   pip3 install pyyaml
+   ```
 
-1. **Legacy Fields**: `type` and `item_type` are forbidden. Use `multi_type` and `item_multi_type` instead.
-2. **List Structure**: `multi_type` and `item_multi_type` must be lists.
-3. **Type Conflict**: `multi_type` cannot contain both `"object"` and `"list"`.
-4. **List Consistency**: If `multi_type` contains `"list"`, `item_multi_type` **must not be empty**.
-5. **Object Consistency**: If `multi_type` contains `"object"`, `item_multi_type` **must be empty**.
-6. **Non-List Consistency**: If `multi_type` does **not** contain `"list"`, `item_multi_type` **must be empty**.
-7. **List-Object Consistency**: If `multi_type` contains `"list"` AND the node has `children`, `item_multi_type` **must contain `"object"`**.
+### Usage (Make Commands)
 
-Or run the script directly:
+The easiest way to generate files is using the interactive `make` command. It will prompt you for the required environment variables based on the selected scenario.
 
-```bash
-./generate.sh
-```
+- **Interactive Generation**:
+  ```bash
+  make gen
+  ```
+  *This will execute `./generate.sh`, asking for required inputs dynamically.*
 
-**Note:** The interactive script automatically clears environment variables before prompting to ensure a clean configuration session.
-
-### Manual Mode
-
-You can also run the python script directly, but you must ensure all required environment variables are set.
-
-```bash
-export SCENARIO_TYPE=tvm
-export TVM_FAB=my-fab
-export FAB=my-fab
-export CLUSTER_NAME=my-cluster
-export SERVICE=my-service
-
-python3 yaml_generator.py
-```
-
-## Configuration Guide
-
-The generator behavior is controlled by `templates/scenario/config.json`.
-
-### Global Settings
-- **`senario_env_key`**: The environment variable used to select the scenario (default: `SCENARIO_TYPE`).
-- **`top_level_spacing`**: Number of blank lines to insert between top-level YAML blocks (default: `2`).
-- **`override_hint_style`**: The style of the override hint comment (default: `# <=== [Override]`).
-- **`default_env_vars`**: List of environment variables required for ALL scenarios.
-
-### Scenarios Configuration (`senarios`)
-The `senarios` array defines all available scenarios and their behaviors.
-
-#### Fields
-- **`value`**: The unique identifier for the scenario.
-    - If `trigger.source` is `user`, this value matches the `SCENARIO_TYPE` environment variable.
-- **`path`**: The file system path to the directory containing templates for this scenario.
-- **`priority`**: Integer defining the override precedence.
-    - **Lower number = Higher Priority**.
-    - High priority scenarios are merged *last*, effectively overwriting values from lower priority scenarios.
-- **`required_env_vars`**: List of environment variables specific to this scenario.
-- **`trigger`**: An object defining when this scenario is active.
-
-#### Trigger Logic
-The `trigger` object determines activation rules:
-
-1. **`source`**:
-    - `"default"`: Always active. Checks for templates in the path but typically serves as the base.
-    - `"user"`: Active if the `SCENARIO_TYPE` environment variable matches the scenario's `value`.
-    - `"env"`: Active if specific environment variables match defined regex patterns.
-
-2. **`logic`** (Optional, for `source: env`):
-    - `"and"` (default): All conditions must match.
-    - `"or"`: At least one condition must match.
-
-3. **`conditions`** (Required for `source: env`):
-    - List of objects with:
-        - `key`: Environment variable name.
-        - `regex`: Regex pattern to match against the variable's value.
-
-#### Example Config
-```json
-{
-    "value": "fab200mm",
-    "path": "templates/scenario/fab200mm",
-    "priority": 1,
-    "trigger": {
-        "source": "env",
-        "conditions": [
-            { "key": "FAB", "regex": "200mm" }
-        ]
-    }
-}
-```
-
-
+- **Manual Execution**:
+  If you prefer to bypass the prompts, export the required environment variables and run it directly:
+  ```bash
+  export SCENARIO_TYPE=fab200mm
+  export CLUSTER_NAME=my-cluster
+  export SERVICE=my-service
+  python3 yaml_generator.py
+  ```
 
 ## Features
 
-### 1. Strict Validation
-The tool strictly validates that all required environment variables are present. If any are missing, it exits with a red error message.
+### 1. `config.json` Configuration
+The generator behavior is controlled by `template/scenario/config.json`.
+- **`senario_env_key`**: The environment variable used to determine the scenario (default: `SCENARIO_TYPE`).
+- **`default_env_vars`**: List of system-wide required environment variables (e.g., `["CLUSTER_NAME", "SERVICE"]`).
+- **`top_level_spacing`**: Number of blank lines inserting between root YAML blocks (default: `2`).
+- **`override_hint_style`**: Style of override comments appended to overridden keys (default: `# <=== [Override]`).
+- **`senarios`**: An array defining available scenarios:
+  - `value`: Scenario identifier (e.g., `"fab200mm"`).
+  - `path`: Directory containing templates for this scenario.
+  - `priority`: Determines override order (lower number = higher priority; applied last to overwrite lower priorities).
+  - `trigger`: Controls when the scenario is activated.
 
-### 2. Safe Generation
-The tool checks if an output file already exists. If it does, it prints a yellow warning (`[WARNING] File ... already exists. Skipping.`) and skips generation to prevent accidental overwrites.
+### 2. Output File Logic
 
-### 3. Formatting Rules
-- **Banner Comments**: Top-level keys are preceded by a banner-style comment.
-- **Spacing**: Top-level blocks are separated by `top_level_spacing` blank lines (default 2) for readability.
-- **Strict Quoting**: The generator enforces strict quoting rules:
-    - **Booleans/Numbers**: Always unquoted (e.g., `enabled: true`, `uid: 0`).
-    - **Strings**:
-        - **Simple**: Unquoted if alphanumeric (e.g., `region: tw`).
-        - **Complex**: Forced double quotes if they look like booleans/numbers or contain special characters (e.g., `vip: "172.16.0.0/16"`, `version: "1.0"`).
+- **Direct Copying**: If a file in the template directory does **not** end with `.yml.json` or `.ini.json`, it is treated as a raw file. The generator will copy it directly to the output path, applying environment variable substitution to the contents.
+- **Template Processing**: Files ending with `.yml.json` or `.ini.json` are parsed against the internal schema rules and emitted as pristine `.yml` or `.ini` files.
 
-### 4. Template Logic
-- **`default_value`**: The primary value used for generation. Can be complex objects or lists.
-- **`regex`**: Used as a fallback if `default_value` is missing or empty.
-- **Context Injection**: Supports `{VAR}` substitution in paths, keys, and string values.
+### 3. Scenario Trigger Logic (`trigger.source`)
+- **`user`**: Active when the user explicitly species it (e.g., `SCENARIO_TYPE=fab200mm`). The generation merges the `default` scenario base with the target `user` scenario.
+- **`env`**: Active automatically if specific environment variables regex patterns match. Even if the user doesn't explicitly select this scenario, the generator will inherit these parameters. If parameters overlap with the base or other active scenarios, the one with the highest priority (lowest number) wins.
 
-## Template Structure
+### 4. Generation & Skipping Rules
+- **Skip if Deprecated/Missing**: If a key's `required` attribute is explicitly set to `null` (deprecated) or is an empty string `""` (or missing completely), the generator will skip outputting this field entirely.
+- **`override_strategy` Mechanism**: When merging a scenario over a base (e.g., `default` + `fab200mm`):
+  - **`"merge"` (Default)**: Deeply merges objects and lists. Child keys from the override scenario are appended or update matching keys in the parent.
+  - **`"replace"`**: Completely overwrites the parent's data structure at that node. The inherited default data is discarded in favor of the override.
 
-Templates are located in `templates/scenario/default` (base) and `templates/scenario/<scenario_name>` (overrides).
+### 5. Value Resolution Strategy
+When the generator determines the final value of a key, it prioritizes the `default_value`. However, if the `default_value` is missing, empty (`{}` / `[]`), or an empty string (`""`), it will fall back to using the `regex` attribute as the value.
 
-- **`.json` files**: Define a schema for generating YAML.
-- **Raw files**: Copied directly (with variable substitution).
+### 6. Value Quoting Formatting
+The generator enforces strict quoting rules when emitting YAML:
+- **Unquoted**: Booleans (`true`/`false`), bare numbers, and simple alphanumeric strings without special characters (e.g., `region: tw`).
+- **Quoted (`"..."`)**: Strings containing special characters (like IP addresses `192.168.1.1` or CIDR `10.0.0.0/8`), or strings that could be misinterpreted by a YAML parser as numbers/booleans (e.g., `"1.0"`, `"true"`).
+
+## Validation Logic
+The JSON templates are strictly validated before generation starts:
+1. Cannot mix legacy `type` with new `multi_type`.
+2. Must use `multi_type` array for types.
+3. If `multi_type` contains `"list"`, then `item_multi_type` **must not be empty**.
+4. **List Object Constraint**: If `multi_type` contains `"list"` AND the node has `children` (is not empty array `[]`), `item_multi_type` **must contain `"object"`**.
+
+---
+
+# 2. File Editor (Web UI)
+
+A customized, schema-aware Next.js frontend and FastAPI backend used to maintain the `.yml.json` schema templates comfortably without manual JSON editing.
+
+## Launching the Editor (Make Commands)
+
+You can launch the editor in three different modes depending on your needs:
+
+### 1. Direct Code Execution
+Starts the backend via `uvicorn` and frontend via `npm run dev` directly on your host machine.
+```bash
+make web         # Start both frontend and backend
+make web-down    # Kill processes on ports 3000 and 8000
+```
+
+### 2. Development Docker Mode
+Builds local Docker images and runs them using `docker-compose.yml`. Ideal for testing the containerized environment.
+```bash
+make web-dev     # Build and start via docker-compose up -d
+make web-dev-down# Stop via docker-compose down
+```
+
+### 3. Production Docker Mode
+Starts the application using `docker-compose-prod.yml`, which pulls pre-built images from Docker Hub instead of building locally.
+```bash
+make web-prod     # Start production stack
+make web-prod-down# Stop production stack
+```
+
+## Docker Compose Configurations
+
+### Modifying the Backend Mount Path
+The File Editor works by mounting your local template directory into the backend container so the API can read and write the JSON files.
+
+If you inspect `docker-compose.yml` (or `docker-compose-prod.yml`), you will find the volume mount for the backend:
+```yaml
+services:
+  backend:
+    volumes:
+      - ./template:/app/template
+```
+
+**What happens if you change this?**
+- **Symptom**: If you change the host path (e.g., `- /my/custom/path:/app/template`), the web UI will display and edit files from `/my/custom/path` instead of the local `./template` folder.
+- **Usage**: This is useful if you want to deploy the editor centrally and point it to a completely different ansible inventory directory on your server. Ensure the target directory maintains the expected `scenario/` structure.
