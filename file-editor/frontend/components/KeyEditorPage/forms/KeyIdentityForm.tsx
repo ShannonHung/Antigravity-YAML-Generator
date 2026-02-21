@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, AlertTriangle } from 'lucide-react';
-import { DATA_TYPES, ITEM_DATA_TYPES, DEFAULT_PLUGINS } from '../../../config/editorConfig'; // Adjust import path
+import { useEditorConfig } from '../../FileSystemPage/hooks/EditorConfigContext';
 import { InfoLabel } from './InfoLabel';
 import clsx from 'clsx';
 
@@ -13,6 +13,7 @@ export default function KeyIdentityForm({
     overrideStrategy, setOverrideStrategy,
     plugins, setPlugins
 }: any) {
+    const { DATA_TYPES, ITEM_DATA_TYPES, DEFAULT_PLUGINS } = useEditorConfig();
     const [isTypeDropdownOpen, setIsTypeDropdownOpen] = useState(false);
 
     return (

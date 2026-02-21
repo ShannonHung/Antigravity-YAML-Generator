@@ -18,5 +18,9 @@ services:
       context: ./file-editor/frontend
     ports:
       - "3000:3000"
+    environment:
+      - DATA_TYPES=${EDITOR_DATA_TYPES:-}
+      - ITEM_DATA_TYPES=${EDITOR_ITEM_DATA_TYPES:-}
+      - DEFAULT_PLUGINS=${EDITOR_DEFAULT_PLUGINS:-}
     depends_on:
       - backend

@@ -3,7 +3,7 @@ import { Info, X, Save } from 'lucide-react';
 import clsx from 'clsx';
 import { Typeahead, Menu, MenuItem } from 'react-bootstrap-typeahead';
 import 'react-bootstrap-typeahead/css/Typeahead.css';
-import { DATA_TYPES, ITEM_DATA_TYPES } from '../../config/editorConfig';
+import { useEditorConfig } from '../FileSystemPage/hooks/EditorConfigContext';
 import { JsonNode } from './types';
 
 // Helper to flatten valid parents
@@ -62,6 +62,7 @@ const InfoLabel = ({ label, tooltip, placement = 'right' }: { label: string, too
 );
 
 export default function AddKeyModal({ nodes, onClose, onSave }: any) {
+    const { DATA_TYPES, ITEM_DATA_TYPES } = useEditorConfig();
     const [parentPath, setParentPath] = useState<string[]>([]);
     const [keyName, setKeyName] = useState('');
     const [types, setTypes] = useState<string[]>([]);
@@ -211,7 +212,7 @@ export default function AddKeyModal({ nodes, onClose, onSave }: any) {
                                 <>
                                     <div className="fixed inset-0 z-10" onClick={() => setIsTypeDropdownOpen(false)} />
                                     <div className="absolute top-full left-0 w-full mt-1 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md shadow-lg z-20 max-h-40 overflow-y-auto py-1">
-                                        {DATA_TYPES.filter(o => !types.includes(o)).map(opt => (
+                                        {DATA_TYPES.filter((o: string) => !types.includes(o)).map((opt: string) => (
                                             <button
                                                 key={opt}
                                                 disabled={types.includes('enum') && opt !== 'enum'}
@@ -264,7 +265,7 @@ export default function AddKeyModal({ nodes, onClose, onSave }: any) {
                             >
                                 <option value="">Add item type...</option>
                                 {!itemTypes.includes('object') && <option value="object">object</option>}
-                                {ITEM_DATA_TYPES.filter(o => !itemTypes.includes(o) && o !== 'object').map(o => <option key={o} value={o}>{o}</option>)}
+                                {ITEM_DATA_TYPES.filter((o: string) => !itemTypes.includes(o) && o !== 'object').map((o: string) => <option key={o} value={o}>{o}</option>)}
                             </select>
                         </div>
                     )}
