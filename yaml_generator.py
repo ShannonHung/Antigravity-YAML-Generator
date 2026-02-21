@@ -4,6 +4,8 @@ import json
 import re
 import shutil
 import yaml
+from dataclasses import dataclass, field
+from typing import List, Dict, Any
 
 # Ensure consistent ordering in output if possible, though PyYAML handles dicts well.
 # We are [INFO] Generating text manually for the complex schema-based JSONs to support comments.
@@ -280,13 +282,14 @@ def generate_yaml_from_schema(nodes, indent=0, config=None):
 
         children = node.get('children', [])
         
-        # 1. Output Description
+        # 1. Output Top Level Spacing
+        if indent == 0 and not is_first:
+            for _ in range(top_level_spacing):
+                lines.append("")
+                
+        # 2. Output Description
         if description:
             if indent == 0:
-                if not is_first:
-                    for _ in range(top_level_spacing):
-                        lines.append("")
-                
                 banner_lines = generate_banner(description, indent=indent)
                 lines.extend(banner_lines)
             else:
@@ -533,136 +536,158 @@ def load_json_nodes(path):
         return [data]
     return data
 
-def process_scenarios(config_path):
-    # 1. Load config
-    try:
-        config = load_json(config_path)
-    except Exception as e:
-        print(f"Error loading config {config_path}: {e}")
-        return
+@dataclass
+class EnvVarDef:
+    key: str
+    description: str = ""
+
+@dataclass
+class TriggerCondition:
+    key: str
+    regex: str
+
+@dataclass
+class ScenarioTrigger:
+    source: str
+    logic: str = "and"
+    conditions: List[TriggerCondition] = field(default_factory=list)
+
+@dataclass
+class ScenarioConfig:
+    value: str
+    path: str
+    trigger: ScenarioTrigger
+    required_env_vars: List[EnvVarDef] = field(default_factory=list)
+    priority: int = 999
+    config: Dict[str, Any] = field(default_factory=dict)
+
+@dataclass
+class AppConfig:
+    override_hint_style: str = "# <=== [Override]"
+    scenario_env_key: str = "SCENARIO_TYPE"
+    top_level_spacing: int = 2
+    default_env_vars: List[EnvVarDef] = field(default_factory=list)
+    scenarios: List[ScenarioConfig] = field(default_factory=list)
+    raw_config: Dict[str, Any] = field(default_factory=dict)
+
+def parse_config(raw: dict) -> AppConfig:
+    app_cfg = AppConfig(
+        override_hint_style=raw.get("override_hint_style", "# <=== [Override]"),
+        scenario_env_key=raw.get("senario_env_key", "SCENARIO_TYPE"),
+        top_level_spacing=raw.get("top_level_spacing", 2),
+        raw_config=raw
+    )
     
-    # ---------------------------------------------------------
-    # NEW: Config Validation & Active Scenario Logic
-    # ---------------------------------------------------------
-    scenario_env_key = config.get("senario_env_key", "SCENARIO_TYPE")
-    env = load_env()
-    
-    # Validate Config Scenarios
-    scenarios_config = config.get("senarios", [])
-    for sc in scenarios_config:
-        name = sc.get("value")
-        trigger = sc.get("trigger", {})
-        source = trigger.get("source")
+    for ev in raw.get("default_env_vars", []):
+        if isinstance(ev, dict):
+            app_cfg.default_env_vars.append(EnvVarDef(key=ev.get("key", ""), description=ev.get("description", "")))
+        else:
+            app_cfg.default_env_vars.append(EnvVarDef(key=str(ev)))
+            
+    for sc in raw.get("senarios", []):
+        t_data = sc.get("trigger", {})
+        conds = []
+        for c in t_data.get("conditions", []):
+            conds.append(TriggerCondition(key=c.get("key", ""), regex=c.get("regex", "")))
+            
+        trigger = ScenarioTrigger(
+            source=t_data.get("source", "default"),
+            logic=t_data.get("logic", "and"),
+            conditions=conds
+        )
         
-        # Validation Rule: source is user/default -> no conditions
-        if source in ["user", "default"]:
-            if trigger.get("conditions") or trigger.get("vars_trigger"): 
-                 print(f"\033[91m[ERROR] Config Error in scenario '{name}': source '{source}' must not have 'conditions'.\033[0m")
+        req_vars = []
+        for ev in sc.get("required_env_vars", []):
+            if isinstance(ev, dict):
+                req_vars.append(EnvVarDef(key=ev.get("key", ""), description=ev.get("description", "")))
+            else:
+                req_vars.append(EnvVarDef(key=str(ev)))
+                
+        scenario = ScenarioConfig(
+            value=sc.get("value", ""),
+            path=sc.get("path", ""),
+            trigger=trigger,
+            required_env_vars=req_vars,
+            priority=sc.get("priority", 999),
+            config=sc
+        )
+        app_cfg.scenarios.append(scenario)
+        
+    return app_cfg
+
+def validate_config_scenarios(app_config: AppConfig):
+    for sc in app_config.scenarios:
+        if sc.trigger.source in ["user", "default"]:
+            if sc.trigger.conditions:
+                 print(f"\033[91m[ERROR] Config Error in scenario '{sc.value}': source '{sc.trigger.source}' must not have 'conditions'.\033[0m")
                  sys.exit(1)
-        
-        # Validation Rule: source is env -> must have conditions
-        if source == "env":
-             if not trigger.get("conditions"):
-                 print(f"\033[91m[ERROR] Config Error in scenario '{name}': source 'env' must have 'conditions'.\033[0m")
+        if sc.trigger.source == "env":
+             if not sc.trigger.conditions:
+                 print(f"\033[91m[ERROR] Config Error in scenario '{sc.value}': source 'env' must have 'conditions'.\033[0m")
                  sys.exit(1)
 
-    # Determine Active Scenarios
-    active_scenarios = []
-    user_selection = env.get(scenario_env_key)
+def determine_active_scenarios(app_config: AppConfig, env: dict) -> List[ScenarioConfig]:
+    active = []
+    user_selection = env.get(app_config.scenario_env_key)
     
-    for sc in scenarios_config:
+    for sc in app_config.scenarios:
         is_active = False
-        trigger = sc.get("trigger", {})
-        source = trigger.get("source")
+        src = sc.trigger.source
         
-        if source == "default":
+        if src == "default":
             is_active = True
-        elif source == "user":
-            if user_selection == sc.get("value"):
+        elif src == "user":
+            if user_selection == sc.value:
                 is_active = True
-        elif source == "env":
-            logic = trigger.get("logic", "and")
-            conditions = trigger.get("conditions", [])
-            
-            if not conditions:
+        elif src == "env":
+            if not sc.trigger.conditions:
                 is_active = False
             else:
                 matches = []
-                for cond in conditions:
-                    key = cond.get("key")
-                    regex = cond.get("regex")
-                    val = env.get(key, "")
-                    if re.search(regex, val):
+                for cond in sc.trigger.conditions:
+                    val = env.get(cond.key, "")
+                    if re.search(cond.regex, val):
                         matches.append(True)
                     else:
                         matches.append(False)
                 
-                if logic == "and":
+                if sc.trigger.logic == "and":
                     is_active = all(matches)
-                elif logic == "or":
+                elif sc.trigger.logic == "or":
                     is_active = any(matches)
         
         if is_active:
-            # Sort by Priority Descending?
-            # User: "priority: 數字越小，優先序越大" -> Small number = High Priority = Wins last.
-            # So we apply logic: Base -> P2 -> P1.
-            # Sort Key: Priority Descending (Big number first).
-            # Default handling: source=default -> Priority 9999.
-            
-            p = sc.get("priority", 999)
-            if source == "default":
-                 p = 9999
-            
-            active_scenarios.append({
-                "name": sc.get("value"),
-                "path": sc.get("path"),
-                "priority": p,
-                "config": sc
-            })
+            # Overwrite priority for default
+            if src == "default":
+                 sc.priority = 9999
+            active.append(sc)
 
-    # Sort Scenarios: Descending Priority (9999 -> 100 -> 2 -> 1)
-    # This implies we apply 9999 first, then 100, then... 1 last.
-    active_scenarios.sort(key=lambda x: x["priority"], reverse=True)
-    
-    if not active_scenarios:
-         print(f"\033[93m[WARNING] No active scenarios found.\033[0m")
-    
-    print("Active Scenarios (in order of application):")
-    for sc in active_scenarios:
-        print(f" - {sc['name']} (Priority: {sc['priority']})")
+    # Sort Descending Priority (Base -> P2 -> P1)
+    active.sort(key=lambda x: x.priority, reverse=True)
+    return active
 
-    # Validate Required Env Vars for ALL active scenarios
-    missing_vars = []
-    # Default globals
-    for item in config.get("default_env_vars", []):
-        var_name = item.get("key") if isinstance(item, dict) else item
-        if var_name and var_name not in env:
-            missing_vars.append(var_name)
+def validate_required_env_vars(app_config: AppConfig, active_scenarios: List[ScenarioConfig], env: dict):
+    missing = []
+    for ev in app_config.default_env_vars:
+        if ev.key and ev.key not in env:
+            missing.append(ev.key)
             
-    # Scenario specifics
     for sc in active_scenarios:
-        s_conf = sc.get("config", {})
-        for item in s_conf.get("required_env_vars", []):
-            var_name = item.get("key") if isinstance(item, dict) else item
-            if var_name and var_name not in env:
-                missing_vars.append(var_name)
+        for ev in sc.required_env_vars:
+            if ev.key and ev.key not in env:
+                missing.append(ev.key)
     
-    missing_vars = list(set(missing_vars))
-    
-    if missing_vars:
-        print(f"\033[91m[ERROR] Missing required environment variables: {', '.join(missing_vars)}\033[0m")
+    missing = list(set(missing))
+    if missing:
+        print(f"\033[91m[ERROR] Missing required environment variables: {', '.join(missing)}\033[0m")
         sys.exit(1)
 
-    # 1.5 Validate templates
+def validate_scenario_templates(active_scenarios: List[ScenarioConfig]):
     validation_dirs = set()
-    
-    # Always include default? Or only if active? 
-    # Logic: Validate all paths that WILL be used.
     for sc in active_scenarios:
-        p = sc.get("path")
-        if p and os.path.exists(p):
-            validation_dirs.add(p)
-    
+        if sc.path and os.path.exists(sc.path):
+            validation_dirs.add(sc.path)
+            
     validation_errors = []
     
     def validate_node(node, file_path, path_context="root"):
@@ -681,28 +706,22 @@ def process_scenarios(config_path):
                  if "object" in multi_type and "list" in multi_type:
                      validation_errors.append(f"{file_path} [{path_context}]: 'multi_type' cannot contain both 'object' and 'list'.")
                  
-                 # list validation
                  if "list" in multi_type:
                      if not item_multi_type:
                          validation_errors.append(f"{file_path} [{path_context}]: 'multi_type' contains 'list' but 'item_multi_type' is empty.")
-                     # Rule: If list has children, items must be objects
                      if node.get('children') and "object" not in item_multi_type:
                           validation_errors.append(f"{file_path} [{path_context}]: 'multi_type' contains 'list' and has children, so 'item_multi_type' must contain 'object'.")
                  
-                 # object validation
                  if "object" in multi_type:
                      if item_multi_type:
                          validation_errors.append(f"{file_path} [{path_context}]: 'multi_type' contains 'object' but 'item_multi_type' is not empty.")
                          
-                 # non-list validation (general cleanup)
                  if "list" not in multi_type and item_multi_type:
                       validation_errors.append(f"{file_path} [{path_context}]: 'multi_type' does not contain 'list' but 'item_multi_type' is set.")
 
-        if 'item_multi_type' in node:
-            if not isinstance(node['item_multi_type'], list):
-                validation_errors.append(f"{file_path} [{path_context}]: 'item_multi_type' must be a list.")
+        if 'item_multi_type' in node and not isinstance(node.get('item_multi_type'), list):
+            validation_errors.append(f"{file_path} [{path_context}]: 'item_multi_type' must be a list.")
 
-        # Recursive check
         for child in node.get('children', []):
             child_key = child.get('key', 'unknown')
             validate_node(child, file_path, f"{path_context}.{child_key}")
@@ -716,11 +735,7 @@ def process_scenarios(config_path):
                         with open(path, 'r') as jf:
                             data = json.load(jf)
                             
-                        nodes_to_check = []
-                        if isinstance(data, list):
-                            nodes_to_check = data
-                        elif isinstance(data, dict):
-                            nodes_to_check = [data]
+                        nodes_to_check = data if isinstance(data, list) else [data]
                             
                         for node in nodes_to_check:
                             key = node.get('key', 'root')
@@ -739,24 +754,20 @@ def process_scenarios(config_path):
         
     print(f"Validation successful for {len(validation_dirs)} directories.\n")
 
-    # 2. Collect files from ALL active scenarios
-    # We iterate active_scenarios which are sorted by PRIORITY DESCENDING (Base -> P2 -> P1)
-    
+def collect_scenario_files(active_scenarios: List[ScenarioConfig]) -> dict:
     file_map = {} 
     
     for sc in active_scenarios:
-        sc_path = sc.get("path")
-        if not sc_path or not os.path.exists(sc_path): continue
+        if not sc.path or not os.path.exists(sc.path): continue
         
-        for dirpath, _, filenames in os.walk(sc_path):
+        for dirpath, _, filenames in os.walk(sc.path):
             for f in filenames:
                 if f.startswith('.'): continue
                 full_path = os.path.join(dirpath, f)
-                rel_path_from_sc = os.path.relpath(full_path, sc_path)
+                rel_path_from_sc = os.path.relpath(full_path, sc.path)
                 
-                # Determine output relative path template
                 if f.endswith('.ini.json'):
-                    out_rel = rel_path_from_sc[:-9] # remove .ini.json, keep base name
+                    out_rel = rel_path_from_sc[:-9]
                     ftype = 'json'
                 elif f.endswith('.yml.json'):
                     out_rel = rel_path_from_sc[:-5]
@@ -771,12 +782,12 @@ def process_scenarios(config_path):
                 file_map[out_rel].append({
                     "path": full_path,
                     "type": ftype,
-                    "scenario": sc["name"]
+                    "scenario": sc.value
                 })
+    return file_map
 
-    # 3. Process files
+def generate_output_files(file_map: dict, env: dict, raw_config: dict):
     for final_rel_path_tpl, sources in file_map.items():
-        # Resolve vars in the path template
         try:
             final_rel_path = resolve_path_vars(final_rel_path_tpl, env)
         except Exception as e:
@@ -785,7 +796,6 @@ def process_scenarios(config_path):
              
         final_output_path = os.path.join(os.getcwd(), final_rel_path)
         
-        # Determine strategy
         last_raw_index = -1
         for i, s in enumerate(sources):
             if s['type'] == 'raw':
@@ -814,20 +824,8 @@ def process_scenarios(config_path):
              save_file(final_output_path, content)
         
         else:
-             start_index = 0
-             if last_raw_index != -1:
-                 # This case shouldn't happen due to check above, unless logic error.
-                 pass
-             
              merged_nodes = []
-             
-             # Detect if we should use INI generator based on input sources
-             # If ANY source ends with .ini.json, use INI generator
-             is_ini = False
-             for s in sources:
-                 if s['path'].endswith('.ini.json'):
-                     is_ini = True
-                     break
+             is_ini = any(s['path'].endswith('.ini.json') for s in sources)
              
              if is_ini or final_rel_path.endswith('.ini'):
                  print(f"[INFO] Generating {final_rel_path} from INI schema")
@@ -840,24 +838,47 @@ def process_scenarios(config_path):
                 print(f"\033[93m[WARNING] File {final_rel_path} already exists. Skipping.\033[0m")
                 continue
 
-             for i in range(start_index, len(sources)):
-                 s = sources[i]
+             for s in sources:
                  try:
                      nodes = load_json_nodes(s['path'])
                      merged_nodes = merge_nodes(merged_nodes, nodes)
                  except Exception as e:
                      print(f"Error loading/merging {s['path']}: {e}")
             
-             output_lines = schema_func(merged_nodes, config=config)
+             output_lines = schema_func(merged_nodes, config=raw_config)
              content = "\n".join(output_lines)
-             # Basic trim or ensure single newline at end
              content = content.strip() + "\n"
-             
              content = resolve_content_vars(content, env)
              save_file(final_output_path, content)
 
+def process_scenarios(config_path):
+    try:
+        raw_config = load_json(config_path)
+    except Exception as e:
+        print(f"Error loading config {config_path}: {e}")
+        return
+        
+    app_config = parse_config(raw_config)
+    env = load_env()
+    
+    validate_config_scenarios(app_config)
+    
+    active_scenarios = determine_active_scenarios(app_config, env)
+    
+    if not active_scenarios:
+         print(f"\033[93m[WARNING] No active scenarios found.\033[0m")
+    else:
+        print("Active Scenarios (in order of application):")
+        for sc in active_scenarios:
+            print(f" - {sc.value} (Priority: {sc.priority})")
+
+    validate_required_env_vars(app_config, active_scenarios, env)
+    validate_scenario_templates(active_scenarios)
+    
+    file_map = collect_scenario_files(active_scenarios)
+    generate_output_files(file_map, env, app_config.raw_config)
+
 if __name__ == "__main__":
-    # Ensure config path is flexible
     if len(sys.argv) > 1:
         config_path = sys.argv[1]
     else:
