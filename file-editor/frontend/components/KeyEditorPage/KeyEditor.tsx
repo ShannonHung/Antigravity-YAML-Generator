@@ -77,6 +77,7 @@ export default function KeyEditor({ filePath, targetKey, onClose, onSave, onNavi
                         required={form.required} setRequired={form.setRequired}
                         overrideHint={form.overrideHint} setOverrideHint={form.setOverrideHint}
                         overrideStrategy={form.overrideStrategy} setOverrideStrategy={form.setOverrideStrategy}
+                        plugins={form.plugins} setPlugins={form.setPlugins}
                     />
 
                     {!form.required && (

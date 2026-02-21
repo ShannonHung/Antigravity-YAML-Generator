@@ -21,3 +21,9 @@ export const ITEM_DATA_TYPES = [
     "email",
     "url"
 ];
+
+export const DEFAULT_PLUGINS = [
+    "check_env_function",
+    "check_env_char_limit",
+    "check_node_function"
+];

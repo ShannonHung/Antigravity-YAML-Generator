@@ -164,7 +164,10 @@
             }
         ],
         "required": true,
-        "override_strategy": "replace"
+        "override_strategy": "replace",
+        "plugins": [
+            "check_env_function"
+        ]
     },
     {
         "key": "dns_v2",

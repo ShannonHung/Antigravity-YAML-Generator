@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, AlertTriangle } from 'lucide-react';
-import { DATA_TYPES, ITEM_DATA_TYPES } from '../../../config/editorConfig'; // Adjust import path
+import { DATA_TYPES, ITEM_DATA_TYPES, DEFAULT_PLUGINS } from '../../../config/editorConfig'; // Adjust import path
 import { InfoLabel } from './InfoLabel';
 import clsx from 'clsx';
 
@@ -10,7 +10,8 @@ export default function KeyIdentityForm({
     itemTypes, setItemTypes,
     required, setRequired,
     overrideHint, setOverrideHint,
-    overrideStrategy, setOverrideStrategy
+    overrideStrategy, setOverrideStrategy,
+    plugins, setPlugins
 }: any) {
     const [isTypeDropdownOpen, setIsTypeDropdownOpen] = useState(false);
 
@@ -202,6 +203,57 @@ export default function KeyIdentityForm({
                             <input type="checkbox" checked={overrideHint} onChange={e => setOverrideHint(e.target.checked)} className="w-4 h-4 rounded border-zinc-300 text-amber-600 focus:ring-amber-500" />
                             <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300 select-none">Show Override Hint</span>
                         </label>
+                    </div>
+
+                    {/* Plugins Editor */}
+                    <div className="w-full mt-2 pt-4 border-t border-zinc-200 dark:border-zinc-800">
+                        <InfoLabel label="Generator Plugins" tooltip="List of generator plugins to apply to this key." placement="right" />
+                        <div className="w-full min-h-[42px] p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg flex flex-wrap gap-2 transition-all hover:border-zinc-300 dark:hover:border-zinc-600">
+                            {plugins.map((plugin: string, idx: number) => (
+                                <span key={idx} className="bg-teal-50 dark:bg-teal-900/40 text-teal-700 dark:text-teal-300 text-[11px] px-2 py-1 rounded-md flex items-center font-mono border border-teal-100 dark:border-teal-800">
+                                    {plugin}
+                                    <button
+                                        onClick={() => setPlugins(plugins.filter((_: any, i: number) => i !== idx))}
+                                        className="ml-1.5 text-teal-400 hover:text-teal-900 dark:hover:text-teal-100 transition-colors"
+                                    >
+                                        <X className="w-3 h-3" />
+                                    </button>
+                                </span>
+                            ))}
+                            <div className="flex-1 relative min-w-[120px]">
+                                <select
+                                    className="w-full bg-transparent outline-none text-xs font-mono h-6 text-zinc-900 dark:text-zinc-100 cursor-pointer appearance-none"
+                                    onChange={(e) => {
+                                        if (e.target.value && !plugins.includes(e.target.value)) {
+                                            setPlugins([...plugins, e.target.value]);
+                                        }
+                                        e.target.value = '';
+                                    }}
+                                >
+                                    <option value="">+ Add plugin...</option>
+                                    {DEFAULT_PLUGINS.filter(p => !plugins.includes(p)).map(p => (
+                                        <option key={p} value={p}>{p}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+                        <div className="mt-2 flex gap-2">
+                            <input
+                                type="text"
+                                id="customPluginInput"
+                                className="flex-1 px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs focus:ring-2 focus:ring-blue-500/20 outline-none font-mono"
+                                placeholder="Or type custom plugin and press Enter..."
+                                onKeyDown={e => {
+                                    if (e.key === 'Enter') {
+                                        const val = (e.target as HTMLInputElement).value.trim();
+                                        if (val && !plugins.includes(val)) {
+                                            setPlugins([...plugins, val]);
+                                            (e.target as HTMLInputElement).value = '';
+                                        }
+                                    }
+                                }}
+                            />
+                        </div>
                     </div>
                 </div>
             </div>
