@@ -1,0 +1,7 @@
+# ==========================================
+# test override merge
+# ==========================================
+test_override:
+  a: apricot
+  b: banana
+  c: cherry

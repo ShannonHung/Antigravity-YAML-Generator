@@ -1,0 +1,14 @@
+{
+    "key": "region",
+    "description": "The deployment region",
+    "multi_type": [
+        "string"
+    ],
+    "required": true,
+    "children": [],
+    "override_hint": true,
+    "regex_enable": false,
+    "regex": null,
+    "default_value": "tw",
+    "override_strategy": "merge"
+}

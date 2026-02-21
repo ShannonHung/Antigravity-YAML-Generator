@@ -1,0 +1,14 @@
+# ==========================================
+# TVM disabled ssd
+# ==========================================
+trident_ssd: false
+
+
+# ==========================================
+# ssd description
+# ==========================================
+trident_ssd_object_ids:
+  # should enable trident ssd object ids
+  - id: [1|2|3] # <=== [Override]
+    # trident ssd object vip
+    vip: "*/16$"

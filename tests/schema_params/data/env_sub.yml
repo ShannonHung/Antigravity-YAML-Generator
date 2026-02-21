@@ -1,0 +1,6 @@
+# ==========================================
+# test environment substitutions
+# ==========================================
+test_env_sub:
+  sub_default: "Hello Alice!"
+  sub_regex: "192.168.1.${NODE_ID}"

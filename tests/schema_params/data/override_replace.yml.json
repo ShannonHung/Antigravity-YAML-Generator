@@ -1,0 +1,33 @@
+{
+    "key": "test_override",
+    "description": "test override replace",
+    "multi_type": [
+        "object"
+    ],
+    "item_multi_type": [],
+    "required": true,
+    "children": [
+        {
+            "key": "x",
+            "required": true,
+            "multi_type": [
+                "string"
+            ],
+            "default_value": "xylophone",
+            "override_strategy": "merge"
+        },
+        {
+            "key": "y",
+            "required": true,
+            "multi_type": [
+                "string"
+            ],
+            "default_value": "yak",
+            "override_strategy": "merge"
+        }
+    ],
+    "override_hint": false,
+    "regex_enable": false,
+    "regex": null,
+    "override_strategy": "replace"
+}

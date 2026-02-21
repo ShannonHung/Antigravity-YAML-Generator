@@ -28,21 +28,63 @@ def resolve_path_vars(path_template, env):
 
 def resolve_content_vars(content, env):
     """Substitute ${VAR} in content with values from env (for file content)."""
-    # Use Regex to find ${VAR}
-    # We iterate env keys to avoid complex regex logic, or use re.sub with callback.
-    # Iteration is safer for known env vars, but strict user request "requires $".
-    
-    # Strategy 1: Iterate env vars
     for key, value in env.items():
         placeholder = f"${{{key}}}"
         if placeholder in content:
             content = content.replace(placeholder, str(value))
             
-    # Strategy 2: Warn on unresolved ${...}
     if re.search(r"\$\{[A-Z0-9_]+\}", content):
         unresolve_content = re.search(r"\$\{[A-Z0-9_]+\}", content).group(0)
         print(f"\033[93m[WARNING] Unresolved variable placeholders in content {unresolve_content}.\033[0m")
+    return content
+
+def substitute_env_in_default_values(nodes, env):
+    """
+    Recursively substitute environment variables explicitly targeting `default_value` nodes.
+    This preserves explicit literal values from `regex` attributes which avoids unintended substitution.
+    """
+    for node in nodes:
+        # Only substitute if default_value exists
+        default_val = node.get('default_value')
+        if default_val is not None:
+            if isinstance(default_val, str):
+                node['default_value'] = resolve_content_vars(default_val, env)
+            elif isinstance(default_val, dict):
+                # We need to deeply resolve dict string values
+                node['default_value'] = resolve_dict_strings(default_val, env)
+            elif isinstance(default_val, list):
+                node['default_value'] = resolve_list_strings(default_val, env)
         
+        # Recurse through children
+        children = node.get('children')
+        if children and isinstance(children, list):
+            substitute_env_in_default_values(children, env)
+
+def resolve_dict_strings(d, env):
+    new_d = {}
+    for k, v in d.items():
+        if isinstance(v, str):
+            new_d[k] = resolve_content_vars(v, env)
+        elif isinstance(v, dict):
+            new_d[k] = resolve_dict_strings(v, env)
+        elif isinstance(v, list):
+            new_d[k] = resolve_list_strings(v, env)
+        else:
+            new_d[k] = v
+    return new_d
+
+def resolve_list_strings(lst, env):
+    new_l = []
+    for v in lst:
+        if isinstance(v, str):
+            new_l.append(resolve_content_vars(v, env))
+        elif isinstance(v, dict):
+            new_l.append(resolve_dict_strings(v, env))
+        elif isinstance(v, list):
+            new_l.append(resolve_list_strings(v, env))
+        else:
+            new_l.append(v)
+    return new_l
     return content
 
 def load_json(path):
@@ -845,10 +887,17 @@ def generate_output_files(file_map: dict, env: dict, raw_config: dict):
                  except Exception as e:
                      print(f"Error loading/merging {s['path']}: {e}")
             
-             output_lines = schema_func(merged_nodes, config=raw_config)
-             content = "\n".join(output_lines)
-             content = content.strip() + "\n"
-             content = resolve_content_vars(content, env)
+            # Execute string substitution explicitly on original schemas and discard string replacements
+             substitute_env_in_default_values(merged_nodes, env)
+            
+             if is_ini:
+                 # It's an ini file
+                 ini_lines = generate_ini_from_schema(merged_nodes, config=raw_config)
+                 content = "\n".join(ini_lines).strip() + "\n"
+             else:
+                 yaml_lines = generate_yaml_from_schema(merged_nodes, config=raw_config)
+                 content = "\n".join(yaml_lines).strip() + "\n"
+                 
              save_file(final_output_path, content)
 
 def process_scenarios(config_path):

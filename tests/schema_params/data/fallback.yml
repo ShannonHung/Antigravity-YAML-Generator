@@ -1,0 +1,6 @@
+# ==========================================
+# test default vs regex fallback
+# ==========================================
+test_fallback:
+  has_default: i_am_default
+  no_default: i_am_fallback_regex

@@ -1,0 +1,34 @@
+{
+    "override_hint_style": "# [TEST-OVERRIDE]",
+    "senario_env_key": "TEST_ENV",
+    "top_level_spacing": 3,
+    "default_env_vars": [
+        {
+            "key": "REQUIRED_VAR",
+            "description": "A required test variable"
+        }
+    ],
+    "senarios": [
+        {
+            "value": "base",
+            "path": "tests/data",
+            "required_env_vars": [],
+            "trigger": {
+                "source": "default"
+            }
+        },
+        {
+            "value": "custom",
+            "path": "tests/data",
+            "required_env_vars": [
+                {
+                    "key": "CUSTOM_VAR",
+                    "description": "Required when custom scenario is active"
+                }
+            ],
+            "trigger": {
+                "source": "user"
+            }
+        }
+    ]
+}

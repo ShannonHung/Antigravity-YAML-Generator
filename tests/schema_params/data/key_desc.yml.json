@@ -1,0 +1,14 @@
+{
+    "key": "test_key",
+    "description": "this is a test description",
+    "multi_type": [
+        "string"
+    ],
+    "required": true,
+    "children": [],
+    "override_hint": false,
+    "regex_enable": false,
+    "regex": null,
+    "default_value": "hello_world",
+    "override_strategy": "merge"
+}

@@ -1,0 +1,35 @@
+{
+    "key": "test_env_sub",
+    "description": "test environment substitutions",
+    "multi_type": [
+        "object"
+    ],
+    "item_multi_type": [],
+    "required": true,
+    "children": [
+        {
+            "key": "sub_default",
+            "required": true,
+            "multi_type": [
+                "string"
+            ],
+            "default_value": "Hello ${TEST_USER}!",
+            "override_strategy": "merge"
+        },
+        {
+            "key": "sub_regex",
+            "required": true,
+            "multi_type": [
+                "string"
+            ],
+            "default_value": null,
+            "regex": "192.168.1.${NODE_ID}",
+            "override_strategy": "merge"
+        }
+    ],
+    "override_hint": false,
+    "regex_enable": true,
+    "regex": null,
+    "default_value": null,
+    "override_strategy": "merge"
+}

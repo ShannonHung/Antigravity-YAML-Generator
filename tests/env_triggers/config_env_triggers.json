@@ -1,0 +1,93 @@
+{
+    "override_hint_style": "# <=== [Override]",
+    "senario_env_key": "SCENARIO_TYPE",
+    "top_level_spacing": 2,
+    "default_env_vars": [],
+    "senarios": [
+        {
+            "value": "base",
+            "path": "test/base",
+            "required_env_vars": [],
+            "trigger": {
+                "source": "default"
+            }
+        },
+        {
+            "value": "p1_scenario",
+            "path": "test/p1",
+            "required_env_vars": [],
+            "priority": 1,
+            "trigger": {
+                "source": "env",
+                "logic": "and",
+                "conditions": [
+                    {
+                        "key": "TEST_TRIGGER",
+                        "regex": "^active$"
+                    }
+                ]
+            }
+        },
+        {
+            "value": "p5_scenario",
+            "path": "test/p5",
+            "required_env_vars": [
+                {
+                    "key": "P5_REQUIRED",
+                    "description": "Required var when p5 is active"
+                }
+            ],
+            "priority": 5,
+            "trigger": {
+                "source": "env",
+                "logic": "and",
+                "conditions": [
+                    {
+                        "key": "TEST_TRIGGER",
+                        "regex": "^active$"
+                    }
+                ]
+            }
+        },
+        {
+            "value": "and_logic_scenario",
+            "path": "test/and",
+            "required_env_vars": [],
+            "priority": 10,
+            "trigger": {
+                "source": "env",
+                "logic": "and",
+                "conditions": [
+                    {
+                        "key": "COND_A",
+                        "regex": "foo"
+                    },
+                    {
+                        "key": "COND_B",
+                        "regex": "bar"
+                    }
+                ]
+            }
+        },
+        {
+            "value": "or_logic_scenario",
+            "path": "test/or",
+            "required_env_vars": [],
+            "priority": 11,
+            "trigger": {
+                "source": "env",
+                "logic": "or",
+                "conditions": [
+                    {
+                        "key": "COND_C",
+                        "regex": "baz"
+                    },
+                    {
+                        "key": "COND_D",
+                        "regex": "qux"
+                    }
+                ]
+            }
+        }
+    ]
+}

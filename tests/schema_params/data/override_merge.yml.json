@@ -1,0 +1,33 @@
+{
+    "key": "test_override",
+    "description": "test override merge",
+    "multi_type": [
+        "object"
+    ],
+    "item_multi_type": [],
+    "required": true,
+    "children": [
+        {
+            "key": "a",
+            "required": true,
+            "multi_type": [
+                "string"
+            ],
+            "default_value": "apricot",
+            "override_strategy": "merge"
+        },
+        {
+            "key": "c",
+            "required": true,
+            "multi_type": [
+                "string"
+            ],
+            "default_value": "cherry",
+            "override_strategy": "merge"
+        }
+    ],
+    "override_hint": false,
+    "regex_enable": false,
+    "regex": null,
+    "override_strategy": "merge"
+}

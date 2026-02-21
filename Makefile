@@ -2,6 +2,9 @@
 gen:
 	@./generate.sh
 
+test:
+	@python -m unittest discover tests
+
 web:
 	make -j 2 backend frontend
 

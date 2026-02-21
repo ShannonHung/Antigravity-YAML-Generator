@@ -1,0 +1,36 @@
+{
+    "key": "test_fallback",
+    "description": "test default vs regex fallback",
+    "multi_type": [
+        "object"
+    ],
+    "item_multi_type": [],
+    "required": true,
+    "children": [
+        {
+            "key": "has_default",
+            "required": true,
+            "multi_type": [
+                "string"
+            ],
+            "default_value": "i_am_default",
+            "regex": "i_am_regex_but_ignored",
+            "override_strategy": "merge"
+        },
+        {
+            "key": "no_default",
+            "required": true,
+            "multi_type": [
+                "string"
+            ],
+            "default_value": null,
+            "regex": "i_am_fallback_regex",
+            "override_strategy": "merge"
+        }
+    ],
+    "override_hint": false,
+    "regex_enable": true,
+    "regex": null,
+    "default_value": null,
+    "override_strategy": "merge"
+}
