@@ -1,0 +1,61 @@
+[
+    {
+        "key": "trident_ssd",
+        "description": "should enable trident ssd",
+        "override_hint": true,
+        "multi_type": [
+            "bool"
+        ],
+        "item_multi_type": [],
+        "regex": null,
+        "regex_enable": false,
+        "children": [],
+        "required": true,
+        "override_strategy": "merge"
+    },
+    {
+        "key": "trident_ssd_object_ids",
+        "description": "ssd description",
+        "override_hint": false,
+        "multi_type": [
+            "list"
+        ],
+        "item_multi_type": [
+            "object"
+        ],
+        "regex": null,
+        "regex_enable": false,
+        "children": [
+            {
+                "key": "id",
+                "description": "should enable trident ssd object ids",
+                "override_hint": true,
+                "multi_type": [
+                    "number"
+                ],
+                "item_multi_type": [],
+                "regex": "[1|2|3]",
+                "regex_enable": true,
+                "children": [],
+                "required": true,
+                "override_strategy": "merge"
+            },
+            {
+                "key": "vip",
+                "description": "trident ssd object vip",
+                "override": true,
+                "multi_type": [
+                    "string"
+                ],
+                "item_multi_type": [],
+                "regex": "*/16$",
+                "regex_enable": true,
+                "children": [],
+                "required": true,
+                "override_strategy": "merge"
+            }
+        ],
+        "required": true,
+        "override_strategy": "merge"
+    }
+]
