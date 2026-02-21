@@ -14,15 +14,11 @@
         {
             "key": "FAB",
             "description": "This var is describe the fab of the cluster."
-        },
-        {
-            "key": "USERNAME",
-            "description": "your nt accout"
         }
     ],
     "senarios": [
         {
-            "value": "default",
+            "value": "general_cluster",
             "path": "template/scenario/default",
             "required_env_vars": [],
             "trigger": {
@@ -30,7 +26,7 @@
             }
         },
         {
-            "value": "fab200mm",
+            "value": "f200",
             "path": "template/scenario/fab200mm",
             "required_env_vars": [],
             "priority": 1,
@@ -66,13 +62,22 @@
         {
             "value": "multitenant",
             "path": "template/scenario/multitenant",
+            "required_env_vars": [],
+            "priority": 3,
+            "trigger": {
+                "source": "user"
+            }
+        },
+        {
+            "value": "example",
+            "path": "template/scenario/multitenant",
             "required_env_vars": [
                 {
-                    "key": "CILIUM_ID",
-                    "description": "We have our customize cilium id for ansible generation."
+                    "key": "EXAMPLE_VARs",
+                    "description": "This is an exmaple scenario."
                 }
             ],
-            "priority": 3,
+            "priority": 999,
             "trigger": {
                 "source": "user"
             }

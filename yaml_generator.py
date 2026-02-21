@@ -21,7 +21,7 @@ def resolve_path_vars(path_template, env):
     
     # Check if any placeholders remain
     if re.search(r"\{[A-Z0-9_]+\}", path_template):
-        print(f"Warning: Unresolved placeholders in path: {path_template}")
+        print(f"\033[93m[WARNING] Unresolved placeholders in path: {path_template}\033[0m")
     return path_template
 
 def resolve_content_vars(content, env):
@@ -38,7 +38,8 @@ def resolve_content_vars(content, env):
             
     # Strategy 2: Warn on unresolved ${...}
     if re.search(r"\$\{[A-Z0-9_]+\}", content):
-        print(f"Warning: Unresolved variable placeholders in content.")
+        unresolve_content = re.search(r"\$\{[A-Z0-9_]+\}", content).group(0)
+        print(f"\033[93m[WARNING] Unresolved variable placeholders in content {unresolve_content}.\033[0m")
         
     return content
 

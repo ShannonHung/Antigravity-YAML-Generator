@@ -6,7 +6,7 @@
             "object"
         ],
         "default_value": {
-            "ansible_user": "${USERNAME}",
+            "ansible_user": "root",
             "ansible_ssh_private_key_file": "~/.ssh/id_rsa",
             "ansible_python_interpreter": "/usr/bin/python3"
         },
@@ -18,7 +18,7 @@
                 ],
                 "regex": ".*",
                 "regex_enable": true,
-                "default_value": "${USERNAME}",
+                "default_value": "root",
                 "required": true,
                 "children": [],
                 "override_strategy": "merge"
@@ -30,6 +30,7 @@
                 ],
                 "regex": ".*",
                 "regex_enable": true,
+                "default_value": "~/.ssh/id_rsa",
                 "required": true,
                 "children": [],
                 "override_strategy": "merge"
@@ -41,6 +42,7 @@
                 ],
                 "regex": ".*",
                 "regex_enable": true,
+                "default_value": "/usr/bin/python3",
                 "required": true,
                 "children": [],
                 "override_strategy": "merge"
@@ -77,18 +79,6 @@
                         "required": true,
                         "children": [],
                         "override_strategy": "merge"
-                    },
-                    {
-                        "key": "ansible_host",
-                        "multi_type": [
-                            "ip"
-                        ],
-                        "regex": "^10\\.0\\.0\\.[0-9]+$",
-                        "default_value": "10.0.0.1",
-                        "regex_enable": true,
-                        "required": true,
-                        "children": [],
-                        "override_strategy": "merge"
                     }
                 ],
                 "required": true,
@@ -116,18 +106,6 @@
                         "required": true,
                         "children": [],
                         "override_strategy": "merge"
-                    },
-                    {
-                        "key": "ansible_host",
-                        "multi_type": [
-                            "ip"
-                        ],
-                        "regex": "^10\\.0\\.1\\.[0-9]+$",
-                        "default_value": "10.0.1.1",
-                        "regex_enable": true,
-                        "required": true,
-                        "children": [],
-                        "override_strategy": "merge"
                     }
                 ],
                 "required": true,
@@ -150,18 +128,7 @@
                             "string"
                         ],
                         "regex": "^lb-[0-9]+$",
-                        "default_value": "lb-1-${USERNAME}",
-                        "regex_enable": true,
-                        "required": true,
-                        "children": [],
-                        "override_strategy": "merge"
-                    },
-                    {
-                        "key": "ansible_host",
-                        "multi_type": [
-                            "ip"
-                        ],
-                        "regex": "^10\\.0\\.2\\.[0-9]+$",
+                        "default_value": "lb-1-root",
                         "regex_enable": true,
                         "required": true,
                         "children": [],

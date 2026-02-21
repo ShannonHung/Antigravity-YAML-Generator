@@ -35,6 +35,8 @@ The easiest way to generate files is using the interactive `make` command. It wi
   export SCENARIO_TYPE=fab200mm
   export CLUSTER_NAME=my-cluster
   export SERVICE=my-service
+  # or using line 
+  export SCENARIO_TYPE=default; export SERVICE=myservice; export CLUSTER_NAME=mycluster; export FAB=f1;
   python3 yaml_generator.py
   ```
 
