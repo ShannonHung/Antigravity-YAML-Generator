@@ -1,0 +1,10 @@
+# ==========================================
+# dns configuration
+# dns configuration
+# ==========================================
+dns:
+  # dns search domains
+  # dns search domains
+  search_domains:
+    # search domain entry
+    - item: corp.example.com

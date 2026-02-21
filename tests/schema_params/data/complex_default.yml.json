@@ -1,0 +1,75 @@
+{
+    "key": "dns",
+    "description": "dns configuration",
+    "override_hint": false,
+    "multi_type": [
+        "object"
+    ],
+    "regex_enable": false,
+    "required": true,
+    "override_strategy": "replace",
+    "children": [
+        {
+            "key": "search_domains",
+            "description": "dns search domains",
+            "override_hint": false,
+            "multi_type": [
+                "list"
+            ],
+            "item_multi_type": [
+                "object"
+            ],
+            "regex": null,
+            "regex_enable": false,
+            "required": true,
+            "override_strategy": "merge",
+            "children": [
+                {
+                    "key": "item",
+                    "description": "search domain entry",
+                    "override_hint": false,
+                    "multi_type": [
+                        "string"
+                    ],
+                    "regex": "corp.example.com|svc.cluster.local",
+                    "regex_enable": true,
+                    "required": true,
+                    "override_strategy": "merge",
+                    "children": []
+                }
+            ]
+        },
+        {
+            "key": "nameservers",
+            "description": "dns nameserver entry",
+            "override_hint": false,
+            "multi_type": [
+                "list"
+            ],
+            "item_multi_type": [
+                "object"
+            ],
+            "regex": null,
+            "regex_enable": false,
+            "required": true,
+            "override_strategy": "merge",
+            "children": [
+                {
+                    "key": "item",
+                    "description": "nameserver entry",
+                    "override_hint": false,
+                    "multi_type": [
+                        "object"
+                    ],
+                    "regex": "8.8.8.8|1.1.1.1",
+                    "regex_enable": true,
+                    "required": true,
+                    "default_value": {
+                        "ip": "100.66.1.1"
+                    },
+                    "children": []
+                }
+            ]
+        }
+    ]
+}

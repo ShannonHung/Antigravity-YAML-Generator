@@ -74,8 +74,12 @@ class TestSchemaParams(unittest.TestCase):
         # The fact that it renders nested under 'test_override:' successfully tests children recursion logic.
         self._generate_and_compare('override_base.yml.json', 'override_base.yml')
 
+    def test_multiline_description(self):
+        # 9: Ensure \n characters inside 'description' render correctly into stacked YAML comments
+        self._generate_and_compare('multiline_desc.yml.json', 'multiline_desc.yml')
+
     def test_multi_type_conflict_validation(self):
-        # 9: multi_type vs item_multi_type logic.
+        # 10: multi_type vs item_multi_type logic.
         # If multi_type has BOTH 'object' and 'list', yaml_generator throws an error and exits.
         
         invalid_node = [{

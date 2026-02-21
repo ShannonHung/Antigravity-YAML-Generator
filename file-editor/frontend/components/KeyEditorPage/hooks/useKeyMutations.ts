@@ -24,6 +24,19 @@ export function useKeyMutations(
                 } else if (types.includes('number')) {
                     finalDefaultValue = parseFloat(defaultValue);
                     if (isNaN(finalDefaultValue)) throw new Error("Invalid number");
+                } else {
+                    // Try to auto-parse if it looks like JSON array or object
+                    const trimmed = String(defaultValue).trim();
+                    if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
+                        try {
+                            finalDefaultValue = JSON.parse(trimmed);
+                        } catch (e) {
+                            // Leave as string if parsing fails
+                            finalDefaultValue = defaultValue;
+                        }
+                    } else {
+                        finalDefaultValue = defaultValue;
+                    }
                 }
             } catch (e) {
                 alert("Invalid Default Value format for selected type.");

@@ -1,9 +1,0 @@
-# ==========================================
-# cilium network cluster configuration
-# ==========================================
-cilium_network_cluster:
-  region: tw
-  # cluster virtual ip cidr
-  vip: "172.168.0.0/16"
-  # fabric variables dynamic object
-  fab_vars: "{FAB}"

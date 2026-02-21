@@ -257,7 +257,11 @@ def generate_banner(description, indent=0, width=42, comment_char="#"):
     prefix = "  " * indent
     lines = []
     lines.append(f"{prefix}{comment_char} {'=' * width}")
-    lines.append(f"{prefix}{comment_char} {description}")
+    
+    # Handle multiline descriptions
+    for desc_line in description.splitlines():
+        lines.append(f"{prefix}{comment_char} {desc_line}")
+        
     lines.append(f"{prefix}{comment_char} {'=' * width}")
     return lines
 
@@ -335,7 +339,8 @@ def generate_yaml_from_schema(nodes, indent=0, config=None):
                 banner_lines = generate_banner(description, indent=indent)
                 lines.extend(banner_lines)
             else:
-                lines.append(f"{prefix}# {description}")
+                for desc_line in description.splitlines():
+                    lines.append(f"{prefix}# {desc_line}")
         
         if indent == 0:
             is_first = False
@@ -374,17 +379,28 @@ def generate_yaml_from_schema(nodes, indent=0, config=None):
                             first = True
                             for child in children:
                                 c_lines = generate_yaml_from_schema([child], indent + 1, config) 
+                                flat_c_lines = []
+                                for cl_block in c_lines:
+                                    flat_c_lines.extend(cl_block.split('\n'))
+                                    
                                 processed_c_lines = []
-                                for j, cl in enumerate(c_lines):
+                                for j, cl in enumerate(flat_c_lines):
+                                    if not cl.strip(): continue # Skip empty lines inside the multiline block
+                                    
                                     if first and cl.strip().startswith(child['key'] + ":"):
                                         stripped = cl.lstrip()
                                         processed_c_lines.append(f"{'  ' * indent}  - {stripped}")
                                         first = False
                                     else:
                                         if not first:
-                                            processed_c_lines.append(f"{'  ' * indent}    {cl.lstrip()}")
+                                            # Indent nested properties of the list item by an extra 4 spaces
+                                            # Wait, indent is list level (e.g. 1). '  ' * 1 = 2 spaces.
+                                            # '      ' = 6 spaces. Total = 8 spaces.
+                                            processed_c_lines.append(f"{'  ' * indent}      {cl.lstrip()}")
                                         else:
-                                            processed_c_lines.append(cl)
+                                            # Comments before the item key (like # nameserver entry)
+                                            # Should align with the dash: indent + 2 spaces = 4 spaces
+                                            processed_c_lines.append(f"{'  ' * indent}  {cl.lstrip()}")
                                 lines.extend(processed_c_lines)
                          else:
                             lines.append(f"{prefix}  []")

@@ -15,9 +15,13 @@ export default function KeyValidationForm({
 
     const validateDefaultValue = (val: string) => {
         if (!val) { setDefaultValueError(null); return; }
+        const trimmed = val.trim();
         if (types.includes('object') || types.includes('list')) {
             try { JSON.parse(val); setDefaultValueError(null); }
             catch (e) { setDefaultValueError("Invalid JSON format"); }
+        } else if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
+            try { JSON.parse(val); setDefaultValueError(null); }
+            catch (e) { setDefaultValueError("Invalid literal JSON format (optional)"); }
         } else {
             setDefaultValueError(null);
         }

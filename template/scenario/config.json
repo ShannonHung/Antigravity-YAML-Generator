@@ -4,16 +4,16 @@
     "top_level_spacing": 2,
     "default_env_vars": [
         {
+            "key": "FAB",
+            "description": "This var is describe the fab of the cluster."
+        },
+        {
             "key": "SERVICE",
             "description": "This var is describe the service of the cluster."
         },
         {
             "key": "CLUSTER_NAME",
             "description": "This var is describe the name of the cluster."
-        },
-        {
-            "key": "FAB",
-            "description": "This var is describe the fab of the cluster."
         }
     ],
     "senarios": [

@@ -1,0 +1,13 @@
+# ==========================================
+# dns configuration
+# ==========================================
+dns:
+  # dns search domains
+  search_domains:
+    # search domain entry
+    - item: "corp.example.com|svc.cluster.local"
+  # dns nameserver entry
+  nameservers:
+    # nameserver entry
+    - item:
+        ip: "100.66.1.1"

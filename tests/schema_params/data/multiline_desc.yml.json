@@ -1,0 +1,43 @@
+{
+    "key": "dns",
+    "description": "dns configuration\ndns configuration",
+    "override_hint": false,
+    "multi_type": [
+        "object"
+    ],
+    "regex_enable": false,
+    "required": true,
+    "override_strategy": "merge",
+    "children": [
+        {
+            "key": "search_domains",
+            "description": "dns search domains\ndns search domains",
+            "override_hint": false,
+            "multi_type": [
+                "list"
+            ],
+            "item_multi_type": [
+                "object"
+            ],
+            "regex": null,
+            "regex_enable": false,
+            "required": true,
+            "override_strategy": "merge",
+            "children": [
+                {
+                    "key": "item",
+                    "description": "search domain entry",
+                    "override_hint": false,
+                    "multi_type": [
+                        "string"
+                    ],
+                    "regex": "corp.example.com",
+                    "regex_enable": true,
+                    "required": true,
+                    "override_strategy": "merge",
+                    "children": []
+                }
+            ]
+        }
+    ]
+}
