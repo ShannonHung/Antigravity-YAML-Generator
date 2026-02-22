@@ -68,5 +68,11 @@ class TestSchemaValidation(unittest.TestCase):
         errors = yaml_generator.validate_schema(data, path)
         self.assertTrue(any("node under INI 'aggregations' must have 'multi_type' containing 'list'" in e for e in errors))
 
+    def test_groups_missing_hostname(self):
+        path = os.path.join(self.data_dir, 'groups_missing_hostname.ini.json')
+        data = yaml_generator.load_json(path)
+        errors = yaml_generator.validate_schema(data, path)
+        self.assertTrue(any("node under INI 'groups' must contain a 'hostname' child key" in e for e in errors))
+
 if __name__ == '__main__':
     unittest.main()

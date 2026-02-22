@@ -164,6 +164,7 @@ To ensure compatibility with the INI generator, `.ini.json` files follow additio
 *   **Type Constraints**:
     *   All direct children of `aggregations` and `groups` must be declared as `multi_type: ["list"]`.
     *   All direct children of `groups` must additionally have `item_multi_type: ["object"]`.
+*   **Mandatory hostname**: Any node under `groups` that contains `children` MUST include a child with `key: "hostname"`. This ensures each host in the INI has a primary identifier.
 
 ---
 

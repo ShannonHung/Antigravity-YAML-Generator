@@ -814,6 +814,13 @@ def validate_node(node, file_path, path_context="root", is_ini=False):
             if parts[0] == "groups":
                 if not item_multi_type or "object" not in item_multi_type:
                     errors.append(f"{file_path} [{path_context}]: node under INI 'groups' must have 'item_multi_type' containing 'object'.")
+                
+                # Check for mandatory 'hostname' child if children exist
+                children = node.get('children', [])
+                if children:
+                    has_hostname = any(c.get('key') == 'hostname' for c in children)
+                    if not has_hostname:
+                        errors.append(f"{file_path} [{path_context}]: node under INI 'groups' must contain a 'hostname' child key.")
 
     if 'item_multi_type' in node and not isinstance(node.get('item_multi_type'), list):
         errors.append(f"{file_path} [{path_context}]: 'item_multi_type' must be a list.")

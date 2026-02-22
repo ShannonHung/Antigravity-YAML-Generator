@@ -1,0 +1,28 @@
+[
+    {
+        "key": "groups",
+        "multi_type": [
+            "object"
+        ],
+        "children": [
+            {
+                "key": "master",
+                "multi_type": [
+                    "list"
+                ],
+                "item_multi_type": [
+                    "object"
+                ],
+                "children": [
+                    {
+                        "key": "ansible_host",
+                        "multi_type": [
+                            "ip"
+                        ],
+                        "default_value": "192.168.0.1"
+                    }
+                ]
+            }
+        ]
+    }
+]
