@@ -427,7 +427,7 @@ def generate_yaml_from_schema(nodes: List[SchemaNode], indent=0, config=None):
                                 # 8 spaces is '  ' * (indent + 3) if indent=1.
                                 lines.append(f"{'  ' * (indent + 3)}{cl.lstrip()}")
             else:
-                 val = format_yaml_value(value, indent, 'list') if value is not None else " []"
+                 val = format_yaml_value(value if value is not None else [], indent, 'list')
                  lines.append(f"{line_content}{current_hint}{val}")
 
         elif "object" in n_multi_type:
@@ -435,7 +435,7 @@ def generate_yaml_from_schema(nodes: List[SchemaNode], indent=0, config=None):
                  lines.append(f"{line_content}{current_hint}")
                  lines.extend(generate_yaml_from_schema(n_children, indent + 1, config))
              else:
-                  val = format_yaml_value(value, indent, 'object') if value is not None else " {}"
+                  val = format_yaml_value(value if value is not None else {}, indent, 'object')
                   lines.append(f"{line_content}{current_hint}{val}")
             
         else:
@@ -472,26 +472,34 @@ def generate_ini_from_schema(nodes: List[SchemaNode], config=None):
             
         for host in hosts:
             if isinstance(host, str):
-                host_lines.append(host)
+                host_lines.append(format_yaml_value(host, -1, 'string'))
             elif isinstance(host, dict):
                 # prioritize hostname
                 primary = host.get("hostname") or (list(host.keys())[0] if host else None)
                 if not primary: continue
-                parts = [str(primary)]
+                # Apply YAML-style quoting to primary host
+                parts = [format_yaml_value(str(primary), -1, 'string')]
                 for k, v in host.items():
                     if k == "hostname" or (k == primary and "hostname" not in host): continue
-                    parts.append(f"{k}={v}")
+                    # Apply YAML-style quoting to keys and values
+                    q_k = format_yaml_value(str(k), -1, 'string')
+                    q_v = format_yaml_value(str(v), -1, 'string')
+                    parts.append(f"{q_k}={q_v}")
                 host_lines.append(" ".join(parts))
         return host_lines
 
     # 1. global_vars
     for node in nodes:
         if node.key == 'global_vars' and is_node_enabled(node):
-            lines.extend(generate_banner(node.description or "global_vars", width=42))
+            if node.description:
+                lines.extend(generate_banner(node.description, width=42))
             lines.append("[all:vars]")
             val = resolve_node_value(node)
             if isinstance(val, dict):
-                for k, v in val.items(): lines.append(f"{k}={v}")
+                for k, v in val.items(): 
+                    # Apply YAML-style quoting
+                    q_v = format_yaml_value(str(v), -1, 'string')
+                    lines.append(f"{k}={q_v}")
             lines.append("")
 
     # 2. groups
@@ -508,8 +516,8 @@ def generate_ini_from_schema(nodes: List[SchemaNode], config=None):
                 if g_schema and not is_node_enabled(g_schema): continue
                 
                 hosts = groups_val.get(gk, [])
-                desc = g_schema.description if g_schema and g_schema.description else f"{gk} nodes"
-                lines.extend(generate_banner(desc, width=42))
+                if g_schema and g_schema.description:
+                    lines.extend(generate_banner(g_schema.description, width=42))
                 hint = get_override_hint(g_schema, override_hint_marker) if g_schema else ""
                 lines.append(f"[{gk}]{hint}")
                 lines.extend(_render_hosts(hosts, g_schema.children if g_schema else []))
@@ -528,8 +536,8 @@ def generate_ini_from_schema(nodes: List[SchemaNode], config=None):
                 c_schema = schema_map.get(ak)
                 if c_schema and not is_node_enabled(c_schema): continue
                 
-                desc = c_schema.description if c_schema and c_schema.description else f"{ak} children"
-                lines.extend(generate_banner(desc, width=42))
+                if c_schema and c_schema.description:
+                    lines.extend(generate_banner(c_schema.description, width=42))
                 lines.append(f"[{ak}:children]")
                 # prioritize inner schema default_value, else outer aggr_val
                 children_groups = resolve_node_value(c_schema) if c_schema else None
