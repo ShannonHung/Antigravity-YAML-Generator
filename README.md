@@ -144,12 +144,26 @@ Priority order:
 
 ## Validation Logic
 
-Strict validation rules:
+Strict validation rules are enforced across all templates to ensure data integrity:
 
-1. Cannot mix legacy `type` with `multi_type`
-2. Must use `multi_type` array
-3. If `multi_type` contains `"list"` → `item_multi_type` required
-4. If list has `children` → `item_multi_type` must contain `"object"`
+### 1. General Structural Rules
+
+*   **Missing Attributes**: Every node MUST have a `key` and a `multi_type` array.
+*   **Legacy Fields**: Mixing legacy `type` or `item_type` with `multi_type` is forbidden.
+*   **List Consistency**:
+    *   If `multi_type` contains `"list"`, `item_multi_type` is mandatory.
+    *   If a list-type node has `children`, `item_multi_type` must contain `"object"`.
+*   **Object Consistency**: If `multi_type` is `"object"`, `item_multi_type` must be empty.
+*   **Type Conflicts**: `multi_type` cannot contain both `"object"` and `"list"`.
+
+### 2. Strict INI Rules (`.ini.json`)
+
+To ensure compatibility with the INI generator, `.ini.json` files follow additional constraints:
+
+*   **Root Key Restriction**: The root `key` must be one of: `aggregations`, `global_vars`, or `groups`. Any other key will be rejected.
+*   **Type Constraints**:
+    *   All direct children of `aggregations` and `groups` must be declared as `multi_type: ["list"]`.
+    *   All direct children of `groups` must additionally have `item_multi_type: ["object"]`.
 
 ---
 
