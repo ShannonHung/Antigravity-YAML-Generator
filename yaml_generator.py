@@ -267,6 +267,8 @@ def format_yaml_value(value, indent_level, val_type=None):
     # But careful: yaml.dump adds \n... and indenting issues.
     
     if isinstance(value, (list, dict)):
+        if not value:
+            return "[]" if isinstance(value, list) else "{}"
         s = yaml.dump(value, default_flow_style=False, width=1000)
         lines = s.splitlines()
         indented_lines = []
@@ -428,7 +430,10 @@ def generate_yaml_from_schema(nodes: List[SchemaNode], indent=0, config=None):
                                 lines.append(f"{'  ' * (indent + 3)}{cl.lstrip()}")
             else:
                  val = format_yaml_value(value if value is not None else [], indent, 'list')
-                 lines.append(f"{line_content}{current_hint}{val}")
+                 if val.startswith("\n"):
+                     lines.append(f"{line_content}{current_hint}{val}")
+                 else:
+                     lines.append(f"{line_content} {val}{current_hint}")
 
         elif "object" in n_multi_type:
              if n_children:
@@ -436,7 +441,10 @@ def generate_yaml_from_schema(nodes: List[SchemaNode], indent=0, config=None):
                  lines.extend(generate_yaml_from_schema(n_children, indent + 1, config))
              else:
                   val = format_yaml_value(value if value is not None else {}, indent, 'object')
-                  lines.append(f"{line_content}{current_hint}{val}")
+                  if val.startswith("\n"):
+                      lines.append(f"{line_content}{current_hint}{val}")
+                  else:
+                      lines.append(f"{line_content} {val}{current_hint}")
             
         else:
             effective_type = 'string'

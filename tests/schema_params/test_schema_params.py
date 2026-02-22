@@ -93,5 +93,9 @@ class TestSchemaParams(unittest.TestCase):
             
         self.assertEqual(cm.exception.code, 1, "Failed to exit when 'object' and 'list' coexist in multi_type")
 
+    def test_empty_containers(self):
+        # 11: Ensure empty objects {} and lists [] are on the same line as the key
+        self._generate_and_compare('empty_containers.yml.json', 'empty_containers.yml')
+
 if __name__ == '__main__':
     unittest.main()

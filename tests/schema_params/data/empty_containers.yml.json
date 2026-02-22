@@ -1,0 +1,33 @@
+[
+    {
+        "key": "test_empty_dict",
+        "description": "Empty dictionary should be inline",
+        "multi_type": [
+            "object"
+        ],
+        "default_value": {},
+        "override_hint": false,
+        "required": true
+    },
+    {
+        "key": "test_empty_list",
+        "description": "Empty list should be inline",
+        "multi_type": [
+            "list"
+        ],
+        "default_value": [],
+        "override_hint": false,
+        "required": true
+    },
+    {
+        "key": "test_override_empty",
+        "description": "Empty dict with override hint",
+        "multi_type": [
+            "object"
+        ],
+        "default_value": {},
+        "override_hint": true,
+        "is_override": true,
+        "required": true
+    }
+]
