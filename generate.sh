@@ -99,7 +99,7 @@ for s in config.get('senarios', []):
 
 for key, desc in vars_map.items():
     # Simple sanitization for pipe delimiter
-    clean_desc = desc.replace('|', '-')
+    clean_desc = desc.replace('|', '-').replace('\n', '\\\\n')
     print(f\"{key}|{clean_desc}\")
 " > "$TEMP_VARS"
 
@@ -112,7 +112,7 @@ while IFS='|' read -r -u 3 VAR DESC; do
     unset $VAR
 
     if [ -n "$DESC" ]; then
-        echo "Description: $DESC"
+        echo -e "Description: $DESC"
     fi
     
     while true; do

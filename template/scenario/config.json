@@ -5,7 +5,7 @@
     "default_env_vars": [
         {
             "key": "FAB",
-            "description": "This var is describe the fab of the cluster."
+            "description": "This var is describe the fab of the cluster.\n Example: fab200mm"
         },
         {
             "key": "SERVICE",
