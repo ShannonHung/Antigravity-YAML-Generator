@@ -1,0 +1,74 @@
+[
+    {
+        "key": "global_vars",
+        "multi_type": [
+            "object"
+        ],
+        "default_value": null,
+        "children": [],
+        "required": false,
+        "override_strategy": "merge",
+        "description": "global vars section e.g. [all:vars]"
+    },
+    {
+        "key": "groups",
+        "multi_type": [
+            "object"
+        ],
+        "children": [
+            {
+                "key": "master",
+                "description": "",
+                "multi_type": [
+                    "list"
+                ],
+                "item_multi_type": [
+                    "object"
+                ],
+                "required": true,
+                "children": [
+                    {
+                        "key": "ansible_host",
+                        "description": "",
+                        "multi_type": [
+                            "ip"
+                        ],
+                        "required": true,
+                        "children": [],
+                        "override_hint": false,
+                        "regex_enable": false,
+                        "default_value": "192.168.0.1"
+                    },
+                    {
+                        "key": "hostname",
+                        "description": "",
+                        "multi_type": [
+                            "string"
+                        ],
+                        "required": true,
+                        "children": [],
+                        "override_hint": false,
+                        "regex_enable": false,
+                        "default_value": "master-001"
+                    }
+                ]
+            }
+        ],
+        "required": true,
+        "description": "groups section e.g.[nodes]",
+        "override_hint": false,
+        "regex_enable": false
+    },
+    {
+        "key": "aggregations",
+        "multi_type": [
+            "object"
+        ],
+        "default_value": null,
+        "children": [],
+        "required": false,
+        "description": "aggregations section e.g. [nodes:children]",
+        "override_hint": false,
+        "regex_enable": false
+    }
+]

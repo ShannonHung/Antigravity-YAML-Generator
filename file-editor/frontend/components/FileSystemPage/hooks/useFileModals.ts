@@ -28,7 +28,38 @@ export function useFileModals(activeFolderPath: string, refresh: () => void) {
         try {
             const filePath = activeFolderPath === '/' ? `/${newItemName}` : `${activeFolderPath}/${newItemName}`;
             let content = '';
-            if (newItemName.endsWith('.yml.json') || newItemName.endsWith('.ini.json')) {
+            if (newItemName.endsWith('.ini.yml') || newItemName.endsWith('.ini.json')) {
+                content = JSON.stringify([
+                    {
+                        "key": "global_vars",
+                        "multi_type": ["object"],
+                        "default_value": null,
+                        "children": [],
+                        "required": false,
+                        "override_strategy": "merge",
+                        "description": "global vars section e.g. [all:vars]"
+                    },
+                    {
+                        "key": "groups",
+                        "multi_type": ["object"],
+                        "children": [],
+                        "required": true,
+                        "default_value": null,
+                        "override_strategy": "merge",
+                        "description": "groups section e.g.[nodes]"
+                    },
+                    {
+                        "key": "aggregations",
+                        "multi_type": ["object"],
+                        "default_value": null,
+                        "children": [],
+                        "required": false,
+                        "description": "aggregations section e.g. [nodes:children]",
+                        "override_hint": false,
+                        "regex_enable": false
+                    }
+                ], null, 4);
+            } else if (newItemName.endsWith('.yml.json')) {
                 content = '[]';
             }
             await api.createFile(filePath, content);

@@ -1,0 +1,36 @@
+[
+    {
+        "key": "global_vars",
+        "multi_type": [
+            "object"
+        ],
+        "default_value": null,
+        "children": [],
+        "required": false,
+        "override_strategy": "merge",
+        "description": "global vars section e.g. [all:vars]"
+    },
+    {
+        "key": "groups",
+        "multi_type": [
+            "object"
+        ],
+        "children": [],
+        "required": true,
+        "default_value": null,
+        "override_strategy": "merge",
+        "description": "groups section e.g.[nodes]"
+    },
+    {
+        "key": "aggregations",
+        "multi_type": [
+            "object"
+        ],
+        "default_value": null,
+        "children": [],
+        "required": false,
+        "description": "aggregations section e.g. [nodes:children]",
+        "override_hint": false,
+        "regex_enable": false
+    }
+]
