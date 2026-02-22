@@ -1,0 +1,30 @@
+{
+    "override_hint_style": "<=== [Override]",
+    "senario_env_key": "SCENARIO_TYPE",
+    "top_level_spacing": 2,
+    "scenarios": [
+        {
+            "name": "default",
+            "source": "default",
+            "priority": 9999,
+            "trigger": {
+                "logic": "AND",
+                "conditions": []
+            }
+        },
+        {
+            "name": "tvm",
+            "source": "env",
+            "priority": 50,
+            "trigger": {
+                "logic": "AND",
+                "conditions": [
+                    {
+                        "key": "SCENARIO_TYPE",
+                        "regex": "^tvm$"
+                    }
+                ]
+            }
+        }
+    ]
+}

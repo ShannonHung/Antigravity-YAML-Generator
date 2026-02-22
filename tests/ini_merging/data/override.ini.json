@@ -1,0 +1,57 @@
+[
+    {
+        "key": "global_vars",
+        "required": true,
+        "default_value": {
+            "ansible_user": "tvm_user"
+        },
+        "children": [
+            {
+                "key": "ansible_user",
+                "default_value": "tvm_user",
+                "required": true
+            }
+        ]
+    },
+    {
+        "key": "groups",
+        "children": [
+            {
+                "key": "master",
+                "override_hint": true,
+                "children": [
+                    {
+                        "key": "hostname",
+                        "default_value": "master-tvm"
+                    },
+                    {
+                        "key": "extra_flag",
+                        "multi_type": [
+                            "string"
+                        ],
+                        "default_value": "tvm-flag",
+                        "required": true,
+                        "override_strategy": "merge"
+                    }
+                ]
+            },
+            {
+                "key": "worker",
+                "description": "Replaced worker nodes",
+                "override_hint": true,
+                "override_strategy": "replace",
+                "children": [
+                    {
+                        "key": "hostname",
+                        "multi_type": [
+                            "string"
+                        ],
+                        "default_value": "worker-tvm-replaced",
+                        "required": true,
+                        "override_strategy": "merge"
+                    }
+                ]
+            }
+        ]
+    }
+]

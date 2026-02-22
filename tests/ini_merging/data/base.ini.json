@@ -1,0 +1,81 @@
+[
+    {
+        "key": "global_vars",
+        "description": "Base global vars",
+        "multi_type": [
+            "object"
+        ],
+        "default_value": {
+            "ansible_user": "root"
+        },
+        "children": [
+            {
+                "key": "ansible_user",
+                "multi_type": [
+                    "string"
+                ],
+                "default_value": "root",
+                "required": true,
+                "override_strategy": "merge"
+            }
+        ],
+        "required": true,
+        "override_strategy": "merge"
+    },
+    {
+        "key": "groups",
+        "multi_type": [
+            "object"
+        ],
+        "children": [
+            {
+                "key": "master",
+                "multi_type": [
+                    "list"
+                ],
+                "item_multi_type": [
+                    "object"
+                ],
+                "description": "Base master nodes",
+                "children": [
+                    {
+                        "key": "hostname",
+                        "multi_type": [
+                            "string"
+                        ],
+                        "default_value": "master-base",
+                        "required": true,
+                        "override_strategy": "merge"
+                    }
+                ],
+                "required": true,
+                "override_strategy": "merge"
+            },
+            {
+                "key": "worker",
+                "multi_type": [
+                    "list"
+                ],
+                "item_multi_type": [
+                    "object"
+                ],
+                "description": "Base worker nodes (will be replaced)",
+                "children": [
+                    {
+                        "key": "hostname",
+                        "multi_type": [
+                            "string"
+                        ],
+                        "default_value": "worker-base",
+                        "required": true,
+                        "override_strategy": "merge"
+                    }
+                ],
+                "required": true,
+                "override_strategy": "merge"
+            }
+        ],
+        "required": true,
+        "override_strategy": "merge"
+    }
+]

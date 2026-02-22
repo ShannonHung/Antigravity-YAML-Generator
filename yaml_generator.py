@@ -556,34 +556,43 @@ def generate_ini_from_schema(nodes, config=None):
                     lines.append("")
 
     # 3. aggregations -> [group:children]
+    # 3. aggregations -> [group:children]
     for node in nodes:
         if not is_node_enabled(node): continue
         if node.get('key') == 'aggregations':
-            # Parent default_value (fallback if child logic not used, but prompt says use child)
-            # Actually, the structure is: aggregations -> children (list of groups)
-            # We iterate children to find the group definition.
-            
+            aggr_val = resolve_node_value(node) or {}
             children_schema = node.get('children', [])
             
-            for child in children_schema:
-                # Check deprecation for the child aggregation node
-                if not is_node_enabled(child): continue
+            schema_map = {c['key']: c for c in children_schema}
+            
+            # Use ordered keys from children_schema first, then append any extras from default_value
+            ordered_aggr_names = [c['key'] for c in children_schema]
+            if isinstance(aggr_val, dict):
+                for g in aggr_val.keys():
+                    if g not in ordered_aggr_names:
+                        ordered_aggr_names.append(g)
+            
+            for group_name in ordered_aggr_names:
+                c_schema = schema_map.get(group_name, {})
                 
-                group_name = child.get('key')
-                if not group_name: continue
+                if c_schema and not is_node_enabled(c_schema):
+                    continue
+                    
+                desc = c_schema.get('description', f"{group_name} children")
                 
-                desc = child.get('description', f"{group_name} children")
-                
-                # Resolve value from CHILD node
-                # Expected value is a list of strings (children groups)
-                child_val = resolve_node_value(child)
-                
+                # Prioritize schema value, fallback to parent's default_value
+                children_groups = resolve_node_value(c_schema)
+                if not children_groups and isinstance(aggr_val, dict):
+                    children_groups = aggr_val.get(group_name, [])
+                    
                 lines.extend(generate_banner(desc, width=42))
                 lines.append(f"[{group_name}:children]")
                 
-                if isinstance(child_val, list):
-                    for item in child_val:
+                if isinstance(children_groups, list):
+                    for item in children_groups:
                          lines.append(str(item))
+                elif isinstance(children_groups, str) and children_groups:
+                    lines.append(children_groups)
                 lines.append("")
     
     return lines

@@ -1,0 +1,39 @@
+{
+    "key": "global_vars",
+    "description": "all:vars section",
+    "multi_type": [
+        "object"
+    ],
+    "default_value": {
+        "ansible_user": "root",
+        "ansible_ssh_private_key_file": "~/.ssh/id_rsa"
+    },
+    "children": [
+        {
+            "key": "ansible_user",
+            "multi_type": [
+                "string"
+            ],
+            "regex": ".*",
+            "regex_enable": true,
+            "default_value": "root",
+            "required": true,
+            "children": [],
+            "override_strategy": "merge"
+        },
+        {
+            "key": "ansible_ssh_private_key_file",
+            "multi_type": [
+                "string"
+            ],
+            "regex": ".*",
+            "regex_enable": true,
+            "default_value": "~/.ssh/id_rsa",
+            "required": true,
+            "children": [],
+            "override_strategy": "merge"
+        }
+    ],
+    "required": true,
+    "override_strategy": "merge"
+}

@@ -136,7 +136,7 @@
                     }
                 ],
                 "required": true,
-                "override_strategy": "merge"
+                "regex_enable": false
             }
         ],
         "required": true,
@@ -175,9 +175,30 @@
                 "required": true,
                 "children": [],
                 "override_strategy": "merge"
+            },
+            {
+                "key": "worker-nodes",
+                "description": "worker nodes",
+                "multi_type": [
+                    "list"
+                ],
+                "item_multi_type": [
+                    "string"
+                ],
+                "regex": "^(worker|l4lb)$",
+                "regex_enable": true,
+                "default_value": [
+                    "worker",
+                    "l4lb"
+                ],
+                "required": true,
+                "children": [],
+                "override_strategy": "merge"
             }
         ],
         "required": true,
-        "override_strategy": "merge"
+        "description": "[k8s-nodes:children]",
+        "override_hint": false,
+        "regex_enable": false
     }
 ]

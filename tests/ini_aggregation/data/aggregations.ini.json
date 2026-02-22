@@ -1,0 +1,59 @@
+{
+    "key": "aggregations",
+    "multi_type": [
+        "object"
+    ],
+    "default_value": {
+        "k8s-nodes": [
+            "master",
+            "worker",
+            "l4lb"
+        ]
+    },
+    "children": [
+        {
+            "key": "k8s-nodes",
+            "description": "k8s nodes",
+            "multi_type": [
+                "list"
+            ],
+            "item_multi_type": [
+                "string"
+            ],
+            "regex": "^(master|worker|l4lb)$",
+            "regex_enable": true,
+            "default_value": [
+                "master",
+                "worker",
+                "l4lb",
+                "hi"
+            ],
+            "required": true,
+            "children": [],
+            "override_strategy": "merge"
+        },
+        {
+            "key": "worker-nodes",
+            "description": "worker nodes",
+            "multi_type": [
+                "list"
+            ],
+            "item_multi_type": [
+                "string"
+            ],
+            "regex": "^(worker|l4lb)$",
+            "regex_enable": true,
+            "default_value": [
+                "worker",
+                "l4lb"
+            ],
+            "required": true,
+            "children": [],
+            "override_strategy": "merge"
+        }
+    ],
+    "required": true,
+    "description": "[k8s-nodes:children]",
+    "override_hint": false,
+    "regex_enable": false
+}

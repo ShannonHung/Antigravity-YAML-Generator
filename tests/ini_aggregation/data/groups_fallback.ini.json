@@ -1,0 +1,48 @@
+{
+    "key": "groups",
+    "multi_type": [
+        "object"
+    ],
+    "children": [
+        {
+            "key": "worker",
+            "multi_type": [
+                "list"
+            ],
+            "item_multi_type": [
+                "object"
+            ],
+            "description": "worker nodes",
+            "override_hint": false,
+            "children": [
+                {
+                    "key": "hostname",
+                    "multi_type": [
+                        "string"
+                    ],
+                    "regex": "^worker-[0-9]+$",
+                    "default_value": "worker-1",
+                    "regex_enable": true,
+                    "required": true,
+                    "children": [],
+                    "override_strategy": "merge"
+                },
+                {
+                    "key": "ansible_host",
+                    "multi_type": [
+                        "ip"
+                    ],
+                    "regex": "^10\\.0\\.0\\.[0-9]+$",
+                    "regex_enable": true,
+                    "required": true,
+                    "children": [],
+                    "override_strategy": "merge"
+                }
+            ],
+            "required": true,
+            "override_strategy": "merge"
+        }
+    ],
+    "required": true,
+    "override_strategy": "merge"
+}
