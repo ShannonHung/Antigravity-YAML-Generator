@@ -1,0 +1,12 @@
+[
+    {
+        "key": "conflict_node",
+        "multi_type": [
+            "list",
+            "object"
+        ],
+        "item_multi_type": [
+            "string"
+        ]
+    }
+]

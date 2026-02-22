@@ -1,0 +1,19 @@
+[
+    {
+        "key": "groups",
+        "multi_type": [
+            "object"
+        ],
+        "children": [
+            {
+                "key": "master",
+                "multi_type": [
+                    "object"
+                ],
+                "item_multi_type": [
+                    "object"
+                ]
+            }
+        ]
+    }
+]

@@ -5,6 +5,11 @@
         "default_value": "${FAB}",
         "override_hint": false,
         "required": true,
-        "override_strategy": "merge"
+        "override_strategy": "merge",
+        "multi_type": [
+            "string"
+        ],
+        "regex": "${FAB}",
+        "regex_enable": true
     }
 ]

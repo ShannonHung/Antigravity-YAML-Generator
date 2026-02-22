@@ -1,0 +1,16 @@
+[
+    {
+        "key": "list_no_item_type",
+        "multi_type": [
+            "list"
+        ],
+        "children": [
+            {
+                "key": "child",
+                "multi_type": [
+                    "string"
+                ]
+            }
+        ]
+    }
+]

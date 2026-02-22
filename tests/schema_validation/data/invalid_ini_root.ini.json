@@ -1,0 +1,9 @@
+[
+    {
+        "key": "invalid_root",
+        "description": "Invalid root key for INI",
+        "multi_type": [
+            "object"
+        ]
+    }
+]

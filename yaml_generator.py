@@ -757,41 +757,93 @@ def validate_scenario_templates(active_scenarios: List[ScenarioConfig]):
             
     validation_errors = []
     
-    def validate_node(node, file_path, path_context="root"):
-        if 'type' in node:
-            validation_errors.append(f"{file_path} [{path_context}]: legacy 'type' field found. Use 'multi_type'.")
-        if 'item_type' in node:
-            validation_errors.append(f"{file_path} [{path_context}]: legacy 'item_type' field found. Use 'item_multi_type'.")
-            
-        multi_type = node.get('multi_type')
-        item_multi_type = node.get('item_multi_type', [])
+def validate_node(node, file_path, path_context="root", is_ini=False):
+    """
+    Validate a single schema node and its children recursively.
+    Returns a list of error strings.
+    """
+    errors = []
+    key = node.get('key')
+    
+    if not key:
+        errors.append(f"{file_path} [{path_context}]: missing 'key' attribute.")
+    
+    # INI specific root key validation
+    if is_ini and "." not in path_context:
+        allowed_ini_roots = ['aggregations', 'global_vars', 'groups']
+        if key not in allowed_ini_roots:
+            errors.append(f"{file_path} [{path_context}]: invalid INI root key '{key}'. Must be one of {allowed_ini_roots}.")
+
+    if 'type' in node:
+        errors.append(f"{file_path} [{path_context}]: legacy 'type' field found. Use 'multi_type'.")
+    if 'item_type' in node:
+        errors.append(f"{file_path} [{path_context}]: legacy 'item_type' field found. Use 'item_multi_type'.")
         
-        if multi_type is not None:
-            if not isinstance(multi_type, list):
-                validation_errors.append(f"{file_path} [{path_context}]: 'multi_type' must be a list.")
-            else:
-                 if "object" in multi_type and "list" in multi_type:
-                     validation_errors.append(f"{file_path} [{path_context}]: 'multi_type' cannot contain both 'object' and 'list'.")
-                 
-                 if "list" in multi_type:
-                     if not item_multi_type:
-                         validation_errors.append(f"{file_path} [{path_context}]: 'multi_type' contains 'list' but 'item_multi_type' is empty.")
-                     if node.get('children') and "object" not in item_multi_type:
-                          validation_errors.append(f"{file_path} [{path_context}]: 'multi_type' contains 'list' and has children, so 'item_multi_type' must contain 'object'.")
-                 
-                 if "object" in multi_type:
-                     if item_multi_type:
-                         validation_errors.append(f"{file_path} [{path_context}]: 'multi_type' contains 'object' but 'item_multi_type' is not empty.")
-                         
-                 if "list" not in multi_type and item_multi_type:
-                      validation_errors.append(f"{file_path} [{path_context}]: 'multi_type' does not contain 'list' but 'item_multi_type' is set.")
+    multi_type = node.get('multi_type')
+    item_multi_type = node.get('item_multi_type', [])
+    
+    if multi_type is None:
+        errors.append(f"{file_path} [{path_context}]: missing 'multi_type' attribute.")
+    else:
+        if not isinstance(multi_type, list):
+            errors.append(f"{file_path} [{path_context}]: 'multi_type' must be a list.")
+        else:
+             if "object" in multi_type and "list" in multi_type:
+                 errors.append(f"{file_path} [{path_context}]: 'multi_type' cannot contain both 'object' and 'list'.")
+             
+             if "list" in multi_type:
+                 if not item_multi_type:
+                     errors.append(f"{file_path} [{path_context}]: 'multi_type' contains 'list' but 'item_multi_type' is empty.")
+                 if node.get('children') and "object" not in item_multi_type:
+                      errors.append(f"{file_path} [{path_context}]: 'multi_type' contains 'list' and has children, so 'item_multi_type' must contain 'object'.")
+             
+             if "object" in multi_type:
+                 if item_multi_type:
+                     errors.append(f"{file_path} [{path_context}]: 'multi_type' contains 'object' but 'item_multi_type' is not empty.")
+                     
+             if "list" not in multi_type and item_multi_type:
+                  errors.append(f"{file_path} [{path_context}]: 'multi_type' does not contain 'list' but 'item_multi_type' is set.")
 
-        if 'item_multi_type' in node and not isinstance(node.get('item_multi_type'), list):
-            validation_errors.append(f"{file_path} [{path_context}]: 'item_multi_type' must be a list.")
+    # INI specific child type validation
+    if is_ini:
+        parts = path_context.split('.')
+        if len(parts) == 2 and parts[0] in ['aggregations', 'groups']:
+            if not multi_type or "list" not in multi_type:
+                errors.append(f"{file_path} [{path_context}]: node under INI '{parts[0]}' must have 'multi_type' containing 'list'.")
+            
+            if parts[0] == "groups":
+                if not item_multi_type or "object" not in item_multi_type:
+                    errors.append(f"{file_path} [{path_context}]: node under INI 'groups' must have 'item_multi_type' containing 'object'.")
 
-        for child in node.get('children', []):
-            child_key = child.get('key', 'unknown')
-            validate_node(child, file_path, f"{path_context}.{child_key}")
+    if 'item_multi_type' in node and not isinstance(node.get('item_multi_type'), list):
+        errors.append(f"{file_path} [{path_context}]: 'item_multi_type' must be a list.")
+
+    for child in node.get('children', []):
+        child_key = child.get('key', 'unknown')
+        errors.extend(validate_node(child, file_path, f"{path_context}.{child_key}", is_ini))
+    
+    return errors
+
+def validate_schema(data, file_path="schema.json"):
+    """
+    Validate a full schema (can be a list of nodes or a single node).
+    Returns a list of error strings.
+    """
+    errors = []
+    is_ini = file_path.endswith('.ini.json')
+    nodes_to_check = data if isinstance(data, list) else [data]
+    for node in nodes_to_check:
+        key = node.get('key', 'unknown')
+        errors.extend(validate_node(node, file_path, key, is_ini))
+    return errors
+
+def validate_scenario_templates(active_scenarios: List[ScenarioConfig]):
+    validation_dirs = set()
+    for sc in active_scenarios:
+        if sc.path and os.path.exists(sc.path):
+            validation_dirs.add(sc.path)
+            
+    validation_errors = []
 
     for search_dir in validation_dirs:
         for dirpath, _, filenames in os.walk(search_dir):
@@ -802,11 +854,7 @@ def validate_scenario_templates(active_scenarios: List[ScenarioConfig]):
                         with open(path, 'r') as jf:
                             data = json.load(jf)
                             
-                        nodes_to_check = data if isinstance(data, list) else [data]
-                            
-                        for node in nodes_to_check:
-                            key = node.get('key', 'root')
-                            validate_node(node, path, key)
+                        validation_errors.extend(validate_schema(data, path))
                             
                     except json.JSONDecodeError as e:
                         validation_errors.append(f"{path}: Invalid JSON - {e}")

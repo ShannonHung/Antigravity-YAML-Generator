@@ -1,0 +1,11 @@
+[
+    {
+        "key": "object_with_item_type",
+        "multi_type": [
+            "object"
+        ],
+        "item_multi_type": [
+            "string"
+        ]
+    }
+]

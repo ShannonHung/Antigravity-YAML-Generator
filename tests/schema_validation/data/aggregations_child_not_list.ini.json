@@ -1,0 +1,16 @@
+[
+    {
+        "key": "aggregations",
+        "multi_type": [
+            "object"
+        ],
+        "children": [
+            {
+                "key": "nodes",
+                "multi_type": [
+                    "string"
+                ]
+            }
+        ]
+    }
+]
