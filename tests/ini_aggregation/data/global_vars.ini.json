@@ -1,6 +1,6 @@
 {
     "key": "global_vars",
-    "description": "all:vars section",
+    "description": "# all:vars section",
     "multi_type": [
         "object"
     ],

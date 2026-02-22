@@ -1,6 +1,4 @@
-# ==========================================
 # dns configuration
-# ==========================================
 dns:
   # dns search domains
   search_domains:

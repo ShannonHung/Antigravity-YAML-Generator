@@ -37,7 +37,7 @@
             },
             {
                 "key": "worker",
-                "description": "Replaced worker nodes",
+                "description": "# Replaced worker nodes",
                 "override_hint": true,
                 "override_strategy": "replace",
                 "children": [

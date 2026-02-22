@@ -393,8 +393,13 @@ def generate_yaml_from_schema(nodes: List[SchemaNode], indent=0, config=None):
         n_children = getattr(node, 'children', []) if not isinstance(node, dict) else node.get('children', [])
 
         if n_desc:
-            if indent == 0:
-                lines.extend(generate_banner(n_desc, indent=indent))
+            is_banner_trigger = n_desc.startswith("#")
+            if is_banner_trigger:
+                # Strip leading '#' and one space if present
+                clean_desc = n_desc[1:]
+                if clean_desc.startswith(" "):
+                    clean_desc = clean_desc[1:]
+                lines.extend(generate_banner(clean_desc, indent=indent))
             else:
                 for desc_line in n_desc.splitlines():
                     lines.append(f"{prefix}# {desc_line}")
@@ -516,7 +521,13 @@ def generate_ini_from_schema(nodes: List[SchemaNode], config=None):
     for node in nodes:
         if node.key == 'global_vars' and is_node_enabled(node):
             if node.description:
-                lines.extend(generate_banner(node.description, width=42))
+                if node.description.startswith("#"):
+                    clean_desc = node.description[1:]
+                    if clean_desc.startswith(" "): clean_desc = clean_desc[1:]
+                    lines.extend(generate_banner(clean_desc, width=42))
+                else:
+                    for desc_line in node.description.splitlines():
+                        lines.append(f"; {desc_line}")
             lines.append("[all:vars]")
             val = resolve_node_value(node)
             if isinstance(val, dict):
@@ -541,7 +552,13 @@ def generate_ini_from_schema(nodes: List[SchemaNode], config=None):
                 
                 hosts = groups_val.get(gk, [])
                 if g_schema and g_schema.description:
-                    lines.extend(generate_banner(g_schema.description, width=42))
+                    if g_schema.description.startswith("#"):
+                        clean_desc = g_schema.description[1:]
+                        if clean_desc.startswith(" "): clean_desc = clean_desc[1:]
+                        lines.extend(generate_banner(clean_desc, width=42))
+                    else:
+                        for desc_line in g_schema.description.splitlines():
+                            lines.append(f"; {desc_line}")
                 hint = get_override_hint(g_schema, override_hint_marker) if g_schema else ""
                 lines.append(f"[{gk}]{hint}")
                 lines.extend(_render_hosts(hosts, g_schema.children if g_schema else []))
@@ -561,7 +578,13 @@ def generate_ini_from_schema(nodes: List[SchemaNode], config=None):
                 if c_schema and not is_node_enabled(c_schema): continue
                 
                 if c_schema and c_schema.description:
-                    lines.extend(generate_banner(c_schema.description, width=42))
+                    if c_schema.description.startswith("#"):
+                        clean_desc = c_schema.description[1:]
+                        if clean_desc.startswith(" "): clean_desc = clean_desc[1:]
+                        lines.extend(generate_banner(clean_desc, width=42))
+                    else:
+                        for desc_line in c_schema.description.splitlines():
+                            lines.append(f"; {desc_line}")
                 lines.append(f"[{ak}:children]")
                 # prioritize inner schema default_value, else outer aggr_val
                 children_groups = resolve_node_value(c_schema) if c_schema else None

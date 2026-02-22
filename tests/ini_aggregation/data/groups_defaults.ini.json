@@ -20,7 +20,7 @@
             "item_multi_type": [
                 "object"
             ],
-            "description": "master nodes",
+            "description": "# master nodes",
             "override_hint": false,
             "children": [
                 {

@@ -1,7 +1,7 @@
 [
     {
         "key": "global_vars",
-        "description": "Base global vars",
+        "description": "# Base global vars",
         "multi_type": [
             "object"
         ],
@@ -36,7 +36,7 @@
                 "item_multi_type": [
                     "object"
                 ],
-                "description": "Base master nodes",
+                "description": "# Base master nodes",
                 "children": [
                     {
                         "key": "hostname",
@@ -59,7 +59,7 @@
                 "item_multi_type": [
                     "object"
                 ],
-                "description": "Base worker nodes (will be replaced)",
+                "description": "# Base worker nodes (will be replaced)",
                 "children": [
                     {
                         "key": "hostname",

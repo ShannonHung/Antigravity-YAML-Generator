@@ -12,7 +12,7 @@
             "item_multi_type": [
                 "object"
             ],
-            "description": "worker nodes",
+            "description": "# worker nodes",
             "override_hint": false,
             "children": [
                 {

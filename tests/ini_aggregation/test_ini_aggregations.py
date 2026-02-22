@@ -48,5 +48,9 @@ class TestIniAggregations(unittest.TestCase):
         # Verify group lists print mapping to nested children nodes explicitly merging regex or defaults when absent
         self._generate_and_compare('groups_fallback.ini.json', 'groups_fallback.ini')
 
+    def test_banner_multiline(self):
+        # Ensure multi-line banners are triggered by # prefix and work with \n in INI
+        self._generate_and_compare('banner_multiline.ini.json', 'banner_multiline.ini')
+
 if __name__ == '__main__':
     unittest.main()

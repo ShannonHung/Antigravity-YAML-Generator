@@ -1,0 +1,20 @@
+[
+    {
+        "key": "banner_single",
+        "description": "# Single line banner",
+        "default_value": "value1",
+        "required": true
+    },
+    {
+        "key": "banner_multi",
+        "description": "# First line\nSecond line",
+        "default_value": "value2",
+        "required": true
+    },
+    {
+        "key": "simple_comment",
+        "description": "Just a standard comment\nWith two lines",
+        "default_value": "value3",
+        "required": true
+    }
+]

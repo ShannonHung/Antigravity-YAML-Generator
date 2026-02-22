@@ -13,7 +13,7 @@
     "children": [
         {
             "key": "k8s-nodes",
-            "description": "k8s nodes",
+            "description": "# k8s nodes",
             "multi_type": [
                 "list"
             ],
@@ -34,7 +34,7 @@
         },
         {
             "key": "worker-nodes",
-            "description": "worker nodes",
+            "description": "# worker nodes",
             "multi_type": [
                 "list"
             ],

@@ -1,0 +1,16 @@
+# ==========================================
+# Single line banner
+# ==========================================
+banner_single: value1
+
+
+# ==========================================
+# First line
+# Second line
+# ==========================================
+banner_multi: value2
+
+
+# Just a standard comment
+# With two lines
+simple_comment: value3

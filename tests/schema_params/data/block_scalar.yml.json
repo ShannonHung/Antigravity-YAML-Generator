@@ -1,7 +1,7 @@
 [
     {
         "key": "test_certificate",
-        "description": "Multi-line string should use block scalar |",
+        "description": "# Multi-line string should use block scalar |",
         "multi_type": [
             "string"
         ],
@@ -11,7 +11,7 @@
     },
     {
         "key": "test_ov_cert",
-        "description": "Multi-line string with override hint",
+        "description": "# Multi-line string with override hint",
         "multi_type": [
             "string"
         ],
@@ -22,7 +22,7 @@
     },
     {
         "key": "ca.crt",
-        "description": "User requested certificate example",
+        "description": "# User requested certificate example",
         "multi_type": [
             "string"
         ],

@@ -1,7 +1,7 @@
 [
     {
         "key": "test_empty_dict",
-        "description": "Empty dictionary should be inline",
+        "description": "# Empty dictionary should be inline",
         "multi_type": [
             "object"
         ],
@@ -11,7 +11,7 @@
     },
     {
         "key": "test_empty_list",
-        "description": "Empty list should be inline",
+        "description": "# Empty list should be inline",
         "multi_type": [
             "list"
         ],
@@ -21,7 +21,7 @@
     },
     {
         "key": "test_override_empty",
-        "description": "Empty dict with override hint",
+        "description": "# Empty dict with override hint",
         "multi_type": [
             "object"
         ],

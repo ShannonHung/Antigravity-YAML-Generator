@@ -146,6 +146,24 @@ Priority order:
 
 ---
 
+### 7. Description & Banner Comments
+
+The generator supports both concise comments and decorative banners for documentation.
+
+*   **Standard Comments**: Descriptions without a prefix are rendered as simple single-line comments.
+    *   **YAML**: `# comment`
+    *   **INI**: `# comment`
+*   **Optional Banners**: Triggered by starting the `description` with a `#` (e.g., `"description": "# My Section"`).
+    *   Creates a boxed banner:
+        ```yaml
+        # ==========================================
+        # My Section
+        # ==========================================
+        ```
+*   **Multi-line Support**: Use `\n` in the description field to create multi-line comments or multi-line banners.
+
+---
+
 ## Validation Logic
 
 Strict validation rules are enforced across all templates to ensure data integrity:

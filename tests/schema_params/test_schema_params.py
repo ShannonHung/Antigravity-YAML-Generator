@@ -101,5 +101,9 @@ class TestSchemaParams(unittest.TestCase):
         # 12: Ensure multi-line strings use block scalar | and correct hint placement
         self._generate_and_compare('block_scalar.yml.json', 'block_scalar.yml')
 
+    def test_banner_multiline(self):
+        # 13: Ensure multi-line banners are triggered by # prefix and work with \n
+        self._generate_and_compare('banner_multiline.yml.json', 'banner_multiline.yml')
+
 if __name__ == '__main__':
     unittest.main()

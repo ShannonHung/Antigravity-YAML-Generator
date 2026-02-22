@@ -1,0 +1,12 @@
+{
+    "key": "global_vars",
+    "description": "# Multi-line\nBanner",
+    "multi_type": [
+        "object"
+    ],
+    "default_value": {
+        "key1": "val1"
+    },
+    "children": [],
+    "required": true
+}
