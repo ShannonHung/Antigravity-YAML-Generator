@@ -203,7 +203,7 @@ export default function AddKeyModal({ nodes, onClose, onSave }: any) {
                     <div className="relative z-10">
                         <InfoLabel label="Type" tooltip="The data type(s) allowed for this key." placement="right" />
                         <div className={clsx(
-                            "min-h-[38px] transition-all bg-white dark:bg-zinc-800 border rounded-md flex items-center flex-wrap px-1.5 focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500",
+                            "transition-all bg-white dark:bg-zinc-800 border rounded-md flex items-center flex-wrap px-2 py-1 focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500",
                             typeError ? "border-red-500" : "border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600"
                         )}>
                             <Typeahead
@@ -223,12 +223,12 @@ export default function AddKeyModal({ nodes, onClose, onSave }: any) {
                                 placeholder={types.length === 0 ? "Search types..." : ""}
                                 className="flex-1"
                                 inputProps={{
-                                    className: 'bg-transparent border-none outline-none text-[13px] py-1.5 px-1 w-full text-zinc-900 dark:text-zinc-100 min-w-[80px]',
+                                    className: 'bg-transparent border-none outline-none text-[13px] py-1 px-2 w-full text-zinc-900 dark:text-zinc-100 min-w-[100px]',
                                 }}
                                 renderToken={(option, props, index) => (
-                                    <div key={index} className="bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-300 text-[11px] px-2 py-0.5 rounded-md flex items-center font-mono border border-blue-100 dark:border-blue-500/20 m-0.5">
+                                    <div key={index} className="bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-300 text-[11px] px-2.5 py-1 rounded-md flex items-center font-mono border border-blue-100 dark:border-blue-500/20 m-1 shadow-sm">
                                         {option as string}
-                                        <button onClick={(e) => { e.stopPropagation(); props.onRemove && props.onRemove(option); }} className="ml-1.5 hover:text-blue-900 dark:hover:text-blue-100"><X className="w-3 h-3" /></button>
+                                        <button onClick={(e) => { e.stopPropagation(); props.onRemove && props.onRemove(option); }} className="ml-2 hover:text-blue-900 dark:hover:text-blue-100 transition-colors"><X className="w-3.5 h-3.5" /></button>
                                     </div>
                                 )}
                                 renderMenuItemChildren={(option) => (
@@ -255,7 +255,7 @@ export default function AddKeyModal({ nodes, onClose, onSave }: any) {
                     {types.includes('list') && (
                         <div className="pl-3 border-l-2 border-blue-500/20 py-1 relative z-0 hover:z-[60]">
                             <InfoLabel label="List Item Type" tooltip="The data type(s) allowed for items within this list." placement="right" />
-                            <div className="min-h-[38px] transition-all bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md flex items-center flex-wrap px-1.5 hover:border-zinc-300 dark:hover:border-zinc-600 focus-within:ring-2 focus-within:ring-purple-500/20 focus-within:border-purple-500">
+                            <div className="min-h-[38px] transition-all bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md flex items-center flex-wrap px-2 py-1 hover:border-zinc-300 dark:hover:border-zinc-600 focus-within:ring-2 focus-within:ring-purple-500/20 focus-within:border-purple-500">
                                 <Typeahead
                                     id="item-type-select"
                                     multiple
@@ -265,12 +265,12 @@ export default function AddKeyModal({ nodes, onClose, onSave }: any) {
                                     placeholder={itemTypes.length === 0 ? "Search item types..." : ""}
                                     className="flex-1"
                                     inputProps={{
-                                        className: 'bg-transparent border-none outline-none text-[13px] py-1.5 px-1 w-full text-zinc-900 dark:text-zinc-100 min-w-[80px]',
+                                        className: 'bg-transparent border-none outline-none text-[13px] py-1 px-2 w-full text-zinc-900 dark:text-zinc-100 min-w-[100px]',
                                     }}
                                     renderToken={(option, props, index) => (
-                                        <div key={index} className="bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-300 text-[11px] px-2 py-0.5 rounded-md flex items-center font-mono border border-purple-100 dark:border-purple-500/20 m-0.5">
+                                        <div key={index} className="bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-300 text-[11px] px-2.5 py-1 rounded-md flex items-center font-mono border border-purple-100 dark:border-purple-500/20 m-1 shadow-sm">
                                             {option as string}
-                                            <button onClick={(e) => { e.stopPropagation(); props.onRemove && props.onRemove(option); }} className="ml-1.5 hover:text-purple-900 dark:hover:text-purple-100"><X className="w-3 h-3" /></button>
+                                            <button onClick={(e) => { e.stopPropagation(); props.onRemove && props.onRemove(option); }} className="ml-2 hover:text-purple-900 dark:hover:text-purple-100 transition-colors"><X className="w-3.5 h-3.5" /></button>
                                         </div>
                                     )}
                                     renderMenuItemChildren={(option) => (
@@ -281,7 +281,7 @@ export default function AddKeyModal({ nodes, onClose, onSave }: any) {
                                         <Menu {...menuProps} className="bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md shadow-xl max-h-40 overflow-y-auto py-1 mt-1 z-[100]">
                                             {results.map((result, index) => (
                                                 <MenuItem key={index} option={result} position={index}>
-                                                    <div className="text-[13px] font-mono text-zinc-700 dark:text-zinc-200 px-3 py-1.5 hover:bg-purple-50 dark:hover:bg-purple-900/30 cursor-pointer border-l-2 border-transparent hover:border-purple-500 transition-all">
+                                                    <div className="text-[13px] font-mono text-zinc-700 dark:text-zinc-200 px-3 py-1.5 hover:bg-purple-50 dark:hover:bg-purple-900/30 cursor-pointer border-l-2 border-transparent hover:border-blue-500 transition-all">
                                                         {result as string}
                                                     </div>
                                                 </MenuItem>

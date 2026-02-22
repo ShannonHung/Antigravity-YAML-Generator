@@ -44,7 +44,7 @@ export default function KeyIdentityForm({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
                     <div>
                         <InfoLabel label="Type(s)" tooltip="Allowed data types for this field." placement="right" />
-                        <div className="min-h-[42px] transition-all bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg flex items-center flex-wrap px-1.5 focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 hover:border-zinc-300 dark:hover:border-zinc-600">
+                        <div className="min-h-[42px] transition-all bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg flex items-center flex-wrap px-3 py-2 focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 hover:border-zinc-300 dark:hover:border-zinc-600">
                             <Typeahead
                                 id="type-select-editor"
                                 multiple
@@ -61,12 +61,12 @@ export default function KeyIdentityForm({
                                 placeholder={types.length === 0 ? "Search types..." : ""}
                                 className="flex-1"
                                 inputProps={{
-                                    className: 'bg-transparent border-none outline-none text-[13px] py-2 px-1 w-full text-zinc-900 dark:text-zinc-100 min-w-[80px]',
+                                    className: 'bg-transparent border-none outline-none text-[13px] py-1 px-2 w-full text-zinc-900 dark:text-zinc-100 min-w-[100px]',
                                 }}
                                 renderToken={(option, props, index) => (
-                                    <div key={index} className="bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-300 text-[11px] px-2 py-0.5 rounded-md flex items-center font-mono border border-blue-100 dark:border-blue-500/20 m-0.5">
+                                    <div key={index} className="bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-300 text-[11px] px-2.5 py-1 rounded-md flex items-center font-mono border border-blue-100 dark:border-blue-500/20 m-1 shadow-sm">
                                         {option as string}
-                                        <button onClick={(e) => { e.stopPropagation(); props.onRemove && props.onRemove(option); }} className="ml-1.5 hover:text-blue-900 dark:hover:text-blue-100"><X className="w-3 h-3" /></button>
+                                        <button onClick={(e) => { e.stopPropagation(); props.onRemove && props.onRemove(option); }} className="ml-2 hover:text-blue-900 dark:hover:text-blue-100 transition-colors"><X className="w-3.5 h-3.5" /></button>
                                     </div>
                                 )}
                                 renderMenuItemChildren={(option) => (
@@ -90,7 +90,7 @@ export default function KeyIdentityForm({
                     {types.includes('list') && (
                         <div className="pl-6 border-l-2 border-purple-100 dark:border-purple-500/20">
                             <InfoLabel label="List Item Type(s)" tooltip="Allowed types for list items." placement="right" />
-                            <div className="min-h-[42px] transition-all bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg flex items-center flex-wrap px-1.5 focus-within:ring-2 focus-within:ring-purple-500/20 focus-within:border-purple-500 hover:border-zinc-300 dark:hover:border-zinc-600">
+                            <div className="min-h-[42px] transition-all bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg flex items-center flex-wrap px-3 py-2 focus-within:ring-2 focus-within:ring-purple-500/20 focus-within:border-purple-500 hover:border-zinc-300 dark:hover:border-zinc-600">
                                 <Typeahead
                                     id="item-type-select-editor"
                                     multiple
@@ -100,12 +100,12 @@ export default function KeyIdentityForm({
                                     placeholder={itemTypes.length === 0 ? "Search item types..." : ""}
                                     className="flex-1"
                                     inputProps={{
-                                        className: 'bg-transparent border-none outline-none text-[13px] py-2 px-1 w-full text-zinc-900 dark:text-zinc-100 min-w-[80px]',
+                                        className: 'bg-transparent border-none outline-none text-[13px] py-1 px-2 w-full text-zinc-900 dark:text-zinc-100 min-w-[100px]',
                                     }}
                                     renderToken={(option, props, index) => (
-                                        <div key={index} className="bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-300 text-[11px] px-2 py-0.5 rounded-md flex items-center font-mono border border-purple-100 dark:border-purple-500/20 m-0.5">
+                                        <div key={index} className="bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-300 text-[11px] px-2.5 py-1 rounded-md flex items-center font-mono border border-purple-100 dark:border-purple-500/20 m-1 shadow-sm">
                                             {option as string}
-                                            <button onClick={(e) => { e.stopPropagation(); props.onRemove && props.onRemove(option); }} className="ml-1.5 hover:text-purple-900 dark:hover:text-purple-100"><X className="w-3 h-3" /></button>
+                                            <button onClick={(e) => { e.stopPropagation(); props.onRemove && props.onRemove(option); }} className="ml-2 hover:text-purple-900 dark:hover:text-purple-100 transition-colors"><X className="w-3.5 h-3.5" /></button>
                                         </div>
                                     )}
                                     renderMenuItemChildren={(option) => (
@@ -209,7 +209,7 @@ export default function KeyIdentityForm({
                     {/* Plugins Editor */}
                     <div className="w-full mt-2 pt-4 border-t border-zinc-200 dark:border-zinc-800">
                         <InfoLabel label="Generator Plugins" tooltip="List of generator plugins to apply to this key." placement="right" />
-                        <div className="min-h-[42px] transition-all bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl flex items-center flex-wrap px-1.5 focus-within:ring-2 focus-within:ring-teal-500/20 focus-within:border-teal-500 hover:border-zinc-300 dark:hover:border-zinc-600">
+                        <div className="min-h-[42px] transition-all bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl flex items-center flex-wrap px-3 py-2 focus-within:ring-2 focus-within:ring-teal-500/20 focus-within:border-teal-500 hover:border-zinc-300 dark:hover:border-zinc-600">
                             <Typeahead
                                 id="plugins-select-editor"
                                 multiple
@@ -223,12 +223,12 @@ export default function KeyIdentityForm({
                                 placeholder={plugins.length === 0 ? "Add plugin..." : ""}
                                 className="flex-1"
                                 inputProps={{
-                                    className: 'bg-transparent border-none outline-none text-[13px] py-2 px-1 w-full text-zinc-900 dark:text-zinc-100 min-w-[120px] font-mono'
+                                    className: 'bg-transparent border-none outline-none text-[13px] py-1 px-2 w-full text-zinc-900 dark:text-zinc-100 min-w-[120px] font-mono'
                                 }}
                                 renderToken={(option: any, props, index) => (
-                                    <div key={index} className="bg-teal-50 dark:bg-teal-900/40 text-teal-700 dark:text-teal-300 text-[11px] px-2 py-0.5 rounded-md flex items-center font-mono border border-teal-100 dark:border-teal-800 m-0.5">
+                                    <div key={index} className="bg-teal-50 dark:bg-teal-900/40 text-teal-700 dark:text-teal-300 text-[11px] px-2.5 py-1 rounded-md flex items-center font-mono border border-teal-100 dark:border-teal-800 m-1 shadow-sm">
                                         {(option as any).label || (option as any)}
-                                        <button onClick={(e) => { e.stopPropagation(); props.onRemove && props.onRemove(option); }} className="ml-1.5 hover:text-teal-900 dark:hover:text-teal-100 transition-colors"><X className="w-3 h-3" /></button>
+                                        <button onClick={(e) => { e.stopPropagation(); props.onRemove && props.onRemove(option); }} className="ml-2 hover:text-teal-900 dark:hover:text-teal-100 transition-colors"><X className="w-3.5 h-3.5" /></button>
                                     </div>
                                 )}
                                 renderMenu={(results, menuProps) => (
