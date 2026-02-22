@@ -1,12 +1,15 @@
 .PHONY: gen
+# generate yaml files
 gen:
 	@./generate.sh
 
+# development used command 
 test:
 	@python -m unittest discover tests
 
 check: 
 	@python yaml_generator.py --check
+
 web:
 	make -j 2 backend frontend
 
