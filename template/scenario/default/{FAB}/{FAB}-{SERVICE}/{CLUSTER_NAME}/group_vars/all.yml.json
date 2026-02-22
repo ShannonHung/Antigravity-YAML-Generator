@@ -227,7 +227,7 @@
                 "override_strategy": "merge"
             }
         ],
-        "required": true
+        "required": null
     },
     {
         "key": "region",
@@ -242,5 +242,25 @@
         "regex": "[tw,us,jp]",
         "default_value": "tw",
         "override_strategy": "merge"
+    },
+    {
+        "key": "ca.crt",
+        "description": "",
+        "multi_type": [
+            "string"
+        ],
+        "required": true,
+        "override_hint": true,
+        "children": []
+    },
+    {
+        "key": "auto_heal_ca.crt",
+        "description": "",
+        "multi_type": [
+            "string"
+        ],
+        "required": true,
+        "override_hint": true,
+        "children": []
     }
 ]

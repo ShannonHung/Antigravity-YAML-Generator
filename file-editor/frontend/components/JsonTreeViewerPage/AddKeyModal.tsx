@@ -16,7 +16,7 @@ const getValidParents = (nodes: JsonNode[], parentPath: string = ''): string[] =
     }
 
     for (const node of nodes) {
-        const currentPath = parentPath ? `${parentPath}.${node.key}` : node.key;
+        const currentPath = parentPath ? `${parentPath}>${node.key}` : node.key;
 
         // Check if this node can be a parent (Object or List of Objects)
         const isObject = node.multi_type?.includes('object');

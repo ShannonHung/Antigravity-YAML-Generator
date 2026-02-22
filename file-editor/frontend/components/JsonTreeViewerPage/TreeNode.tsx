@@ -25,8 +25,8 @@ export default function TreeNode({
     inheritedDeprecated = false
 }: TreeNodeProps & { inheritedDeprecated?: boolean }) {
     const hasChildren = node.children && node.children.length > 0;
-    const isExpanded = expandedKeys.has(node.key);
-    const myPath = parentPath ? `${parentPath}.${node.key}` : node.key;
+    const myPath = parentPath ? `${parentPath}>${node.key}` : node.key;
+    const isExpanded = expandedKeys.has(myPath);
 
     // Deprecated Status
     const isSelfDeprecated = node.required === null || inheritedDeprecated;
@@ -57,7 +57,7 @@ export default function TreeNode({
                     <div className="flex items-center" style={{ paddingLeft: `${depth * 20}px` }}>
                         {hasChildren ? (
                             <button
-                                onClick={() => toggleExpand(node.key)}
+                                onClick={() => toggleExpand(myPath)}
                                 className="p-0.5 mr-1 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded transition-colors text-zinc-500"
                             >
                                 {isExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}

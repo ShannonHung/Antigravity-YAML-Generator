@@ -7,11 +7,12 @@ export function useJsonUiState(nodes: JsonNode[]) {
     // Helper to get all keys with children
     const getAllExpandableKeys = useCallback((list: JsonNode[]): Set<string> => {
         const keys = new Set<string>();
-        const traverse = (items: JsonNode[]) => {
+        const traverse = (items: JsonNode[], prefix = '') => {
             items.forEach(n => {
+                const currentPath = prefix ? `${prefix}>${n.key}` : n.key;
                 if (n.children && n.children.length > 0) {
-                    keys.add(n.key);
-                    traverse(n.children);
+                    keys.add(currentPath);
+                    traverse(n.children, currentPath);
                 }
             });
         };
