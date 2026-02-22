@@ -5,7 +5,64 @@ import re
 import shutil
 import yaml
 from dataclasses import dataclass, field
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
+
+@dataclass
+class SchemaNode:
+    key: str
+    multi_type: List[str] = field(default_factory=list)
+    item_multi_type: List[str] = field(default_factory=list)
+    description: str = ""
+    default_value: Any = None
+    required: bool = True
+    override_strategy: str = "merge"
+    override_hint: bool = False
+    is_override: bool = False
+    regex_enable: bool = False
+    regex: Optional[str] = None
+    children: List['SchemaNode'] = field(default_factory=list)
+
+    def __getitem__(self, key):
+        """Temporary compatibility for tests subscripting nodes."""
+        return getattr(self, key)
+
+    @classmethod
+    def from_dict(cls, d: Dict[str, Any]) -> 'SchemaNode':
+        if not isinstance(d, dict):
+            return d
+            
+        children_data = d.get("children", [])
+        children = [cls.from_dict(c) for c in children_data]
+        return cls(
+            key=d.get("key", ""),
+            multi_type=d.get("multi_type", []),
+            item_multi_type=d.get("item_multi_type", []),
+            description=d.get("description", ""),
+            default_value=d.get("default_value"),
+            required=d.get("required", True),
+            override_strategy=d.get("override_strategy", "merge"),
+            override_hint=d.get("override_hint", False), 
+            is_override=d.get("is_override", False),
+            regex_enable=d.get("regex_enable", False),
+            regex=d.get("regex"),
+            children=children
+        )
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert back to dict for legacy compatibility if needed."""
+        return {
+            "key": self.key,
+            "multi_type": self.multi_type,
+            "item_multi_type": self.item_multi_type,
+            "description": self.description,
+            "default_value": self.default_value,
+            "required": self.required,
+            "override_strategy": self.override_strategy,
+            "override_hint": self.override_hint,
+            "regex_enable": self.regex_enable,
+            "regex": self.regex,
+            "children": [c.to_dict() for c in self.children]
+        }
 
 # Ensure consistent ordering in output if possible, though PyYAML handles dicts well.
 # We are [INFO] Generating text manually for the complex schema-based JSONs to support comments.
@@ -38,27 +95,30 @@ def resolve_content_vars(content, env):
         print(f"\033[93m[WARNING] Unresolved variable placeholders in content {unresolve_content}.\033[0m")
     return content
 
-def substitute_env_in_default_values(nodes, env):
+def load_json(path):
+    with open(path, 'r') as f:
+        return json.load(f)
+
+def substitute_env_in_default_values(nodes: List[SchemaNode], env):
     """
     Recursively substitute environment variables explicitly targeting `default_value` nodes.
     This preserves explicit literal values from `regex` attributes which avoids unintended substitution.
     """
     for node in nodes:
         # Only substitute if default_value exists
-        default_val = node.get('default_value')
+        default_val = node.default_value
         if default_val is not None:
             if isinstance(default_val, str):
-                node['default_value'] = resolve_content_vars(default_val, env)
+                node.default_value = resolve_content_vars(default_val, env)
             elif isinstance(default_val, dict):
                 # We need to deeply resolve dict string values
-                node['default_value'] = resolve_dict_strings(default_val, env)
+                node.default_value = resolve_dict_strings(default_val, env)
             elif isinstance(default_val, list):
-                node['default_value'] = resolve_list_strings(default_val, env)
+                node.default_value = resolve_list_strings(default_val, env)
         
         # Recurse through children
-        children = node.get('children')
-        if children and isinstance(children, list):
-            substitute_env_in_default_values(children, env)
+        if node.children:
+            substitute_env_in_default_values(node.children, env)
 
 def resolve_dict_strings(d, env):
     new_d = {}
@@ -85,11 +145,13 @@ def resolve_list_strings(lst, env):
         else:
             new_l.append(v)
     return new_l
-    return content
 
-def load_json(path):
+def load_json_nodes(path) -> List[SchemaNode]:
     with open(path, 'r') as f:
-        return json.load(f)
+        data = json.load(f)
+    if isinstance(data, list):
+        return [SchemaNode.from_dict(n) for n in data]
+    return [SchemaNode.from_dict(data)]
 
 def save_file(path, content):
     if os.path.exists(path):
@@ -106,9 +168,15 @@ def merge_nodes(source_nodes, override_nodes):
     source_nodes: list of dicts (schema definitions)
     override_nodes: list of dicts OR single dict
     """
-    # Convert source to dict for easier access: key -> node
-    # Since it's a list of definitions, we assume 'key' property is unique at this level.
-    source_map = {item.get('key'): item for item in source_nodes}
+    # Ensure source_nodes are objects
+    processed_source = []
+    for s in source_nodes:
+        if isinstance(s, dict):
+            processed_source.append(SchemaNode.from_dict(s))
+        else:
+            processed_source.append(s)
+    
+    source_map = {item.key: item for item in processed_source}
     
     if isinstance(override_nodes, dict):
         override_nodes = [override_nodes]
@@ -181,7 +249,8 @@ def format_yaml_value(value, indent_level, val_type=None):
     """
     Format a value as YAML using the custom representer.
     """
-    prefix = "  " * indent_level
+    # For block formatting (dicts/lists), we want children indented 2 spaces more than the current level
+    prefix = "  " * (indent_level + 2)
     
     # 1. Handle None
     if value is None:
@@ -207,29 +276,26 @@ def format_yaml_value(value, indent_level, val_type=None):
 
     # 4. Handle Scala String directly using our logic to avoid yaml.dump overhead for simple strings?
     # Actually, let's use the same logic pattern for consistency, or just call the logic directly.
-    # calling yaml.dump for a simple string adds a newline and "..." etc.
-    
-    # Re-use the representer logic for simple return? 
-    # Or just duplicate the logic here for performance/simplicity? 
-    # Let's duplicate logic for scalar string return to avoid yaml.dump artifacts.
-    
     s_val = str(value)
+    
+    # Check if it already looks quoted
+    if (s_val.startswith('"') and s_val.endswith('"')) or (s_val.startswith("'") and s_val.endswith("'")):
+        return s_val
+
+    # Regex to catch ${VAR} or $VAR
+    has_env_sub = re.search(r'\$\{?[\w]+\}?', s_val)
     
     needs_quotes = False
     if not s_val: needs_quotes = True
     elif re.match(r'^(true|false|yes|no|on|off)$', s_val, re.IGNORECASE): needs_quotes = True
     elif re.match(r'^[\d\.]+$', s_val): needs_quotes = True
-    elif any(c in s_val for c in ":#[]{}/"): needs_quotes = True
+    elif any(c in s_val for c in ":#[]{}/| !") or has_env_sub: # Added space and !
+        needs_quotes = True
     
     if needs_quotes:
         escaped = s_val.replace('"', '\\"')
         return f'"{escaped}"'
-    else:
-        if re.match(r'^[a-zA-Z0-9_\-\.]+$', s_val):
-            return s_val
-        else:
-            escaped = s_val.replace('"', '\\"')
-            return f'"{escaped}"'
+    return s_val
 def get_override_hint_style(config, default_style="<=== [Override]"):
     """
     Get the override hint style from config, ensuring it starts with a valid comment character.
@@ -242,13 +308,16 @@ def get_override_hint_style(config, default_style="<=== [Override]"):
         return style
     return f"# {default_style}"
 
-def get_override_hint(node, style_marker):
+def get_override_hint(node, hint_marker):
     """
-    Return the formatted override hint string if enabled in the node.
+    Generate override hint string if applicable.
+    Supports both SchemaNode and dict.
     """
-    if node.get('override_hint', False):
-        return f" {style_marker}"
-    return ""
+    hint_e = getattr(node, 'override_hint', False) if not isinstance(node, dict) else node.get('override_hint', False)
+    
+    if not hint_e:
+        return ""
+    return f" {hint_marker}"
 
 def generate_banner(description, indent=0, width=42, comment_char="#"):
     """
@@ -265,27 +334,27 @@ def generate_banner(description, indent=0, width=42, comment_char="#"):
     lines.append(f"{prefix}{comment_char} {'=' * width}")
     return lines
 
-def resolve_node_value(node):
+def resolve_node_value(node: Any):
     """
-    Resolve the value to print: default_value (if present/not empty) OR regex.
+    Return default_value if exists, otherwise regex.
+    Supports both SchemaNode and dict.
     """
-    default_value = node.get('default_value')
-    # If default_value is explicitly set (even False or 0), use it.
-    # If it's None or empty string, fallback to regex.
-    if default_value is not None and default_value != "":
-        return default_value
-    return node.get('regex')
-def is_node_enabled(node):
-    """
-    Check if node is enabled based on 'required' field.
-    Deprecated if required is None, empty string, or missing.
-    """
-    req = node.get('required')
-    if req is None or req == "":
+    val = getattr(node, 'default_value', None) if not isinstance(node, dict) else node.get('default_value')
+    if val is None:
+        val = getattr(node, 'regex', None) if not isinstance(node, dict) else node.get('regex')
+    return val
+
+def is_node_enabled(node_data: Any):
+    # Duck-typing to handle both SchemaNode and dict from unit tests
+    required = getattr(node_data, 'required', True) if not isinstance(node_data, dict) else node_data.get('required', True)
+    default_value = getattr(node_data, 'default_value', None) if not isinstance(node_data, dict) else node_data.get('default_value')
+    regex = getattr(node_data, 'regex', None) if not isinstance(node_data, dict) else node_data.get('regex')
+    
+    if not required and default_value is None and regex is None:
         return False
     return True
 
-def generate_yaml_from_schema(nodes, indent=0, config=None):
+def generate_yaml_from_schema(nodes: List[SchemaNode], indent=0, config=None):
     """
     Generate YAML content strings from the schema list.
     """
@@ -293,165 +362,92 @@ def generate_yaml_from_schema(nodes, indent=0, config=None):
     prefix = "  " * indent
     
     override_hint_marker = get_override_hint_style(config)
-    
-    # We still check "top_level_spacing"
-    top_level_spacing = 2
-    if config:
-        top_level_spacing = config.get("top_level_spacing", 2)
+    top_level_spacing = config.get("top_level_spacing", 2) if config else 2
     
     is_first = True
     for node in nodes:
-        # Check deprecation/enabled status
         if not is_node_enabled(node):
             continue
             
-        key = node.get('key')
-        if not key: continue
-        
-        description = node.get('description')
-        
-        # Refactor: use multi_type
-        # Old: val_type = node.get('type')
-        multi_type = node.get('multi_type', [])
-        # Handle case where multi_type might be None (from some old override?)
-        if multi_type is None: multi_type = []
-        
-        # Validation 2: check object AND list conflict
-        if "object" in multi_type and "list" in multi_type:
-            print(f"\033[91m[ERROR] Invalid multi_type definition in key '{key}': 'object' and 'list' cannot simplify exist.\033[0m")
-            sys.exit(1)
-            
-        current_hint = get_override_hint(node, override_hint_marker)
-        
-        # Logic: use default_value, fallback to regex if empty
-        value = resolve_node_value(node)
-
-        children = node.get('children', [])
-        
-        # 1. Output Top Level Spacing
         if indent == 0 and not is_first:
-            for _ in range(top_level_spacing):
-                lines.append("")
+            lines.extend([""] * top_level_spacing)
                 
-        # 2. Output Description
-        if description:
+        # Duck-type access
+        n_desc = getattr(node, 'description', "") if not isinstance(node, dict) else node.get('description', "")
+        n_key = getattr(node, 'key', "") if not isinstance(node, dict) else node.get('key', "")
+        n_multi_type = getattr(node, 'multi_type', []) if not isinstance(node, dict) else node.get('multi_type', [])
+        n_children = getattr(node, 'children', []) if not isinstance(node, dict) else node.get('children', [])
+
+        if n_desc:
             if indent == 0:
-                banner_lines = generate_banner(description, indent=indent)
-                lines.extend(banner_lines)
+                lines.extend(generate_banner(n_desc, indent=indent))
             else:
-                for desc_line in description.splitlines():
+                for desc_line in n_desc.splitlines():
                     lines.append(f"{prefix}# {desc_line}")
         
         if indent == 0:
             is_first = False
             
-        # 2. Output Key-Value
-        line_content = f"{prefix}{key}:"
+        if "object" in n_multi_type and "list" in n_multi_type:
+             print(f"[ERROR] Conflict: node '{n_key}' cannot be both 'object' and 'list'.")
+             sys.exit(1)
 
-        # Logic for types
-        # Priority: list > object > others
-        # "Validation 3: ... future types ... treat as string"
-        
-        if "list" in multi_type:
-            # It's a list
-             if children:
+        line_content = f"{prefix}{n_key}:"
+        current_hint = get_override_hint(node, override_hint_marker)
+        value = resolve_node_value(node)
+
+        if "list" in n_multi_type:
+            if n_children:
                 if value is not None and isinstance(value, list) and len(value) > 0:
-                    # Pass indent to format_yaml_value
-                    # It returns string starting with \n for complex types (list/dict)
                     val = format_yaml_value(value, indent, 'list')
-                    if val.strip(): # if not empty
-                         lines.append(f"{line_content}{current_hint}{val}")
-                    else:
-                         lines.append(f"{line_content} []{current_hint}")
+                    lines.append(f"{line_content}{current_hint}{val}" if val.strip() else f"{line_content} []{current_hint}")
                 else:
-                    # No value or empty, generate from children schema?
-                    # "children" in list type means schema for items.
-                    # We usually output empty list if no value provided?
-                    # Or do we generate example items?
-                    # In previous example, we traversed children to show structure.
-                    
-                    if children and not value:
-                        # Generate structure from schema (example item)
-                         lines.append(f"{line_content}{current_hint}")
-                         child_lines = generate_yaml_from_schema(children, indent + 1, config)
-                        
-                         if child_lines:
-                            first = True
-                            for child in children:
-                                c_lines = generate_yaml_from_schema([child], indent + 1, config) 
-                                flat_c_lines = []
-                                for cl_block in c_lines:
-                                    flat_c_lines.extend(cl_block.split('\n'))
-                                    
-                                processed_c_lines = []
-                                for j, cl in enumerate(flat_c_lines):
-                                    if not cl.strip(): continue # Skip empty lines inside the multiline block
-                                    
-                                    if first and cl.strip().startswith(child['key'] + ":"):
-                                        stripped = cl.lstrip()
-                                        processed_c_lines.append(f"{'  ' * indent}  - {stripped}")
-                                        first = False
-                                    else:
-                                        if not first:
-                                            # Indent nested properties of the list item by an extra 4 spaces
-                                            # Wait, indent is list level (e.g. 1). '  ' * 1 = 2 spaces.
-                                            # '      ' = 6 spaces. Total = 8 spaces.
-                                            processed_c_lines.append(f"{'  ' * indent}      {cl.lstrip()}")
-                                        else:
-                                            # Comments before the item key (like # nameserver entry)
-                                            # Should align with the dash: indent + 2 spaces = 4 spaces
-                                            processed_c_lines.append(f"{'  ' * indent}  {cl.lstrip()}")
-                                lines.extend(processed_c_lines)
-                         else:
-                            lines.append(f"{prefix}  []")
-                    else:
-                        lines.append(f"{line_content} []{current_hint}")
-             else:
-                  # List without children schema -> simple list value
-                 if value is not None:
-                      val = format_yaml_value(value, indent, 'list')
-                      lines.append(f"{line_content}{current_hint}{val}")
-                 else:
-                      lines.append(f"{line_content} []{current_hint}")
+                    lines.append(f"{line_content}{current_hint}")
+                    # Render list items from children schema
+                    list_item_started = False
+                    for child_node in n_children:
+                        child_lines = generate_yaml_from_schema([child_node], indent + 1, config)
+                        for cl in child_lines:
+                            if not cl.strip(): continue
+                            
+                            if not list_item_started:
+                                if cl.lstrip().startswith("#"):
+                                    # Align comment with the DASH line (indent*2 + 2)
+                                    # indent=1 -> 4 spaces. indent=2 -> 6 spaces.
+                                    # That is '  ' * (indent + 1)
+                                    lines.append(f"{'  ' * (indent + 1)}{cl.lstrip()}")
+                                else:
+                                    # This is the first content line, add the dash
+                                    # dash at col 4 (if dns=0, search=2. indent=1)
+                                    lines.append(f"{'  ' * indent}  - {cl.lstrip()}")
+                                    list_item_started = True
+                            else:
+                                # Align with text: 2 spaces more than the text of the first key (- key: ...)
+                                # dash at 4 -> key at 6 -> sibling at 8.
+                                # 8 spaces is '  ' * (indent + 3) if indent=1.
+                                lines.append(f"{'  ' * (indent + 3)}{cl.lstrip()}")
+            else:
+                 val = format_yaml_value(value, indent, 'list') if value is not None else " []"
+                 lines.append(f"{line_content}{current_hint}{val}")
 
-        elif "object" in multi_type:
-             # Object with properties
-             if children:
+        elif "object" in n_multi_type:
+             if n_children:
                  lines.append(f"{line_content}{current_hint}")
-                 lines.extend(generate_yaml_from_schema(children, indent + 1, config))
+                 lines.extend(generate_yaml_from_schema(n_children, indent + 1, config))
              else:
-                 # Object but no children?
-                 if value is not None:
-                      val = format_yaml_value(value, indent, 'object')
-                      lines.append(f"{line_content}{current_hint}{val}")
-                 else:
-                      lines.append(f"{line_content} {{}}{current_hint}")
+                  val = format_yaml_value(value, indent, 'object') if value is not None else " {}"
+                  lines.append(f"{line_content}{current_hint}{val}")
             
         else:
-            # Primitive / Custom Types
-            # Logic 3: Treat as string (unless bool/number detected via multi_type?)
-            # Valid types: bool, number, string. Others -> string
-            
             effective_type = 'string'
-            if "bool" in multi_type: effective_type = 'bool'
-            elif "number" in multi_type: effective_type = 'number'
+            if "bool" in n_multi_type: effective_type = 'bool'
+            elif "number" in n_multi_type: effective_type = 'number'
             
-            # Value
             val_to_print = value
             if val_to_print is None:
-                # Fallback defaults?
-                if effective_type == 'bool': val_to_print = False
-                elif effective_type == 'number': val_to_print = 0
-                else: val_to_print = ""
-                # But requirement says: "if number produce default_value, if no default output regex"
-                # We already set value = default_value or regex above.
-                if val_to_print == "" and node.get('regex'):
-                     val_to_print = node.get('regex')
+                val_to_print = False if effective_type == 'bool' else (0 if effective_type == 'number' else "")
             
-            # Format value, pass indent
             val_str = format_yaml_value(val_to_print, indent, effective_type)
-            
-            # Check multiline
             if '\n' in val_str:
                  lines.append(f"{line_content}{current_hint} {val_str}")
             else:
@@ -459,149 +455,154 @@ def generate_yaml_from_schema(nodes, indent=0, config=None):
 
     return lines
 
-def generate_ini_from_schema(nodes, config=None):
+def generate_ini_from_schema(nodes: List[SchemaNode], config=None):
     """
     Generate INI content strings from the schema list.
-    Specifically handles 'global_vars', 'groups', and 'aggregations'.
     """
     lines = []
-    
     override_hint_marker = get_override_hint_style(config)
     
-    # 1. global_vars -> [all:vars]
+    # helper for host rendering
+    def _render_hosts(hosts, item_schemas):
+        host_lines = []
+        if not hosts and item_schemas:
+            # Generate example
+            example = {s.key: (f'"{s.regex}"' if s.default_value is None and s.regex else (s.default_value if s.default_value is not None else "")) for s in item_schemas}
+            hosts = [example]
+            
+        for host in hosts:
+            if isinstance(host, str):
+                host_lines.append(host)
+            elif isinstance(host, dict):
+                # prioritize hostname
+                primary = host.get("hostname") or (list(host.keys())[0] if host else None)
+                if not primary: continue
+                parts = [str(primary)]
+                for k, v in host.items():
+                    if k == "hostname" or (k == primary and "hostname" not in host): continue
+                    parts.append(f"{k}={v}")
+                host_lines.append(" ".join(parts))
+        return host_lines
+
+    # 1. global_vars
     for node in nodes:
-        if not is_node_enabled(node): continue
-        if node.get('key') == 'global_vars':
-            # Header
-            description = node.get('description', 'all:vars section')
-            lines.extend(generate_banner(description, width=42))
+        if node.key == 'global_vars' and is_node_enabled(node):
+            lines.extend(generate_banner(node.description or "global_vars", width=42))
             lines.append("[all:vars]")
-            
-            # Values
-            default_value = resolve_node_value(node)
-            # Ensure it is a dict
-            if isinstance(default_value, dict):
-                for k, v in default_value.items():
-                    lines.append(f"{k}={v}")
-            lines.append("") # Newline
-            
-    # 2. groups -> [group_name]
+            val = resolve_node_value(node)
+            if isinstance(val, dict):
+                for k, v in val.items(): lines.append(f"{k}={v}")
+            lines.append("")
+
+    # 2. groups
     for node in nodes:
-        if not is_node_enabled(node): continue
-        if node.get('key') == 'groups':
+        if node.key == 'groups' and is_node_enabled(node):
             groups_val = resolve_node_value(node) or {}
-            children_schema = node.get('children', [])
-            
-            # Map children schema for hints/descriptions
-            schema_map = {c['key']: c for c in children_schema}
-            
-            if isinstance(groups_val, dict):
-                # Ensure we process groups in schema even if not in default_value
-                ordered_group_names = [c['key'] for c in children_schema]
-                for g in groups_val.keys():
-                    if g not in ordered_group_names:
-                        ordered_group_names.append(g)
-
-                for group_name in ordered_group_names:
-                    hosts = groups_val.get(group_name, [])
-                    # Get schema info
-                    g_schema = schema_map.get(group_name, {})
-                    
-                    # Check deprecation for the group node
-                    if g_schema and not is_node_enabled(g_schema):
-                        continue
-                        
-                    desc = g_schema.get('description', f"{group_name} nodes")
-                    hint = get_override_hint(g_schema, override_hint_marker)
-                    
-                    lines.extend(generate_banner(desc, width=42))
-                    lines.append(f"[{group_name}]{hint}")
-                    
-                    # Fallback to schema to generate an example host if empty
-                    if not hosts and g_schema:
-                        example_host = {}
-                        for item_schema in g_schema.get('children', []):
-                            val = item_schema.get('default_value')
-                            if not val and item_schema.get('regex'):
-                                v = item_schema.get('regex')
-                                example_host[item_schema['key']] = f'"{v}"'
-                            else:
-                                example_host[item_schema['key']] = val if val is not None else ""
-                        if example_host:
-                            hosts = [example_host]
-
-                    if isinstance(hosts, list):
-                        for host in hosts:
-                            if isinstance(host, dict):
-                                primary_key = "hostname"
-                                primary_val = host.get(primary_key)
-                                
-                                if not primary_val:
-                                    # Fallback to first key
-                                    if host:
-                                        primary_key = list(host.keys())[0]
-                                        primary_val = host[primary_key]
-                                    else:
-                                        continue
-                                
-                                line_parts = [str(primary_val)]
-                                
-                                for k, v in host.items():
-                                    if k == primary_key: continue
-                                    line_parts.append(f"{k}={v}")
-                                
-                                lines.append(" ".join(line_parts))
-                            elif isinstance(host, str):
-                                lines.append(host)
-                    lines.append("")
-
-    # 3. aggregations -> [group:children]
-    # 3. aggregations -> [group:children]
-    for node in nodes:
-        if not is_node_enabled(node): continue
-        if node.get('key') == 'aggregations':
-            aggr_val = resolve_node_value(node) or {}
-            children_schema = node.get('children', [])
-            
-            schema_map = {c['key']: c for c in children_schema}
-            
-            # Use ordered keys from children_schema first, then append any extras from default_value
-            ordered_aggr_names = [c['key'] for c in children_schema]
-            if isinstance(aggr_val, dict):
-                for g in aggr_val.keys():
-                    if g not in ordered_aggr_names:
-                        ordered_aggr_names.append(g)
-            
-            for group_name in ordered_aggr_names:
-                c_schema = schema_map.get(group_name, {})
+            schema_map = {c.key: c for c in node.children}
+            ordered_keys = list(schema_map.keys())
+            for gk in groups_val: 
+                if gk not in ordered_keys: ordered_keys.append(gk)
                 
-                if c_schema and not is_node_enabled(c_schema):
-                    continue
-                    
-                desc = c_schema.get('description', f"{group_name} children")
+            for gk in ordered_keys:
+                g_schema = schema_map.get(gk)
+                if g_schema and not is_node_enabled(g_schema): continue
                 
-                # Prioritize schema value, fallback to parent's default_value
-                children_groups = resolve_node_value(c_schema)
-                if not children_groups and isinstance(aggr_val, dict):
-                    children_groups = aggr_val.get(group_name, [])
-                    
+                hosts = groups_val.get(gk, [])
+                desc = g_schema.description if g_schema and g_schema.description else f"{gk} nodes"
                 lines.extend(generate_banner(desc, width=42))
-                lines.append(f"[{group_name}:children]")
+                hint = get_override_hint(g_schema, override_hint_marker) if g_schema else ""
+                lines.append(f"[{gk}]{hint}")
+                lines.extend(_render_hosts(hosts, g_schema.children if g_schema else []))
+                lines.append("")
+
+    # 3. aggregations
+    for node in nodes:
+        if node.key == 'aggregations' and is_node_enabled(node):
+            aggr_val = resolve_node_value(node) or {}
+            schema_map = {c.key: c for c in node.children}
+            ordered_keys = list(schema_map.keys())
+            for ak in aggr_val:
+                if ak not in ordered_keys: ordered_keys.append(ak)
+            
+            for ak in ordered_keys:
+                c_schema = schema_map.get(ak)
+                if c_schema and not is_node_enabled(c_schema): continue
+                
+                desc = c_schema.description if c_schema and c_schema.description else f"{ak} children"
+                lines.extend(generate_banner(desc, width=42))
+                lines.append(f"[{ak}:children]")
+                # prioritize inner schema default_value, else outer aggr_val
+                children_groups = resolve_node_value(c_schema) if c_schema else None
+                if children_groups is None: children_groups = aggr_val.get(ak, [])
                 
                 if isinstance(children_groups, list):
-                    for item in children_groups:
-                         lines.append(str(item))
-                elif isinstance(children_groups, str) and children_groups:
-                    lines.append(children_groups)
+                    lines.extend([str(i) for i in children_groups])
+                elif children_groups:
+                    lines.append(str(children_groups))
                 lines.append("")
-    
+
     return lines
 
-def load_json_nodes(path):
-    data = load_json(path)
-    if isinstance(data, dict):
-        return [data]
-    return data
+def merge_nodes(base: List[SchemaNode], override: List[SchemaNode]) -> List[SchemaNode]:
+    """
+    Merge two lists of SchemaNodes. 
+    Nodes in 'override' with the same 'key' will replace or merge with nodes in 'base'.
+    """
+    base_map = {n.key: n for n in base}
+    
+    for o_node in override:
+        # Ensure o_node is a SchemaNode
+        o_obj = o_node
+        if isinstance(o_node, dict):
+            o_obj = SchemaNode.from_dict(o_node)
+            
+        if o_obj.key in base_map:
+            b_node = base_map[o_obj.key]
+            
+            # This is an actual override
+            b_node.is_override = True
+            
+            if o_obj.override_strategy == "replace":
+                # Replace the entire node
+                o_obj.is_override = True
+                base_map[o_obj.key] = o_obj
+            else:
+                # strategy: Merge
+                b_node.is_override = True
+                
+                # Default to showing hint unless explicitly false in override
+                if isinstance(o_node, dict):
+                    b_node.override_hint = o_node.get('override_hint', True)
+                else:
+                    # If it's a SchemaNode, it might have default False. 
+                    # Use the override node's hint setting, but default to True for overrides
+                    # unless it was explicitly specified as False in the origin.
+                    # Since we can't easily know if it was explicit on a SchemaNode,
+                    # we check if it's already True or if we want to force it.
+                    b_node.override_hint = getattr(o_obj, 'override_hint', True)
+                
+                b_node.description = o_obj.description or b_node.description
+                b_node.default_value = o_obj.default_value if o_obj.default_value is not None else b_node.default_value
+                b_node.required = o_obj.required
+                b_node.multi_type = o_obj.multi_type or b_node.multi_type
+                b_node.item_multi_type = o_obj.item_multi_type or b_node.item_multi_type
+                b_node.regex_enable = o_obj.regex_enable
+                b_node.regex = o_obj.regex if o_obj.regex is not None else b_node.regex
+                
+                if o_obj.children:
+                    b_node.children = merge_nodes(b_node.children, o_obj.children)
+        else:
+            base.append(o_obj)
+            base_map[o_obj.key] = o_obj
+            
+    return list(base_map.values()) # Return the updated list of nodes
+
+def load_json_nodes(path) -> List[SchemaNode]:
+    with open(path, 'r') as f:
+        data = json.load(f)
+    if isinstance(data, list):
+        return [SchemaNode.from_dict(n) for n in data]
+    return [SchemaNode.from_dict(data)]
 
 @dataclass
 class EnvVarDef:
@@ -757,91 +758,93 @@ def validate_scenario_templates(active_scenarios: List[ScenarioConfig]):
             
     validation_errors = []
     
-def validate_node(node, file_path, path_context="root", is_ini=False):
+def validate_node(node_data: Any, file_path: str, node_key: str, is_ini: bool = False):
     """
-    Validate a single schema node and its children recursively.
-    Returns a list of error strings.
+    Validate a single node (can be dict or SchemaNode).
     """
     errors = []
-    key = node.get('key')
     
-    if not key:
-        errors.append(f"{file_path} [{path_context}]: missing 'key' attribute.")
+    # Validation logic depends on raw dict for missing mandatory keys
+    d = node_data
+    is_obj = isinstance(node_data, SchemaNode)
     
+    # 1. Mandatory attributes
+    if is_obj:
+        if not node_data.key:
+            errors.append(f"[{file_path}] Error: Node '{node_key}' missing 'key' attribute.")
+        if not node_data.multi_type:
+             errors.append(f"[{file_path}] Error: Node '{node_data.key or node_key}' missing 'multi_type' attribute.")
+    else:
+        if "key" not in d:
+             errors.append(f"[{file_path}] Error: Node '{node_key}' missing 'key' attribute.")
+        if "multi_type" not in d:
+             errors.append(f"[{file_path}] Error: Node '{d.get('key', node_key)}' missing 'multi_type' attribute.")
+             
+    key = node_data.key if is_obj else d.get("key", node_key)
+    multi_type = node_data.multi_type if is_obj else d.get("multi_type", [])
+    item_multi_type = node_data.item_multi_type if is_obj else d.get("item_multi_type", [])
+    children = node_data.children if is_obj else d.get("children", [])
+
+    # Legacy check (if not obj)
+    if not is_obj and "type" in d:
+        errors.append(f"[{file_path}] Warning: Node '{key}' legacy 'type' field found. Use 'multi_type'.")
+
+    # Conflict check
+    if "object" in multi_type and "list" in multi_type:
+        errors.append(f"[{file_path}] Error: Node '{key}' 'multi_type' cannot contain both 'object' and 'list'.")
+
+    # List consistency
+    if "list" in multi_type and not item_multi_type:
+         errors.append(f"[{file_path}] Error: Node '{key}' 'multi_type' contains 'list' but 'item_multi_type' is empty.")
+
+    # Object consistency
+    if "object" in multi_type and item_multi_type:
+         errors.append(f"[{file_path}] Error: Node '{key}' 'multi_type' contains 'object' but 'item_multi_type' is not empty.")
+            
     # INI specific root key validation
-    if is_ini and "." not in path_context:
+    if is_ini and "." not in node_key: # node_key here is the top-level key like 'global_vars'
         allowed_ini_roots = ['aggregations', 'global_vars', 'groups']
         if key not in allowed_ini_roots:
-            errors.append(f"{file_path} [{path_context}]: invalid INI root key '{key}'. Must be one of {allowed_ini_roots}.")
-
-    if 'type' in node:
-        errors.append(f"{file_path} [{path_context}]: legacy 'type' field found. Use 'multi_type'.")
-    if 'item_type' in node:
-        errors.append(f"{file_path} [{path_context}]: legacy 'item_type' field found. Use 'item_multi_type'.")
-        
-    multi_type = node.get('multi_type')
-    item_multi_type = node.get('item_multi_type', [])
-    
-    if multi_type is None:
-        errors.append(f"{file_path} [{path_context}]: missing 'multi_type' attribute.")
-    else:
-        if not isinstance(multi_type, list):
-            errors.append(f"{file_path} [{path_context}]: 'multi_type' must be a list.")
-        else:
-             if "object" in multi_type and "list" in multi_type:
-                 errors.append(f"{file_path} [{path_context}]: 'multi_type' cannot contain both 'object' and 'list'.")
-             
-             if "list" in multi_type:
-                 if not item_multi_type:
-                     errors.append(f"{file_path} [{path_context}]: 'multi_type' contains 'list' but 'item_multi_type' is empty.")
-                 if node.get('children') and "object" not in item_multi_type:
-                      errors.append(f"{file_path} [{path_context}]: 'multi_type' contains 'list' and has children, so 'item_multi_type' must contain 'object'.")
-             
-             if "object" in multi_type:
-                 if item_multi_type:
-                     errors.append(f"{file_path} [{path_context}]: 'multi_type' contains 'object' but 'item_multi_type' is not empty.")
-                     
-             if "list" not in multi_type and item_multi_type:
-                  errors.append(f"{file_path} [{path_context}]: 'multi_type' does not contain 'list' but 'item_multi_type' is set.")
+            errors.append(f"{file_path} [{node_key}]: invalid INI root key '{key}'. Must be one of {allowed_ini_roots}.")
 
     # INI specific child type validation
     if is_ini:
-        parts = path_context.split('.')
+        parts = node_key.split('.')
         if len(parts) == 2 and parts[0] in ['aggregations', 'groups']:
             if not multi_type or "list" not in multi_type:
-                errors.append(f"{file_path} [{path_context}]: node under INI '{parts[0]}' must have 'multi_type' containing 'list'.")
+                errors.append(f"{file_path} [{node_key}]: node under INI '{parts[0]}' must have 'multi_type' containing 'list'.")
             
             if parts[0] == "groups":
                 if not item_multi_type or "object" not in item_multi_type:
-                    errors.append(f"{file_path} [{path_context}]: node under INI 'groups' must have 'item_multi_type' containing 'object'.")
+                    errors.append(f"{file_path} [{node_key}]: node under INI 'groups' must have 'item_multi_type' containing 'object'.")
                 
                 # Check for mandatory 'hostname' child if children exist
-                children = node.get('children', [])
                 if children:
-                    has_hostname = any(c.get('key') == 'hostname' for c in children)
+                    has_hostname = any((c.key if not isinstance(c, dict) else c.get('key')) == 'hostname' for c in children)
                     if not has_hostname:
-                        errors.append(f"{file_path} [{path_context}]: node under INI 'groups' must contain a 'hostname' child key.")
+                        errors.append(f"{file_path} [{node_key}]: node under INI 'groups' must contain a 'hostname' child key.")
 
-    if 'item_multi_type' in node and not isinstance(node.get('item_multi_type'), list):
-        errors.append(f"{file_path} [{path_context}]: 'item_multi_type' must be a list.")
+    if not isinstance(item_multi_type, list):
+        errors.append(f"{file_path} [{node_key}]: 'item_multi_type' must be a list.")
 
-    for child in node.get('children', []):
-        child_key = child.get('key', 'unknown')
-        errors.extend(validate_node(child, file_path, f"{path_context}.{child_key}", is_ini))
+    for child in children:
+        child_key = child.key if is_obj else child.get("key", "UNKNOWN")
+        errors.extend(validate_node(child, file_path, f"{node_key}.{child_key}", is_ini))
     
     return errors
 
-def validate_schema(data, file_path="schema.json"):
-    """
-    Validate a full schema (can be a list of nodes or a single node).
-    Returns a list of error strings.
-    """
+def validate_schema(data, file_path):
     errors = []
+    
     is_ini = file_path.endswith('.ini.json')
-    nodes_to_check = data if isinstance(data, list) else [data]
-    for node in nodes_to_check:
-        key = node.get('key', 'unknown')
-        errors.extend(validate_node(node, file_path, key, is_ini))
+    if isinstance(data, list):
+        for node in data:
+            n_key = node.key if hasattr(node, 'key') else node.get('key', 'UNKNOWN')
+            errors.extend(validate_node(node, file_path, n_key, is_ini))
+    else:
+        n_key = data.key if hasattr(data, 'key') else data.get('key', 'UNKNOWN')
+        errors.extend(validate_node(data, file_path, n_key, is_ini))
+        
     return errors
 
 def validate_scenario_templates(active_scenarios: List[ScenarioConfig]):
@@ -858,10 +861,8 @@ def validate_scenario_templates(active_scenarios: List[ScenarioConfig]):
                 if f.endswith('.json') and f != "config.json":
                     path = os.path.join(dirpath, f)
                     try:
-                        with open(path, 'r') as jf:
-                            data = json.load(jf)
-                            
-                        validation_errors.extend(validate_schema(data, path))
+                        nodes = load_json_nodes(path)
+                        validation_errors.extend(validate_schema(nodes, path))
                             
                     except json.JSONDecodeError as e:
                         validation_errors.append(f"{path}: Invalid JSON - {e}")
@@ -1009,8 +1010,19 @@ def process_scenarios(config_path, check_only=False):
             print(f" - {sc.value} (Priority: {sc.priority})")
 
     validate_required_env_vars(app_config, active_scenarios, env)
-    validate_scenario_templates(active_scenarios)
-    
+    # Validate scenario templates (dry-run if --check)
+    all_errors = validate_scenario_templates(active_scenarios)
+    if all_errors:
+        print("[ERROR] Schema validation failed:")
+        for err in all_errors:
+            print(f"  - {err}")
+        sys.exit(1)
+        
+    if check_only: # This block will not be reached if check_only is True due to the early return above.
+                   # Assuming this is intended for a different flow or a future change.
+        print("Validation successful. Exiting (check mode).")
+        sys.exit(0)
+        
     file_map = collect_scenario_files(active_scenarios)
     generate_output_files(file_map, env, app_config.raw_config)
 
