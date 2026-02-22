@@ -63,20 +63,18 @@ const InfoLabel = ({ label, tooltip, placement = 'right' }: { label: string, too
 
 export default function AddKeyModal({ nodes, onClose, onSave }: any) {
     const { DATA_TYPES, ITEM_DATA_TYPES } = useEditorConfig();
-    const [parentPath, setParentPath] = useState<string[]>([]);
+    const [parentPath, setParentPath] = useState<string[]>(['root']);
     const [keyName, setKeyName] = useState('');
     const [types, setTypes] = useState<string[]>([]);
     const [itemTypes, setItemTypes] = useState<string[]>([]);
     const [desc, setDesc] = useState('');
-    const [req, setReq] = useState<boolean | null>(false);
+    const [req, setReq] = useState<boolean | null>(true);
+    const [overrideHint, setOverrideHint] = useState(true);
 
     // Validation States
     const [parentError, setParentError] = useState<string | null>(null);
     const [keyError, setKeyError] = useState<string | null>(null);
     const [typeError, setTypeError] = useState<string | null>(null);
-
-    // Type dropdown state
-    const [isTypeDropdownOpen, setIsTypeDropdownOpen] = useState(false);
 
     // Flatten valid parents
     const validParents = useMemo(() => getValidParents(nodes), [nodes]);
@@ -109,10 +107,27 @@ export default function AddKeyModal({ nodes, onClose, onSave }: any) {
         if (types.length === 0) {
             setTypeError("At least one type is required");
             isValid = false;
+        } else {
+            // Ensure all selected types are in the allowed list
+            const invalidTypes = types.filter(t => !DATA_TYPES.includes(t));
+            if (invalidTypes.length > 0) {
+                setTypeError(`Invalid type(s): ${invalidTypes.join(', ')}`);
+                isValid = false;
+            }
+        }
+
+        // validate Item Types (if list)
+        if (types.includes('list')) {
+            const invalidItemTypes = itemTypes.filter(t => !ITEM_DATA_TYPES.includes(t) && t !== 'object');
+            if (invalidItemTypes.length > 0) {
+                // We'll show this as a type error for simplicity or alert
+                alert(`Invalid item type(s): ${invalidItemTypes.join(', ')}`);
+                isValid = false;
+            }
         }
 
         if (isValid) {
-            onSave({ parentPathString, key: keyName, types, itemTypes, desc, required: req });
+            onSave({ parentPathString, key: keyName, types, itemTypes, desc, required: req, overrideHint });
         }
     };
 
@@ -184,89 +199,97 @@ export default function AddKeyModal({ nodes, onClose, onSave }: any) {
                         {keyError && <p className="text-[10px] text-red-500 mt-1">{keyError}</p>}
                     </div>
 
-                    {/* Styled Type Selector */}
+                    {/* Redesigned Type Selector (Typeahead) */}
                     <div className="relative z-10">
                         <InfoLabel label="Type" tooltip="The data type(s) allowed for this key." placement="right" />
-                        <div className="relative">
-                            <div
-                                className={clsx(
-                                    "w-full min-h-[34px] p-1 bg-white dark:bg-zinc-800 border rounded-md flex flex-wrap gap-1.5 cursor-text transition-colors",
-                                    typeError ? "border-red-500" : "border-zinc-200 dark:border-zinc-700"
-                                )}
-                                onClick={() => {
-                                    setIsTypeDropdownOpen(true);
+                        <div className={clsx(
+                            "min-h-[38px] transition-all bg-white dark:bg-zinc-800 border rounded-md flex items-center flex-wrap px-1.5 focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500",
+                            typeError ? "border-red-500" : "border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600"
+                        )}>
+                            <Typeahead
+                                id="type-select"
+                                multiple
+                                options={DATA_TYPES}
+                                selected={types}
+                                onChange={(s) => {
+                                    const selected = s as string[];
+                                    if (selected.includes('enum')) {
+                                        setTypes(['enum']);
+                                    } else {
+                                        setTypes(selected);
+                                    }
                                     if (typeError) setTypeError(null);
                                 }}
-                            >
-                                {types.map(t => (
-                                    <span key={t} className="bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-300 text-[10px] px-1.5 py-0.5 rounded flex items-center font-mono border border-blue-100 dark:border-blue-800">
-                                        {t}
-                                        <button onClick={(e) => { e.stopPropagation(); setTypes(types.filter(x => x !== t)); }} className="ml-1 hover:text-blue-800 dark:hover:text-blue-100"><X className="w-3 h-3" /></button>
-                                    </span>
-                                ))}
-                                <input readOnly type="text" className="flex-1 bg-transparent outline-none text-xs min-w-[60px] cursor-pointer h-6 px-1" placeholder={types.length === 0 ? "Select type..." : ""} />
-                            </div>
-                            {typeError && <p className="text-[10px] text-red-500 mt-1">{typeError}</p>}
-
-                            {isTypeDropdownOpen && (
-                                <>
-                                    <div className="fixed inset-0 z-10" onClick={() => setIsTypeDropdownOpen(false)} />
-                                    <div className="absolute top-full left-0 w-full mt-1 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md shadow-lg z-20 max-h-40 overflow-y-auto py-1">
-                                        {DATA_TYPES.filter((o: string) => !types.includes(o)).map((opt: string) => (
-                                            <button
-                                                key={opt}
-                                                disabled={types.includes('enum') && opt !== 'enum'}
-                                                className={clsx(
-                                                    "w-full text-left px-3 py-1.5 text-xs font-mono",
-                                                    (types.includes('enum') && opt !== 'enum')
-                                                        ? "text-zinc-300 dark:text-zinc-600 cursor-not-allowed"
-                                                        : "hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200"
-                                                )}
-                                                onClick={() => {
-                                                    if (types.includes('enum') && opt !== 'enum') return;
-
-                                                    if (opt === 'enum') {
-                                                        setTypes(['enum']);
-                                                    } else {
-                                                        setTypes([...types, opt]);
-                                                    }
-                                                    setIsTypeDropdownOpen(false);
-                                                }}
-                                            >
-                                                {opt}
-                                            </button>
-                                        ))}
+                                placeholder={types.length === 0 ? "Search types..." : ""}
+                                className="flex-1"
+                                inputProps={{
+                                    className: 'bg-transparent border-none outline-none text-[13px] py-1.5 px-1 w-full text-zinc-900 dark:text-zinc-100 min-w-[80px]',
+                                }}
+                                renderToken={(option, props, index) => (
+                                    <div key={index} className="bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-300 text-[11px] px-2 py-0.5 rounded-md flex items-center font-mono border border-blue-100 dark:border-blue-500/20 m-0.5">
+                                        {option as string}
+                                        <button onClick={(e) => { e.stopPropagation(); props.onRemove && props.onRemove(option); }} className="ml-1.5 hover:text-blue-900 dark:hover:text-blue-100"><X className="w-3 h-3" /></button>
                                     </div>
-                                </>
-                            )}
+                                )}
+                                renderMenuItemChildren={(option) => (
+                                    <div className="text-[13px] font-mono text-zinc-700 dark:text-zinc-200 px-2 py-0.5">{option as string}</div>
+                                )}
+                                emptyLabel={<span className="text-red-500 text-xs font-medium px-2">No matches found</span>}
+                                renderMenu={(results, menuProps) => (
+                                    <Menu {...menuProps} className="bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md shadow-xl max-h-48 overflow-y-auto py-1 mt-1 z-[100]">
+                                        {results.map((result, index) => (
+                                            <MenuItem key={index} option={result} position={index}>
+                                                <div className="text-[13px] font-mono text-zinc-700 dark:text-zinc-200 px-3 py-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-700/50 cursor-pointer border-l-2 border-transparent hover:border-blue-500 transition-all">
+                                                    {result as string}
+                                                </div>
+                                            </MenuItem>
+                                        ))}
+                                    </Menu>
+                                )}
+                            />
                         </div>
+                        {typeError && <p className="text-[10px] text-red-500 mt-1">{typeError}</p>}
                     </div>
 
-                    {/* Item Type (if list) */}
+                    {/* Redesigned Item Type (if list) (Typeahead) */}
                     {types.includes('list') && (
                         <div className="pl-3 border-l-2 border-blue-500/20 py-1 relative z-0 hover:z-[60]">
                             <InfoLabel label="List Item Type" tooltip="The data type(s) allowed for items within this list." placement="right" />
-                            <div className="flex flex-wrap gap-1.5 mb-1.5">
-                                {itemTypes.map(t => (
-                                    <span key={t} className="bg-purple-50 dark:bg-purple-900/40 text-purple-600 dark:text-purple-300 text-[10px] px-1.5 py-0.5 rounded flex items-center font-mono border border-purple-100 dark:border-purple-800">
-                                        {t}
-                                        <button onClick={() => setItemTypes(itemTypes.filter(x => x !== t))} className="ml-1 hover:text-purple-800 dark:hover:text-purple-100"><X className="w-3 h-3" /></button>
-                                    </span>
-                                ))}
+                            <div className="min-h-[38px] transition-all bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md flex items-center flex-wrap px-1.5 hover:border-zinc-300 dark:hover:border-zinc-600 focus-within:ring-2 focus-within:ring-purple-500/20 focus-within:border-purple-500">
+                                <Typeahead
+                                    id="item-type-select"
+                                    multiple
+                                    options={['object', ...ITEM_DATA_TYPES]}
+                                    selected={itemTypes}
+                                    onChange={(s) => setItemTypes(s as string[])}
+                                    placeholder={itemTypes.length === 0 ? "Search item types..." : ""}
+                                    className="flex-1"
+                                    inputProps={{
+                                        className: 'bg-transparent border-none outline-none text-[13px] py-1.5 px-1 w-full text-zinc-900 dark:text-zinc-100 min-w-[80px]',
+                                    }}
+                                    renderToken={(option, props, index) => (
+                                        <div key={index} className="bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-300 text-[11px] px-2 py-0.5 rounded-md flex items-center font-mono border border-purple-100 dark:border-purple-500/20 m-0.5">
+                                            {option as string}
+                                            <button onClick={(e) => { e.stopPropagation(); props.onRemove && props.onRemove(option); }} className="ml-1.5 hover:text-purple-900 dark:hover:text-purple-100"><X className="w-3 h-3" /></button>
+                                        </div>
+                                    )}
+                                    renderMenuItemChildren={(option) => (
+                                        <div className="text-[13px] font-mono text-zinc-700 dark:text-zinc-200 px-2 py-0.5">{option as string}</div>
+                                    )}
+                                    emptyLabel={<span className="text-red-500 text-xs font-medium px-2">No matches found</span>}
+                                    renderMenu={(results, menuProps) => (
+                                        <Menu {...menuProps} className="bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md shadow-xl max-h-40 overflow-y-auto py-1 mt-1 z-[100]">
+                                            {results.map((result, index) => (
+                                                <MenuItem key={index} option={result} position={index}>
+                                                    <div className="text-[13px] font-mono text-zinc-700 dark:text-zinc-200 px-3 py-1.5 hover:bg-purple-50 dark:hover:bg-purple-900/30 cursor-pointer border-l-2 border-transparent hover:border-purple-500 transition-all">
+                                                        {result as string}
+                                                    </div>
+                                                </MenuItem>
+                                            ))}
+                                        </Menu>
+                                    )}
+                                />
                             </div>
-                            <select
-                                className="w-full px-2 py-1.5 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md text-xs outline-none focus:ring-2 focus:ring-purple-500/50"
-                                onChange={(e) => {
-                                    if (e.target.value && !itemTypes.includes(e.target.value)) {
-                                        setItemTypes([...itemTypes, e.target.value]);
-                                    }
-                                    e.target.value = '';
-                                }}
-                            >
-                                <option value="">Add item type...</option>
-                                {!itemTypes.includes('object') && <option value="object">object</option>}
-                                {ITEM_DATA_TYPES.filter((o: string) => !itemTypes.includes(o) && o !== 'object').map((o: string) => <option key={o} value={o}>{o}</option>)}
-                            </select>
                         </div>
                     )}
 
@@ -314,6 +337,23 @@ export default function AddKeyModal({ nodes, onClose, onSave }: any) {
                                 Deprecated
                             </button>
                         </div>
+                    </div>
+
+                    {/* Show Override Hint */}
+                    <div className="pt-2">
+                        <label className="flex items-center space-x-2 cursor-pointer group">
+                            <div className="relative">
+                                <input
+                                    type="checkbox"
+                                    className="sr-only peer"
+                                    checked={overrideHint}
+                                    onChange={(e) => setOverrideHint(e.target.checked)}
+                                />
+                                <div className="w-8 h-4 bg-zinc-200 dark:bg-zinc-700 rounded-full peer peer-checked:bg-blue-600 transition-colors"></div>
+                                <div className="absolute left-1 top-1 w-2 h-2 bg-white rounded-full peer-checked:translate-x-4 transition-transform"></div>
+                            </div>
+                            <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300 group-hover:text-blue-500 transition-colors">Show Override Hint</span>
+                        </label>
                     </div>
                 </div>
 

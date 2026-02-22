@@ -32,8 +32,15 @@ TAG ?= latest
 build-front:
 	docker build -t my-frontend ./file-editor/frontend
 
+build-front-x86:
+	docker buildx build --platform linux/amd64 -t my-frontend-x86 ./file-editor/frontend
+
+# docker build -t my-backend ./file-editor/backend
 build-back:
 	docker build -t my-backend ./file-editor/backend
+
+build-back-x86:
+	docker buildx build --platform linux/amd64 -t my-backend-x86 ./file-editor/backend
 
 web-dev:
 	docker-compose up -d

@@ -1,8 +1,5 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
-
-const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "File Editor",
@@ -35,7 +32,9 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className={inter.className}>{children}</body>
+      <body className="antialiased selection:bg-blue-100 dark:selection:bg-blue-900/40">
+        {children}
+      </body>
     </html>
   );
 }

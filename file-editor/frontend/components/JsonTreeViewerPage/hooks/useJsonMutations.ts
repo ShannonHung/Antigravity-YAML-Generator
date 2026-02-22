@@ -50,6 +50,7 @@ export function useJsonMutations(
             multi_type: data.types,
             item_multi_type: data.types.includes('list') ? data.itemTypes : undefined,
             required: data.required,
+            override_hint: data.overrideHint,
             children: []
         };
 

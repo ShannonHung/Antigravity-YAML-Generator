@@ -2,7 +2,22 @@ import { useState } from 'react';
 import { JsonNode } from '../types';
 
 export function useJsonUiState(nodes: JsonNode[]) {
-    const [expandedKeys, setExpandedKeys] = useState<Set<string>>(new Set());
+    // Helper to get all keys with children
+    const getAllExpandableKeys = (list: JsonNode[]): Set<string> => {
+        const keys = new Set<string>();
+        const traverse = (items: JsonNode[]) => {
+            items.forEach(n => {
+                if (n.children && n.children.length > 0) {
+                    keys.add(n.key);
+                    traverse(n.children);
+                }
+            });
+        };
+        traverse(list);
+        return keys;
+    };
+
+    const [expandedKeys, setExpandedKeys] = useState<Set<string>>(() => getAllExpandableKeys(nodes));
     const [isAddKeyModalOpen, setIsAddKeyModalOpen] = useState(false);
     const [deleteTarget, setDeleteTarget] = useState<{ node: JsonNode, parentPath: string } | null>(null);
 
