@@ -2,6 +2,9 @@
     {
         "key": "trident_ssd",
         "description": "TVM disabled ssd",
+        "multi_type": [
+            "boolean"
+        ],
         "default_value": false,
         "override_hint": false,
         "required": true,

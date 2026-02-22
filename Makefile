@@ -5,6 +5,8 @@ gen:
 test:
 	@python -m unittest discover tests
 
+check: 
+	@python yaml_generator.py --check
 web:
 	make -j 2 backend frontend
 

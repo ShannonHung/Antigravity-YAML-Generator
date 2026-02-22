@@ -2,6 +2,9 @@
     {
         "key": "fab_location",
         "description": "Location of the fab",
+        "multi_type": [
+            "string"
+        ],
         "default_value": "${FAB}",
         "override_hint": false,
         "required": true,
@@ -10,6 +13,9 @@
     {
         "key": "tvm_fabvar",
         "description": "Location of the multitenant fab",
+        "multi_type": [
+            "string"
+        ],
         "default_value": "${TVM_FAB}",
         "override_hint": false,
         "required": true,

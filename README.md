@@ -58,6 +58,10 @@ export SERVICE=my-service
 export SCENARIO_TYPE=default; export SERVICE=myservice; export CLUSTER_NAME=mycluster; export FAB=f1;
 
 python3 yaml_generator.py
+
+# Validation Only Mode (Check mode)
+# Validates all templates defined in config.json across all scenarios
+python3 yaml_generator.py --check
 ```
 
 ---

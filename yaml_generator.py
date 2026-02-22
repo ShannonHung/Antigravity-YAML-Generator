@@ -980,7 +980,7 @@ def generate_output_files(file_map: dict, env: dict, raw_config: dict):
                  
              save_file(final_output_path, content)
 
-def process_scenarios(config_path):
+def process_scenarios(config_path, check_only=False):
     try:
         raw_config = load_json(config_path)
     except Exception as e:
@@ -992,6 +992,13 @@ def process_scenarios(config_path):
     
     validate_config_scenarios(app_config)
     
+    if check_only:
+        print(f"\033[94m[CHECK MODE] Validating all scenario templates in '{config_path}'...\033[0m")
+        # In check mode, we validate ALL scenarios defined in config, not just active ones
+        validate_scenario_templates(app_config.scenarios)
+        print(f"\033[92m[SUCCESS] All templates in config are valid.\033[0m")
+        return
+
     active_scenarios = determine_active_scenarios(app_config, env)
     
     if not active_scenarios:
@@ -1008,8 +1015,10 @@ def process_scenarios(config_path):
     generate_output_files(file_map, env, app_config.raw_config)
 
 if __name__ == "__main__":
-    if len(sys.argv) > 1:
-        config_path = sys.argv[1]
-    else:
-        config_path = "template/scenario/config.json"
-    process_scenarios(config_path)
+    import argparse
+    parser = argparse.ArgumentParser(description="YAML/INI Generator with Scenario Overrides")
+    parser.add_argument("config", nargs="?", default="template/scenario/config.json", help="Path to config.json")
+    parser.add_argument("--check", action="store_true", help="Validation only mode (no file generation)")
+    
+    args = parser.parse_args()
+    process_scenarios(args.config, check_only=args.check)

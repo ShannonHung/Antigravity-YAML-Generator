@@ -2,6 +2,12 @@
     {
         "key": "trident_ssd_object_ids",
         "description": "multitenant must using id=1, vip=192.168.1.1",
+        "multi_type": [
+            "list"
+        ],
+        "item_multi_type": [
+            "object"
+        ],
         "override_hint": false,
         "default_value": [
             {
