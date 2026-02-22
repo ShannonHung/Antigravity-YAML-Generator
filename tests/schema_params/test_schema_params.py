@@ -97,5 +97,9 @@ class TestSchemaParams(unittest.TestCase):
         # 11: Ensure empty objects {} and lists [] are on the same line as the key
         self._generate_and_compare('empty_containers.yml.json', 'empty_containers.yml')
 
+    def test_block_scalars(self):
+        # 12: Ensure multi-line strings use block scalar | and correct hint placement
+        self._generate_and_compare('block_scalar.yml.json', 'block_scalar.yml')
+
 if __name__ == '__main__':
     unittest.main()

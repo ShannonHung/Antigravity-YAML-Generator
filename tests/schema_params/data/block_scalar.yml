@@ -1,0 +1,27 @@
+# ==========================================
+# Multi-line string should use block scalar |
+# ==========================================
+test_certificate: |
+  Line 1
+  Line 2
+  Line 3
+
+
+# ==========================================
+# Multi-line string with override hint
+# ==========================================
+test_ov_cert: | # <=== [Override]
+  Cert Start
+  Cert End
+
+
+# ==========================================
+# User requested certificate example
+# ==========================================
+ca.crt: |
+  -----BEGIN CERTIFICATE-----
+  MIIDdTCCAl2gAwIBAgIUdP0xq2x9...
+  w0BAQsFADBoMQswCQYDVQQGEwJUVzER
+  ...
+  9x1Q5KJ8G3xM3f==
+  -----END CERTIFICATE-----

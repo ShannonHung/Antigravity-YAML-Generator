@@ -233,6 +233,9 @@ def quoted_str_representer(dumper, data):
     elif any(c in data for c in ":#[]{}/"):
         needs_quotes = True
     
+    if "\n" in data:
+        return dumper.represent_scalar('tag:yaml.org,2002:str', data, style='|')
+    
     if needs_quotes:
         return dumper.represent_scalar('tag:yaml.org,2002:str', data, style='"')
     else:
@@ -271,10 +274,19 @@ def format_yaml_value(value, indent_level, val_type=None):
             return "[]" if isinstance(value, list) else "{}"
         s = yaml.dump(value, default_flow_style=False, width=1000)
         lines = s.splitlines()
-        indented_lines = []
-        for line in lines:
-            indented_lines.append(line)
-        return "\n" + "\n".join([f"{prefix}{line}" for line in indented_lines])
+        return "\n" + "\n".join([f"{prefix}{line}" for line in lines])
+
+    if isinstance(value, str) and "\n" in value:
+        s = yaml.dump(value, default_flow_style=False)
+        lines = s.splitlines()
+        if lines and lines[0].strip() in ('|', '|-', '|+', '>', '>-', '>+'):
+            indicator = lines[0].strip()
+            content_lines = lines[1:]
+            # Use same spaces as key for content prefix, because yaml.dump already adds 2 spaces
+            content_prefix = "  " * indent_level
+            # Lines from yaml.dump already have 2 spaces, so this adds correct indentation
+            return f" {indicator}\n" + "\n".join([f"{content_prefix}{l}" for l in content_lines])
+        return "\n" + "\n".join([f"{prefix}{line}" for line in lines])
 
     # 4. Handle Scala String directly using our logic to avoid yaml.dump overhead for simple strings?
     # Actually, let's use the same logic pattern for consistency, or just call the logic directly.
@@ -457,7 +469,11 @@ def generate_yaml_from_schema(nodes: List[SchemaNode], indent=0, config=None):
             
             val_str = format_yaml_value(val_to_print, indent, effective_type)
             if '\n' in val_str:
-                 lines.append(f"{line_content}{current_hint} {val_str}")
+                 if val_str.startswith(" |") or val_str.startswith(" >"):
+                      parts = val_str.split("\n", 1)
+                      lines.append(f"{line_content}{parts[0]}{current_hint}\n{parts[1]}")
+                 else:
+                      lines.append(f"{line_content}{current_hint}{val_str}")
             else:
                  lines.append(f"{line_content} {val_str}{current_hint}")
 

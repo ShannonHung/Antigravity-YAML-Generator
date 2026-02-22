@@ -1,0 +1,32 @@
+[
+    {
+        "key": "test_certificate",
+        "description": "Multi-line string should use block scalar |",
+        "multi_type": [
+            "string"
+        ],
+        "default_value": "Line 1\nLine 2\nLine 3\n",
+        "override_hint": false,
+        "required": true
+    },
+    {
+        "key": "test_ov_cert",
+        "description": "Multi-line string with override hint",
+        "multi_type": [
+            "string"
+        ],
+        "default_value": "Cert Start\nCert End\n",
+        "override_hint": true,
+        "is_override": true,
+        "required": true
+    },
+    {
+        "key": "ca.crt",
+        "description": "User requested certificate example",
+        "multi_type": [
+            "string"
+        ],
+        "default_value": "-----BEGIN CERTIFICATE-----\nMIIDdTCCAl2gAwIBAgIUdP0xq2x9...\nw0BAQsFADBoMQswCQYDVQQGEwJUVzER\n...\n9x1Q5KJ8G3xM3f==\n-----END CERTIFICATE-----\n",
+        "required": true
+    }
+]
