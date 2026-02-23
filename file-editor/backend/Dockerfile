@@ -4,10 +4,16 @@ WORKDIR /app
 
 # Install dependencies
 COPY requirements.txt .
+
 RUN pip install --no-cache-dir -r requirements.txt
 
+RUN groupadd -g 1000 appuser && \
+    useradd -u 1000 -g appuser -m appuser
+
 # Copy application code
-COPY . .
+COPY --chown=appuser:appuser . .
+
+RUN chown -R appuser:appuser /app
 
 # Ensure template directory exists and is empty
 RUN mkdir -p template && rm -rf template/*
