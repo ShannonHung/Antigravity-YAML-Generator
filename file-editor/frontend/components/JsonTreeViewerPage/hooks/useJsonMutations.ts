@@ -46,13 +46,47 @@ export function useJsonMutations(
     const handleSaveNewKey = async (data: any) => {
         // Data contains: { parentPathString: "root.ntp", key, types, itemTypes, desc, required }
         const newNodes = JSON.parse(JSON.stringify(nodes));
+        let finalDefaultValue: any = null;
+        if (data.defaultValue) {
+            const trimmed = String(data.defaultValue).trim();
+            let parsed = false;
+
+            // 1. Try JSON parsing if it looks like an object or array
+            if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+                try {
+                    finalDefaultValue = JSON.parse(trimmed);
+                    parsed = true;
+                } catch (e) {
+                    // Let it fall through to string
+                }
+            }
+
+            // 2. Try primitive casting if not parsed as JSON
+            if (!parsed) {
+                if (trimmed === 'true' || trimmed === 'false') {
+                    finalDefaultValue = trimmed === 'true';
+                } else if (!isNaN(Number(trimmed)) && trimmed !== '') {
+                    finalDefaultValue = Number(trimmed);
+                } else {
+                    finalDefaultValue = data.defaultValue; // Store raw string
+                }
+            }
+        }
+
         const newNode: JsonNode = {
             key: data.key,
-            description: data.desc,
+            description: data.desc || "",
             multi_type: data.types,
             item_multi_type: data.types.includes('list') ? data.itemTypes : undefined,
+            regex_enable: false,
+            regex: "",
             required: data.required,
+            either_required: data.eitherRequired,
+            uniqueness: data.uniqueness,
             override_hint: data.overrideHint,
+            override_strategy: 'merge',
+            default_value: finalDefaultValue,
+            condition: null,
             children: []
         };
 

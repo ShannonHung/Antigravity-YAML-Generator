@@ -17,31 +17,28 @@ export function useKeyMutations(
         // 1. Process Default Value
         let finalDefaultValue: any = defaultValue;
         if (defaultValue) {
-            try {
-                if (types.includes('object') || types.includes('list')) {
-                    finalDefaultValue = JSON.parse(defaultValue);
-                } else if (types.includes('boolean')) {
-                    finalDefaultValue = defaultValue === 'true';
-                } else if (types.includes('number')) {
-                    finalDefaultValue = parseFloat(defaultValue);
-                    if (isNaN(finalDefaultValue)) throw new Error("Invalid number");
-                } else {
-                    // Try to auto-parse if it looks like JSON array or object
-                    const trimmed = String(defaultValue).trim();
-                    if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
-                        try {
-                            finalDefaultValue = JSON.parse(trimmed);
-                        } catch (e) {
-                            // Leave as string if parsing fails
-                            finalDefaultValue = defaultValue;
-                        }
-                    } else {
-                        finalDefaultValue = defaultValue;
-                    }
+            const trimmed = String(defaultValue).trim();
+            let parsed = false;
+
+            // 1. Try JSON parsing if it looks like an object or array
+            if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+                try {
+                    finalDefaultValue = JSON.parse(trimmed);
+                    parsed = true;
+                } catch (e) {
+                    // Let it fall through to string
                 }
-            } catch (e) {
-                alert("Invalid Default Value format for selected type.");
-                return;
+            }
+
+            // 2. Try primitive casting if not parsed as JSON
+            if (!parsed) {
+                if (trimmed === 'true' || trimmed === 'false') {
+                    finalDefaultValue = trimmed === 'true';
+                } else if (!isNaN(Number(trimmed)) && trimmed !== '') {
+                    finalDefaultValue = Number(trimmed);
+                } else {
+                    finalDefaultValue = defaultValue; // Store raw string
+                }
             }
         }
 
@@ -58,6 +55,8 @@ export function useKeyMutations(
                             item.key = keyName;
                             item.description = description;
                             item.required = required;
+                            item.either_required = formData.eitherRequired;
+                            item.uniqueness = formData.uniqueness;
                             item.override_hint = overrideHint;
 
                             if (overrideStrategy && overrideStrategy !== 'merge') {

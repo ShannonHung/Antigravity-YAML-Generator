@@ -253,7 +253,8 @@ def format_yaml_value(value, indent_level, val_type=None):
     Format a value as YAML using the custom representer.
     """
     # For block formatting (dicts/lists), we want children indented 2 spaces more than the current level
-    prefix = "  " * (indent_level + 2)
+    # 1 space level = 2 spaces. So indent + 1.
+    prefix = "  " * (indent_level + 1)
     
     # 1. Handle None
     if value is None:
@@ -269,12 +270,56 @@ def format_yaml_value(value, indent_level, val_type=None):
     # Since we registered str representer, yaml.dump will use it for top-level strings too.
     # But careful: yaml.dump adds \n... and indenting issues.
     
-    if isinstance(value, (list, dict)):
+    if isinstance(value, dict):
         if not value:
-            return "[]" if isinstance(value, list) else "{}"
-        s = yaml.dump(value, default_flow_style=False, width=1000)
-        lines = s.splitlines()
-        return "\n" + "\n".join([f"{prefix}{line}" for line in lines])
+            return "{}"
+        
+        # Manually format the dict to gain control over list indentation within it
+        lines = []
+        for k, v in value.items():
+            formatted_k = format_yaml_value(k, -1, 'string').strip()
+            if isinstance(v, (dict, list)):
+                # render nested block
+                child_val = format_yaml_value(v, indent_level + 1)
+                lines.append(f"{prefix}{formatted_k}:{child_val}")
+            else:
+                formatted_v = format_yaml_value(v, -1, 'string').strip()
+                if "\n" in formatted_v:
+                     # block scalar
+                     parts = formatted_v.split("\n", 1)
+                     lines.append(f"{prefix}{formatted_k}: {parts[0]}")
+                     for sub_line in parts[1].splitlines():
+                          lines.append(f"{prefix}  {sub_line}")
+                else:
+                     lines.append(f"{prefix}{formatted_k}: {formatted_v}")
+        
+        return "\n" + "\n".join(lines)
+        
+    if isinstance(value, list):
+        if not value:
+            return "[]"
+        # Manually format list to control indentation perfectly
+        list_prefix = prefix
+        lines = []
+        for item in value:
+            if isinstance(item, (dict, list)):
+                # Fallback to yaml.dump for nested complex structures but strip trailing newline
+                item_yaml = yaml.dump(item, default_flow_style=False, width=1000).rstrip()
+                item_lines = item_yaml.splitlines()
+                lines.append(f"{list_prefix}- {item_lines[0]}")
+                for sub_line in item_lines[1:]:
+                    lines.append(f"{list_prefix}  {sub_line}")
+            else:
+                formatted_item = format_yaml_value(item, -1, 'string').strip()
+                if "\n" in formatted_item:
+                    # block scalar inside list
+                    parts = formatted_item.split("\n", 1)
+                    lines.append(f"{list_prefix}- {parts[0]}")
+                    for sub_line in parts[1].splitlines():
+                        lines.append(f"{list_prefix}  {sub_line}")
+                else:
+                    lines.append(f"{list_prefix}- {formatted_item}")
+        return "\n" + "\n".join(lines)
 
     if isinstance(value, str) and "\n" in value:
         s = yaml.dump(value, default_flow_style=False)
@@ -385,6 +430,9 @@ def generate_yaml_from_schema(nodes: List[SchemaNode], indent=0, config=None):
             
         if indent == 0 and not is_first:
             lines.extend([""] * top_level_spacing)
+            
+        node_lines = []
+        desc_line_count = 0
                 
         # Duck-type access
         n_desc = getattr(node, 'description', "") if not isinstance(node, dict) else node.get('description', "")
@@ -399,10 +447,14 @@ def generate_yaml_from_schema(nodes: List[SchemaNode], indent=0, config=None):
                 clean_desc = n_desc[1:]
                 if clean_desc.startswith(" "):
                     clean_desc = clean_desc[1:]
-                lines.extend(generate_banner(clean_desc, indent=indent))
+                banner_lines = generate_banner(clean_desc, indent=indent)
+                node_lines.extend(banner_lines)
+                desc_line_count = len(banner_lines)
             else:
-                for desc_line in n_desc.splitlines():
-                    lines.append(f"{prefix}# {desc_line}")
+                desc_lines = n_desc.splitlines()
+                for desc_line in desc_lines:
+                    node_lines.append(f"{prefix}# {desc_line}")
+                desc_line_count = len(desc_lines)
         
         if indent == 0:
             is_first = False
@@ -419,9 +471,9 @@ def generate_yaml_from_schema(nodes: List[SchemaNode], indent=0, config=None):
             if n_children:
                 if value is not None and isinstance(value, list) and len(value) > 0:
                     val = format_yaml_value(value, indent, 'list')
-                    lines.append(f"{line_content}{current_hint}{val}" if val.strip() else f"{line_content} []{current_hint}")
+                    node_lines.append(f"{line_content}{current_hint}{val}" if val.strip() else f"{line_content} []{current_hint}")
                 else:
-                    lines.append(f"{line_content}{current_hint}")
+                    node_lines.append(f"{line_content}{current_hint}")
                     # Render list items from children schema
                     list_item_started = False
                     for child_node in n_children:
@@ -431,37 +483,33 @@ def generate_yaml_from_schema(nodes: List[SchemaNode], indent=0, config=None):
                             
                             if not list_item_started:
                                 if cl.lstrip().startswith("#"):
-                                    # Align comment with the DASH line (indent*2 + 2)
-                                    # indent=1 -> 4 spaces. indent=2 -> 6 spaces.
-                                    # That is '  ' * (indent + 1)
-                                    lines.append(f"{'  ' * (indent + 1)}{cl.lstrip()}")
+                                    # Keep initial comments aligned with the dash
+                                    node_lines.append(cl)
                                 else:
-                                    # This is the first content line, add the dash
-                                    # dash at col 4 (if dns=0, search=2. indent=1)
-                                    lines.append(f"{'  ' * indent}  - {cl.lstrip()}")
+                                    # Insert `- ` without destroying existing internal indentation
+                                    leading_spaces = len(cl) - len(cl.lstrip(' '))
+                                    node_lines.append(cl[:leading_spaces] + "- " + cl.lstrip(' '))
                                     list_item_started = True
                             else:
-                                # Align with text: 2 spaces more than the text of the first key (- key: ...)
-                                # dash at 4 -> key at 6 -> sibling at 8.
-                                # 8 spaces is '  ' * (indent + 3) if indent=1.
-                                lines.append(f"{'  ' * (indent + 3)}{cl.lstrip()}")
+                                # Maintain parallel indentation alignment for subsequent lines
+                                node_lines.append(f"  {cl}")
             else:
                  val = format_yaml_value(value if value is not None else [], indent, 'list')
                  if val.startswith("\n"):
-                     lines.append(f"{line_content}{current_hint}{val}")
+                     node_lines.append(f"{line_content}{current_hint}{val}")
                  else:
-                     lines.append(f"{line_content} {val}{current_hint}")
+                     node_lines.append(f"{line_content} {val}{current_hint}")
 
         elif "object" in n_multi_type:
              if n_children:
-                 lines.append(f"{line_content}{current_hint}")
-                 lines.extend(generate_yaml_from_schema(n_children, indent + 1, config))
+                 node_lines.append(f"{line_content}{current_hint}")
+                 node_lines.extend(generate_yaml_from_schema(n_children, indent + 1, config))
              else:
                   val = format_yaml_value(value if value is not None else {}, indent, 'object')
                   if val.startswith("\n"):
-                      lines.append(f"{line_content}{current_hint}{val}")
+                      node_lines.append(f"{line_content}{current_hint}{val}")
                   else:
-                      lines.append(f"{line_content} {val}{current_hint}")
+                      node_lines.append(f"{line_content} {val}{current_hint}")
             
         else:
             effective_type = 'string'
@@ -476,11 +524,38 @@ def generate_yaml_from_schema(nodes: List[SchemaNode], indent=0, config=None):
             if '\n' in val_str:
                  if val_str.startswith(" |") or val_str.startswith(" >"):
                       parts = val_str.split("\n", 1)
-                      lines.append(f"{line_content}{parts[0]}{current_hint}\n{parts[1]}")
+                      node_lines.append(f"{line_content}{parts[0]}{current_hint}\n{parts[1]}")
                  else:
-                      lines.append(f"{line_content}{current_hint}{val_str}")
+                      node_lines.append(f"{line_content}{current_hint}{val_str}")
             else:
-                 lines.append(f"{line_content} {val_str}{current_hint}")
+                 node_lines.append(f"{line_content} {val_str}{current_hint}")
+
+        is_required = getattr(node, 'required', True) if not isinstance(node, dict) else node.get('required', True)
+        if hasattr(node, "get") and isinstance(node, dict):
+            is_required = node.get('required', True)
+        elif hasattr(node, "required"):
+            is_required = getattr(node, "required")
+        else:
+            is_required = True
+
+        if is_required is False:
+            commented_node_lines = []
+            flat_node_lines = []
+            for line in node_lines:
+                flat_node_lines.extend(line.split("\n"))
+                
+            for i, line in enumerate(flat_node_lines):
+                if i < desc_line_count:
+                    commented_node_lines.append(line)
+                    continue
+                if not line.strip():
+                    commented_node_lines.append(line)
+                    continue
+                idx = len(line) - len(line.lstrip(' '))
+                commented_node_lines.append(line[:idx] + "# " + line[idx:])
+            node_lines = commented_node_lines
+            
+        lines.extend(node_lines)
 
     return lines
 
@@ -1051,7 +1126,12 @@ def process_scenarios(config_path, check_only=False):
     if check_only:
         print(f"\033[94m[CHECK MODE] Validating all scenario templates in '{config_path}'...\033[0m")
         # In check mode, we validate ALL scenarios defined in config, not just active ones
-        validate_scenario_templates(app_config.scenarios)
+        all_errors = validate_scenario_templates(app_config.scenarios)
+        if all_errors:
+            print("[ERROR] Schema validation failed:")
+            for err in all_errors:
+                print(f"  - {err}")
+            sys.exit(1)
         print(f"\033[92m[SUCCESS] All templates in config are valid.\033[0m")
         return
 

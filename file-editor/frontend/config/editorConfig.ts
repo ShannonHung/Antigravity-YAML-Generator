@@ -1,7 +1,7 @@
 export const DATA_TYPES = [
     "string",
     "number",
-    "boolean",
+    "bool",
     "object",
     "list",
     "ntp",
@@ -14,7 +14,7 @@ export const DATA_TYPES = [
 export const ITEM_DATA_TYPES = [
     "string",
     "number",
-    "boolean",
+    "bool",
     "object",
     "ntp",
     "ip",

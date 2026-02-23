@@ -74,6 +74,14 @@ export default function TreeNode({
                         )}>
                             {node.key}
                         </span>
+                        {node.override_hint && (
+                            <span
+                                className="px-1.5 py-[2px] rounded text-[9px] font-bold uppercase tracking-wider bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/30 cursor-help"
+                                title="Override Recommended"
+                            >
+                                Override
+                            </span>
+                        )}
                     </div>
                 </td>
 

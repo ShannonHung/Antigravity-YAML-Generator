@@ -11,11 +11,13 @@ export default function KeyIdentityForm({
     types, setTypes,
     itemTypes, setItemTypes,
     required, setRequired,
+    eitherRequired, setEitherRequired,
+    uniqueness, setUniqueness,
     overrideHint, setOverrideHint,
     overrideStrategy, setOverrideStrategy,
     plugins, setPlugins
 }: any) {
-    const { DATA_TYPES, ITEM_DATA_TYPES, DEFAULT_PLUGINS } = useEditorConfig();
+    const { DATA_TYPES, ITEM_DATA_TYPES, DEFAULT_PLUGINS, UNIQUENESS_OPTIONS } = useEditorConfig();
 
     return (
         <div className="space-y-4">
@@ -94,7 +96,7 @@ export default function KeyIdentityForm({
                                 <Typeahead
                                     id="item-type-select-editor"
                                     multiple
-                                    options={['object', ...ITEM_DATA_TYPES]}
+                                    options={ITEM_DATA_TYPES}
                                     selected={itemTypes}
                                     onChange={(s) => setItemTypes(s as string[])}
                                     placeholder={itemTypes.length === 0 ? "Search item types..." : ""}
@@ -167,6 +169,43 @@ export default function KeyIdentityForm({
                             >
                                 Deprecated
                             </button>
+                        </div>
+                    </div>
+
+                    {/* Either Required Selector */}
+                    <div className="w-full md:w-[48%] mt-2 md:mt-0">
+                        <InfoLabel label="Either Required" tooltip="If true, at least one key at this path level must exist." placement="right" />
+                        <label className="flex items-center h-[36px] space-x-3 px-3 rounded-lg bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 cursor-pointer">
+                            <div className="relative flex items-center">
+                                <input
+                                    type="checkbox"
+                                    className="sr-only peer"
+                                    checked={eitherRequired}
+                                    onChange={(e) => setEitherRequired(e.target.checked)}
+                                />
+                                <div className="w-8 h-4 bg-zinc-200 dark:bg-zinc-700 rounded-full peer peer-checked:bg-purple-600 transition-colors"></div>
+                                <div className="absolute left-1 w-2 h-2 bg-white rounded-full peer-checked:translate-x-4 transition-transform"></div>
+                            </div>
+                            <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Requires peers</span>
+                        </label>
+                    </div>
+
+                    {/* Uniqueness Selector */}
+                    <div className="w-full md:w-[48%]">
+                        <InfoLabel label="Uniqueness" tooltip="The scoping level at which this key must be unique." placement="right" />
+                        <div className="relative">
+                            <select
+                                value={uniqueness}
+                                onChange={(e) => setUniqueness(e.target.value)}
+                                className="w-full px-3 py-[9px] bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-xs font-medium transition-colors appearance-none cursor-pointer text-zinc-700 dark:text-zinc-100"
+                            >
+                                {UNIQUENESS_OPTIONS.map((opt) => (
+                                    <option key={opt} value={opt}>{opt.charAt(0).toUpperCase() + opt.slice(1)}</option>
+                                ))}
+                            </select>
+                            <div className="absolute right-3 top-[10px] pointer-events-none text-zinc-400">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </div>
                         </div>
                     </div>
 

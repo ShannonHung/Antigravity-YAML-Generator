@@ -6,6 +6,8 @@ export function useKeyForm(initialData: any) {
     const [keyName, setKeyName] = useState('');
     const [description, setDescription] = useState('');
     const [required, setRequired] = useState<boolean | null>(false);
+    const [eitherRequired, setEitherRequired] = useState<boolean>(false);
+    const [uniqueness, setUniqueness] = useState<string>('cluster');
     const [overrideHint, setOverrideHint] = useState(false);
     const [overrideStrategy, setOverrideStrategy] = useState<'merge' | 'replace'>('merge');
     const [plugins, setPlugins] = useState<string[]>([]);
@@ -31,6 +33,8 @@ export function useKeyForm(initialData: any) {
         } else {
             setRequired(!!initialData.required);
         }
+        setEitherRequired(!!initialData.either_required);
+        setUniqueness(initialData.uniqueness || 'cluster');
         setOverrideHint(!!initialData.override_hint);
         setOverrideStrategy(initialData.override_strategy || 'merge');
         setPlugins(initialData.plugins || []);
@@ -79,6 +83,8 @@ export function useKeyForm(initialData: any) {
         keyName, setKeyName,
         description, setDescription,
         required, setRequired,
+        eitherRequired, setEitherRequired,
+        uniqueness, setUniqueness,
         overrideHint, setOverrideHint,
         overrideStrategy, setOverrideStrategy,
         types, setTypes,

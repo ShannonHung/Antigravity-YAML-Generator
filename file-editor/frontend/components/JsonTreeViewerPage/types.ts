@@ -12,6 +12,8 @@ export interface JsonNode {
     regex_enable?: boolean;
     regex?: string;
     required?: boolean | null;
+    either_required?: boolean;
+    uniqueness?: string;
     condition?: any;
     children?: JsonNode[];
     [key: string]: any;

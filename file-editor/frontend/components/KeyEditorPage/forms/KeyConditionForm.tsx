@@ -62,16 +62,20 @@ export default function KeyConditionForm({ condition, setCondition, availableKey
                                 return (
                                     <div key={idx} className={`flex items-center space-x-2 bg-white dark:bg-zinc-800 p-2 rounded-lg border border-zinc-200 dark:border-zinc-700 shadow-sm group relative ${openConditionKeyIndex === idx ? 'z-50' : 'z-10'}`}>
                                         {/* Key Selector (Custom Searchable Dropdown) */}
-                                        <div className="flex-1 w-[40%] relative">
+                                        <div className="flex-1 w-[45%] relative">
                                             <div
-                                                className="w-full text-xs border rounded px-2 py-1.5 border-zinc-200 dark:border-zinc-700 bg-transparent cursor-pointer hover:border-blue-400 truncate"
+                                                className="w-full text-xs border rounded px-2 py-1.5 border-zinc-200 dark:border-zinc-700 bg-transparent cursor-pointer hover:border-blue-400 flex items-center shadow-inner"
                                                 onClick={() => {
                                                     setOpenConditionKeyIndex(idx);
                                                     setConditionKeySearch('');
                                                 }}
+                                                title={cond.key || "Select Field"}
                                             >
                                                 {cond.key ? (
-                                                    <span>{cond.key} <span className="text-zinc-400 ml-1">({availableKeys.find((k: any) => k.path === cond.key)?.type || '?'})</span></span>
+                                                    <div className="truncate w-full font-mono">
+                                                        <span>{cond.key}</span>
+                                                        <span className="text-zinc-400 ml-1 font-sans">({availableKeys.find((k: any) => k.path === cond.key)?.type || '?'})</span>
+                                                    </div>
                                                 ) : (
                                                     <span className="text-zinc-400">Select Field...</span>
                                                 )}
@@ -107,8 +111,8 @@ export default function KeyConditionForm({ condition, setCondition, availableKey
                                                                             setOpenConditionKeyIndex(null);
                                                                         }}
                                                                     >
-                                                                        <span className="font-mono truncate mr-2">{k.path}</span>
-                                                                        <span className="text-[10px] text-zinc-400 bg-zinc-50 dark:bg-zinc-900 px-1 rounded border border-zinc-100 dark:border-zinc-700/50 group-hover/item:border-zinc-200">{k.type}</span>
+                                                                        <span className="font-mono text-[11px] truncate whitespace-normal break-all mr-2" title={k.path}>{k.path}</span>
+                                                                        <span className="text-[10px] text-zinc-400 bg-zinc-50 dark:bg-zinc-900 px-1 rounded border border-zinc-100 dark:border-zinc-700/50 group-hover/item:border-zinc-200 shrink-0">{k.type}</span>
                                                                     </button>
                                                                 ))}
                                                             {availableKeys.filter((k: any) => k.path.toLowerCase().includes(conditionKeySearch.toLowerCase())).length === 0 && (
@@ -136,9 +140,10 @@ export default function KeyConditionForm({ condition, setCondition, availableKey
                                         {/* Value Input */}
                                         <input
                                             type="text"
-                                            className="flex-1 bg-transparent text-xs border rounded px-2 py-1.5 border-zinc-200 dark:border-zinc-700 outline-none focus:border-blue-500 w-[30%]"
+                                            className="flex-[2] bg-transparent text-xs border rounded px-2 py-1.5 border-zinc-200 dark:border-zinc-700 outline-none focus:border-blue-500 min-w-[30%] shadow-inner"
                                             placeholder="Value"
                                             value={cond.value}
+                                            title={cond.value}
                                             onChange={e => {
                                                 const newConds = [...condition.conditions];
                                                 newConds[idx].value = e.target.value;

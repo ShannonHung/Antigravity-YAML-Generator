@@ -41,6 +41,9 @@ function getEditorConfig(): Partial<EditorConfig> {
   const envDefaultPlugins = parseEnvArray(process.env.DEFAULT_PLUGINS);
   if (envDefaultPlugins) config.DEFAULT_PLUGINS = envDefaultPlugins;
 
+  const envUniquenessOptions = parseEnvArray(process.env.UNIQUENESS_OPTIONS);
+  if (envUniquenessOptions) config.UNIQUENESS_OPTIONS = envUniquenessOptions;
+
   return config;
 }
 

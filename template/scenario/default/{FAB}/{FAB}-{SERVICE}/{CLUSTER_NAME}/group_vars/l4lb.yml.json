@@ -1,0 +1,112 @@
+[
+    {
+        "key": "l4lb_node_vips",
+        "description": "# Optional keys test",
+        "required": true,
+        "multi_type": [
+            "object"
+        ],
+        "default_value": {},
+        "children": [
+            {
+                "key": "ipv4_pools",
+                "required": true,
+                "multi_type": [
+                    "object"
+                ],
+                "default_value": {},
+                "children": [
+                    {
+                        "key": "infra_wildcard_vip",
+                        "required": true,
+                        "multi_type": [
+                            "object"
+                        ],
+                        "default_value": {
+                            "type": "infra",
+                            "ips": [
+                                "<IP>/32"
+                            ]
+                        },
+                        "children": [
+                            {
+                                "key": "type",
+                                "description": "",
+                                "multi_type": [
+                                    "string"
+                                ],
+                                "regex_enable": false,
+                                "regex": "",
+                                "required": true,
+                                "either_required": false,
+                                "uniqueness": "cluster",
+                                "override_hint": false,
+                                "override_strategy": "merge",
+                                "default_value": "infra",
+                                "condition": null,
+                                "children": []
+                            },
+                            {
+                                "key": "ips",
+                                "description": "",
+                                "multi_type": [
+                                    "list"
+                                ],
+                                "item_multi_type": [
+                                    "ip",
+                                    "string"
+                                ],
+                                "regex_enable": false,
+                                "regex": "",
+                                "required": true,
+                                "either_required": false,
+                                "uniqueness": "cluster",
+                                "override_hint": true,
+                                "override_strategy": "merge",
+                                "default_value": [
+                                    "<ip>/32"
+                                ],
+                                "children": []
+                            }
+                        ]
+                    },
+                    {
+                        "key": "thanos_wildcard_vip",
+                        "required": true,
+                        "multi_type": [
+                            "object"
+                        ],
+                        "default_value": {
+                            "type": "infra",
+                            "ips": [
+                                "<IP>/32"
+                            ]
+                        }
+                    },
+                    {
+                        "key": "user_wildcard_vip",
+                        "required": false,
+                        "description": "Optional user vips",
+                        "multi_type": [
+                            "object"
+                        ],
+                        "default_value": {
+                            "type": "user",
+                            "ips": [
+                                "<IP>/32"
+                            ]
+                        }
+                    }
+                ]
+            },
+            {
+                "key": "ipv6_pools",
+                "required": true,
+                "multi_type": [
+                    "object"
+                ],
+                "default_value": {}
+            }
+        ]
+    }
+]

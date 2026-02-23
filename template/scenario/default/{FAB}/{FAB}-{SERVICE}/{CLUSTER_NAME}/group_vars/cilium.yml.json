@@ -1,97 +1,108 @@
 [
     {
-        "key": "cilium_network_cluster",
-        "description": "cilium network cluster configuration",
-        "override_hint": false,
+        "key": "cilium_cluster_mesh",
+        "description": "",
         "multi_type": [
             "object"
         ],
-        "item_multi_type": [],
-        "regex": null,
         "regex_enable": false,
+        "regex": "",
+        "required": true,
+        "either_required": false,
+        "uniqueness": "cluster",
+        "override_hint": false,
+        "override_strategy": "merge",
+        "default_value": null,
+        "condition": null,
         "children": [
             {
-                "key": "region",
-                "description": "",
-                "override_hint": false,
-                "multi_type": [
-                    "string"
-                ],
-                "regex": "tw",
-                "regex_enable": true,
-                "children": [],
-                "required": true,
-                "override_strategy": "merge",
-                "default_value": null
-            },
-            {
-                "key": "vip",
-                "description": "cluster virtual ip cidr",
-                "override_hint": false,
-                "multi_type": [
-                    "string"
-                ],
-                "regex": "172.168.0.0/16",
-                "regex_enable": true,
-                "children": [],
-                "required": true,
-                "override_strategy": "merge",
-                "default_value": "<remote cilium_cluster_id (int)>"
-            },
-            {
-                "key": "fab_vars",
-                "description": "fabric variables dynamic object",
-                "override_hint": false,
-                "multi_type": [
-                    "string"
-                ],
-                "item_multi_type": [],
-                "regex": "{FAB}",
-                "regex_enable": true,
-                "children": [],
-                "required": true,
-                "override_strategy": "merge"
-            },
-            {
-                "key": "environment",
+                "key": "enabled",
                 "description": "",
                 "multi_type": [
-                    "string"
+                    "bool"
                 ],
-                "required": true,
-                "override_hint": true,
-                "children": [],
                 "regex_enable": false,
-                "regex": "{{cluster_network_env}}"
-            },
-            {
-                "key": "bgp",
-                "description": "",
-                "multi_type": [
-                    "enum"
-                ],
+                "regex": "",
                 "required": true,
+                "either_required": false,
+                "uniqueness": "cluster",
                 "override_hint": true,
-                "children": [],
-                "regex_enable": false,
-                "regex": "[bgp1,bpg2]"
-            },
-            {
-                "key": "ipv6_city",
-                "description": "",
-                "multi_type": [
-                    "enum"
-                ],
-                "required": true,
-                "override_hint": true,
-                "children": [],
-                "regex_enable": false,
-                "regex": "[tw,us,jp,de]",
                 "override_strategy": "merge",
-                "default_value": null
+                "default_value": false,
+                "condition": null,
+                "children": []
+            },
+            {
+                "key": "local_ip",
+                "description": "",
+                "multi_type": [
+                    "string"
+                ],
+                "regex_enable": false,
+                "regex": "",
+                "required": true,
+                "either_required": false,
+                "uniqueness": "cluster",
+                "override_hint": false,
+                "override_strategy": "merge",
+                "default_value": "{{ infra_wildcard_vip }}",
+                "condition": null,
+                "children": []
+            },
+            {
+                "key": "remote_clusters",
+                "description": "",
+                "multi_type": [
+                    "list"
+                ],
+                "regex_enable": false,
+                "regex": "",
+                "required": true,
+                "either_required": false,
+                "uniqueness": "cluster",
+                "override_hint": true,
+                "override_strategy": "merge",
+                "default_value": "null",
+                "children": [
+                    {
+                        "key": "id",
+                        "description": "",
+                        "multi_type": [
+                            "string",
+                            "number"
+                        ],
+                        "regex_enable": false,
+                        "regex": "",
+                        "required": true,
+                        "either_required": false,
+                        "uniqueness": "cluster",
+                        "override_hint": false,
+                        "override_strategy": "merge",
+                        "default_value": "<remote cilium_cluster_id (int)>",
+                        "children": []
+                    },
+                    {
+                        "key": "ip",
+                        "description": "",
+                        "multi_type": [
+                            "string",
+                            "ip"
+                        ],
+                        "regex_enable": false,
+                        "regex": "",
+                        "required": true,
+                        "either_required": false,
+                        "uniqueness": "cluster",
+                        "override_hint": false,
+                        "override_strategy": "merge",
+                        "default_value": "<remote infra_wildcard_vip (ip)>",
+                        "children": []
+                    }
+                ],
+                "item_multi_type": [
+                    "object"
+                ]
             }
-        ],
-        "required": true,
-        "override_strategy": "merge"
+        ]
     }
 ]

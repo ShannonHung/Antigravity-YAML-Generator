@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Info, X, Save } from 'lucide-react';
+import { Info, X, Save, Edit3 } from 'lucide-react';
 import clsx from 'clsx';
 import { Typeahead, Menu, MenuItem } from 'react-bootstrap-typeahead';
 import 'react-bootstrap-typeahead/css/Typeahead.css';
@@ -70,7 +70,12 @@ export default function AddKeyModal({ nodes, onClose, onSave }: any) {
     const [itemTypes, setItemTypes] = useState<string[]>([]);
     const [desc, setDesc] = useState('');
     const [req, setReq] = useState<boolean | null>(true);
+    const [defaultValue, setDefaultValue] = useState('');
+    const [uniqueness, setUniqueness] = useState('cluster');
     const [overrideHint, setOverrideHint] = useState(true);
+
+    const [isDefaultValueModalOpen, setIsDefaultValueModalOpen] = useState(false);
+    const [tempDefaultValue, setTempDefaultValue] = useState('');
 
     // Validation States
     const [parentError, setParentError] = useState<string | null>(null);
@@ -116,7 +121,7 @@ export default function AddKeyModal({ nodes, onClose, onSave }: any) {
 
         // validate Item Types (if list)
         if (types.includes('list')) {
-            const invalidItemTypes = itemTypes.filter(t => !ITEM_DATA_TYPES.includes(t) && t !== 'object');
+            const invalidItemTypes = itemTypes.filter(t => !ITEM_DATA_TYPES.includes(t));
             if (invalidItemTypes.length > 0) {
                 // We'll show this as a type error for simplicity or alert
                 alert(`Invalid item type(s): ${invalidItemTypes.join(', ')}`);
@@ -125,7 +130,18 @@ export default function AddKeyModal({ nodes, onClose, onSave }: any) {
         }
 
         if (isValid) {
-            onSave({ parentPathString, key: keyName, types, itemTypes, desc, required: req, overrideHint });
+            onSave({
+                parentPathString,
+                key: keyName,
+                types,
+                itemTypes,
+                desc,
+                required: req,
+                eitherRequired: false,
+                defaultValue,
+                uniqueness,
+                overrideHint
+            });
         }
     };
 
@@ -257,7 +273,7 @@ export default function AddKeyModal({ nodes, onClose, onSave }: any) {
                                 <Typeahead
                                     id="item-type-select"
                                     multiple
-                                    options={['object', ...ITEM_DATA_TYPES]}
+                                    options={ITEM_DATA_TYPES}
                                     selected={itemTypes}
                                     onChange={(s) => setItemTypes(s as string[])}
                                     placeholder={itemTypes.length === 0 ? "Search item types..." : ""}
@@ -297,8 +313,73 @@ export default function AddKeyModal({ nodes, onClose, onSave }: any) {
                         <textarea value={desc} onChange={e => setDesc(e.target.value)} className="w-full px-3 py-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md outline-none text-xs min-h-[60px]" placeholder="..." />
                     </div>
 
-                    {/* Required Status Selector */}
-                    <div className="w-full pt-1 relative z-0">
+                    {/* Default Value */}
+                    <div className="relative z-0 hover:z-[60]">
+                        <div className="flex items-center justify-between mb-1">
+                            <InfoLabel label="Default Value" tooltip="The default value assigned if none is provided." placement="right" />
+                            <button
+                                onClick={() => {
+                                    setTempDefaultValue(defaultValue);
+                                    setIsDefaultValueModalOpen(true);
+                                }}
+                                className="text-[10px] text-blue-600 hover:text-blue-700 dark:text-blue-400 hover:underline flex items-center mb-1"
+                            >
+                                <Edit3 className="w-3 h-3 mr-1" />
+                                Edit in Modal
+                            </button>
+                        </div>
+                        <div
+                            onClick={() => {
+                                setTempDefaultValue(defaultValue);
+                                setIsDefaultValueModalOpen(true);
+                            }}
+                            className="w-full px-3 py-2 rounded-md border bg-zinc-50 dark:bg-zinc-800 text-xs font-mono min-h-[42px] cursor-pointer hover:border-blue-400 transition-all border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 overflow-hidden text-ellipsis whitespace-nowrap"
+                        >
+                            {defaultValue || <span className="text-zinc-400 italic">No default value set...</span>}
+                        </div>
+                    </div>
+
+                    {/* Uniqueness Selector */}
+                    <div className="relative z-0 hover:z-[60]">
+                        <InfoLabel label="Uniqueness" tooltip="The scoping level at which this key must be unique." placement="right" />
+                        <select
+                            value={uniqueness}
+                            onChange={(e) => setUniqueness(e.target.value)}
+                            className="w-full px-3 py-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md outline-none focus:ring-2 focus:ring-blue-500 text-xs transition-colors appearance-none cursor-pointer"
+                        >
+                            <option value="cluster">Cluster</option>
+                            <option value="region">Region</option>
+                            <option value="fab">FAB</option>
+                        </select>
+                        {/* Custom Select Arrow */}
+                        <div className="absolute right-3 top-[34px] pointer-events-none text-zinc-400">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </div>
+                    </div>
+
+                    {/* Checkboxes Row */}
+                    <div className="pt-3 pb-1 flex flex-wrap gap-4">
+                        {/* Override Hint */}
+                        <label className="flex items-center space-x-2 cursor-pointer group">
+                            <div className="relative">
+                                <input
+                                    type="checkbox"
+                                    className="sr-only peer"
+                                    checked={overrideHint}
+                                    onChange={(e) => setOverrideHint(e.target.checked)}
+                                />
+                                <div className="w-8 h-4 bg-zinc-200 dark:bg-zinc-700 rounded-full peer peer-checked:bg-blue-600 transition-colors"></div>
+                                <div className="absolute left-1 top-1 w-2 h-2 bg-white rounded-full peer-checked:translate-x-4 transition-transform"></div>
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300 group-hover:text-blue-500 transition-colors">Show Override Hint</span>
+                                <span className="text-[10px] text-zinc-500">Display override indicators in UI</span>
+                            </div>
+                        </label>
+                    </div>
+
+                    {/* Required Status Selector (Moved to Bottom) */}
+                    <div className="w-full pt-2 mt-4 border-t border-zinc-200 dark:border-zinc-800 relative z-0">
                         <InfoLabel label="Field Status" tooltip="Define the requirement status of this field." placement="right" />
                         <div className="flex bg-zinc-100 dark:bg-zinc-800 rounded-lg p-1 border border-zinc-200 dark:border-zinc-700">
                             <button
@@ -336,23 +417,6 @@ export default function AddKeyModal({ nodes, onClose, onSave }: any) {
                             </button>
                         </div>
                     </div>
-
-                    {/* Show Override Hint */}
-                    <div className="pt-2">
-                        <label className="flex items-center space-x-2 cursor-pointer group">
-                            <div className="relative">
-                                <input
-                                    type="checkbox"
-                                    className="sr-only peer"
-                                    checked={overrideHint}
-                                    onChange={(e) => setOverrideHint(e.target.checked)}
-                                />
-                                <div className="w-8 h-4 bg-zinc-200 dark:bg-zinc-700 rounded-full peer peer-checked:bg-blue-600 transition-colors"></div>
-                                <div className="absolute left-1 top-1 w-2 h-2 bg-white rounded-full peer-checked:translate-x-4 transition-transform"></div>
-                            </div>
-                            <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300 group-hover:text-blue-500 transition-colors">Show Override Hint</span>
-                        </label>
-                    </div>
                 </div>
 
                 <div className="p-4 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-800/50 flex justify-end space-x-2">
@@ -362,6 +426,58 @@ export default function AddKeyModal({ nodes, onClose, onSave }: any) {
                     </button>
                 </div>
             </div>
+
+            {/* Default Value Secondary Modal Overlay */}
+            {isDefaultValueModalOpen && (
+                <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-2xl w-full max-w-2xl h-[60vh] flex flex-col border border-zinc-200 dark:border-zinc-800">
+                        <div className="flex items-center justify-between p-4 border-b border-zinc-200 dark:border-zinc-800">
+                            <h3 className="font-bold text-sm text-zinc-900 dark:text-zinc-100">Edit Default Value</h3>
+                            <button onClick={() => setIsDefaultValueModalOpen(false)} className="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors">
+                                <X className="w-4 h-4 text-zinc-500" />
+                            </button>
+                        </div>
+                        <div className="flex-1 p-4 overflow-hidden relative">
+                            <textarea
+                                value={tempDefaultValue}
+                                onChange={e => setTempDefaultValue(e.target.value)}
+                                className="w-full h-full bg-zinc-50 dark:bg-zinc-950 font-mono text-sm p-4 rounded-lg resize-none outline-none focus:ring-2 focus:ring-blue-500/20 border border-zinc-200 dark:border-zinc-800"
+                                placeholder="Enter JSON or string value..."
+                            />
+                            <div className="absolute bottom-6 right-6 flex space-x-2">
+                                <button
+                                    onClick={() => {
+                                        try {
+                                            const parsed = JSON.parse(tempDefaultValue);
+                                            setTempDefaultValue(JSON.stringify(parsed, null, 4));
+                                        } catch (e) { /* ignore */ }
+                                    }}
+                                    className="px-3 py-1.5 bg-zinc-200 dark:bg-zinc-800 text-xs font-medium rounded-md hover:bg-zinc-300 dark:hover:bg-zinc-700 transition"
+                                >
+                                    Format JSON
+                                </button>
+                            </div>
+                        </div>
+                        <div className="p-4 border-t border-zinc-200 dark:border-zinc-800 flex justify-end space-x-3 bg-zinc-50 dark:bg-zinc-900/50 rounded-b-xl">
+                            <button
+                                onClick={() => setIsDefaultValueModalOpen(false)}
+                                className="px-5 py-2 text-zinc-600 dark:text-zinc-400 text-xs font-medium hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded-lg transition"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setDefaultValue(tempDefaultValue);
+                                    setIsDefaultValueModalOpen(false);
+                                }}
+                                className="px-5 py-2 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 shadow-lg hover:shadow-blue-500/20 transition"
+                            >
+                                Apply Changes
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
