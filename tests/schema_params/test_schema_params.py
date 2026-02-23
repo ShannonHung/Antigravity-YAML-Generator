@@ -105,5 +105,13 @@ class TestSchemaParams(unittest.TestCase):
         # 13: Ensure multi-line banners are triggered by # prefix and work with \n
         self._generate_and_compare('banner_multiline.yml.json', 'banner_multiline.yml')
 
+    def test_optional_keys(self):
+        """Test commenting out optional keys logic."""
+        self._generate_and_compare('optional_keys.yml.json', 'optional_keys.yml')
+
+    def test_cilium_remote_clusters(self):
+        """Test formatting of list items that are objects (with children) for proper internal alignment."""
+        self._generate_and_compare('cilium_remote_clusters.yml.json', 'cilium_remote_clusters.yml')
+
 if __name__ == '__main__':
     unittest.main()

@@ -1,0 +1,71 @@
+[
+    {
+        "key": "l4lb_node_vips",
+        "description": "# Optional keys test",
+        "required": true,
+        "multi_type": [
+            "object"
+        ],
+        "default_value": {},
+        "children": [
+            {
+                "key": "ipv4_pools",
+                "required": true,
+                "multi_type": [
+                    "object"
+                ],
+                "default_value": {},
+                "children": [
+                    {
+                        "key": "infra_wildcard_vip",
+                        "required": true,
+                        "multi_type": [
+                            "object"
+                        ],
+                        "default_value": {
+                            "type": "infra",
+                            "ips": [
+                                "<IP>/32"
+                            ]
+                        }
+                    },
+                    {
+                        "key": "thanos_wildcard_vip",
+                        "required": true,
+                        "multi_type": [
+                            "object"
+                        ],
+                        "default_value": {
+                            "type": "infra",
+                            "ips": [
+                                "<IP>/32"
+                            ]
+                        }
+                    },
+                    {
+                        "key": "user_wildcard_vip",
+                        "required": false,
+                        "description": "Optional user vips",
+                        "multi_type": [
+                            "object"
+                        ],
+                        "default_value": {
+                            "type": "user",
+                            "ips": [
+                                "<IP>/32"
+                            ]
+                        }
+                    }
+                ]
+            },
+            {
+                "key": "ipv6_pools",
+                "required": true,
+                "multi_type": [
+                    "object"
+                ],
+                "default_value": {}
+            }
+        ]
+    }
+]

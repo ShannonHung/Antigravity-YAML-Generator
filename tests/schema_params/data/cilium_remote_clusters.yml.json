@@ -1,0 +1,108 @@
+[
+    {
+        "key": "cilium_cluster_mesh",
+        "description": "",
+        "multi_type": [
+            "object"
+        ],
+        "regex_enable": false,
+        "regex": "",
+        "required": true,
+        "either_required": false,
+        "uniqueness": "cluster",
+        "override_hint": false,
+        "override_strategy": "merge",
+        "default_value": null,
+        "condition": null,
+        "children": [
+            {
+                "key": "enabled",
+                "description": "",
+                "multi_type": [
+                    "bool"
+                ],
+                "regex_enable": false,
+                "regex": "",
+                "required": true,
+                "either_required": false,
+                "uniqueness": "cluster",
+                "override_hint": true,
+                "override_strategy": "merge",
+                "default_value": false,
+                "condition": null,
+                "children": []
+            },
+            {
+                "key": "local_ip",
+                "description": "",
+                "multi_type": [
+                    "string"
+                ],
+                "regex_enable": false,
+                "regex": "",
+                "required": true,
+                "either_required": false,
+                "uniqueness": "cluster",
+                "override_hint": false,
+                "override_strategy": "merge",
+                "default_value": "{{ infra_wildcard_vip }}",
+                "condition": null,
+                "children": []
+            },
+            {
+                "key": "remote_clusters",
+                "description": "",
+                "multi_type": [
+                    "list"
+                ],
+                "regex_enable": false,
+                "regex": "",
+                "required": true,
+                "either_required": false,
+                "uniqueness": "cluster",
+                "override_hint": true,
+                "override_strategy": "merge",
+                "default_value": null,
+                "children": [
+                    {
+                        "key": "id",
+                        "description": "",
+                        "multi_type": [
+                            "string",
+                            "number"
+                        ],
+                        "regex_enable": false,
+                        "regex": "",
+                        "required": true,
+                        "either_required": false,
+                        "uniqueness": "cluster",
+                        "override_hint": false,
+                        "override_strategy": "merge",
+                        "default_value": "<remote cilium_cluster_id (int)>",
+                        "children": []
+                    },
+                    {
+                        "key": "ip",
+                        "description": "",
+                        "multi_type": [
+                            "string",
+                            "ip"
+                        ],
+                        "regex_enable": false,
+                        "regex": "",
+                        "required": true,
+                        "either_required": false,
+                        "uniqueness": "cluster",
+                        "override_hint": false,
+                        "override_strategy": "merge",
+                        "default_value": "<remote infra_wildcard_vip (ip)>",
+                        "children": []
+                    }
+                ],
+                "item_multi_type": [
+                    "object"
+                ]
+            }
+        ]
+    }
+]

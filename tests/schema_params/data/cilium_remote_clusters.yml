@@ -1,0 +1,6 @@
+cilium_cluster_mesh:
+  enabled: false # <=== [Override]
+  local_ip: "{{ infra_wildcard_vip }}"
+  remote_clusters: # <=== [Override]
+    - id: <remote cilium_cluster_id (int)>
+      ip: "<remote infra_wildcard_vip (ip)>"

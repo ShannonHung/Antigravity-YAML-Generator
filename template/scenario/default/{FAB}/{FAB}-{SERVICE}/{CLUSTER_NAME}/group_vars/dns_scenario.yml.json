@@ -64,9 +64,6 @@
                     "regex": "8.8.8.8|1.1.1.1",
                     "regex_enable": true,
                     "required": true,
-                    "default_value": {
-                        "ip": "100.66.1.1"
-                    },
                     "children": [
                         {
                             "key": "id",
@@ -77,6 +74,7 @@
                             ],
                             "regex": "",
                             "regex_enable": true,
+                            "default_value": "100.66.1.1",
                             "required": true,
                             "children": []
                         }

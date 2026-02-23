@@ -1,0 +1,19 @@
+# ==========================================
+# Optional keys test
+# ==========================================
+l4lb_node_vips:
+  ipv4_pools:
+    infra_wildcard_vip:
+      type: infra
+      ips:
+        - "<IP>/32"
+    thanos_wildcard_vip:
+      type: infra
+      ips:
+        - "<IP>/32"
+    # Optional user vips
+    # user_wildcard_vip:
+      # type: user
+      # ips:
+        # - "<IP>/32"
+  ipv6_pools: {}
