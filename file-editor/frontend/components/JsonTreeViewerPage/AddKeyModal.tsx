@@ -5,6 +5,7 @@ import { Typeahead, Menu, MenuItem } from 'react-bootstrap-typeahead';
 import 'react-bootstrap-typeahead/css/Typeahead.css';
 import { useEditorConfig } from '../FileSystemPage/hooks/EditorConfigContext';
 import { JsonNode } from './types';
+import { joinPaths, escapeKey, unescapePath } from '@/lib/pathUtils';
 
 // Helper to flatten valid parents
 const getValidParents = (nodes: JsonNode[], parentPath: string = ''): string[] => {
@@ -16,7 +17,7 @@ const getValidParents = (nodes: JsonNode[], parentPath: string = ''): string[] =
     }
 
     for (const node of nodes) {
-        const currentPath = parentPath ? `${parentPath}>${node.key}` : node.key;
+        const currentPath = joinPaths(parentPath, escapeKey(node.key));
 
         // Check if this node can be a parent (Object or List of Objects)
         const isObject = node.multi_type?.includes('object');
@@ -63,7 +64,7 @@ const InfoLabel = ({ label, tooltip, placement = 'right' }: { label: string, too
 
 export default function AddKeyModal({ nodes, onClose, onSave }: any) {
     const { DATA_TYPES, ITEM_DATA_TYPES } = useEditorConfig();
-    const [parentPath, setParentPath] = useState<string[]>(['root']);
+    const [parentPath, setParentPath] = useState<string[]>([]);
     const [keyName, setKeyName] = useState('');
     const [types, setTypes] = useState<string[]>([]);
     const [itemTypes, setItemTypes] = useState<string[]>([]);
@@ -88,11 +89,8 @@ export default function AddKeyModal({ nodes, onClose, onSave }: any) {
         let isValid = true;
 
         // validate Parent
-        const parentPathString = parentPath[0];
-        if (!parentPathString) {
-            setParentError("Parent is required");
-            isValid = false;
-        } else if (!validParents.includes(parentPathString)) {
+        const parentPathString = parentPath.length > 0 ? parentPath[0] : '';
+        if (parentPathString && !validParents.includes(parentPathString)) {
             setParentError("Selected parent does not exist");
             isValid = false;
         }
@@ -152,7 +150,7 @@ export default function AddKeyModal({ nodes, onClose, onSave }: any) {
                                 setParentPath(s as string[]);
                                 if (parentError) setParentError(null);
                             }}
-                            placeholder="Search parent path (e.g. root.ntp)..."
+                            placeholder="Root (leave empty) or search path..."
                             inputProps={{
                                 className: clsx(
                                     'w-full px-3 py-2 bg-white dark:bg-zinc-800 border rounded-md outline-none focus:ring-2 focus:ring-blue-500 text-xs transition-colors',
@@ -160,17 +158,17 @@ export default function AddKeyModal({ nodes, onClose, onSave }: any) {
                                 )
                             }}
                             renderMenuItemChildren={(option) => (
-                                <div className="text-xs font-mono text-zinc-700 dark:text-zinc-200 px-2 py-1">{option as string}</div>
+                                <div className="text-xs font-mono text-zinc-700 dark:text-zinc-200 px-2 py-1">{unescapePath(option as string)}</div>
                             )}
                             emptyLabel={
                                 <span className="text-red-500 text-xs font-medium px-2">No matches found</span>
                             }
-                            renderMenu={(results, menuProps) => (
+                            renderMenu={(results, { newSelectionPrefix, paginationText, renderMenuItemChildren, ...menuProps }: any) => (
                                 <Menu {...menuProps} className="bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md shadow-lg max-h-48 overflow-y-auto">
                                     {results.map((result, index) => (
                                         <MenuItem key={index} option={result} position={index}>
                                             <div className="text-xs font-mono text-zinc-700 dark:text-zinc-200 px-3 py-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-700 cursor-pointer">
-                                                {result as string}
+                                                {unescapePath(result as string)}
                                             </div>
                                         </MenuItem>
                                     ))}
@@ -235,7 +233,7 @@ export default function AddKeyModal({ nodes, onClose, onSave }: any) {
                                     <div className="text-[13px] font-mono text-zinc-700 dark:text-zinc-200 px-2 py-0.5">{option as string}</div>
                                 )}
                                 emptyLabel={<span className="text-red-500 text-xs font-medium px-2">No matches found</span>}
-                                renderMenu={(results, menuProps) => (
+                                renderMenu={(results, { newSelectionPrefix, paginationText, renderMenuItemChildren, ...menuProps }: any) => (
                                     <Menu {...menuProps} className="bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md shadow-xl max-h-48 overflow-y-auto py-1 mt-1 z-[100]">
                                         {results.map((result, index) => (
                                             <MenuItem key={index} option={result} position={index}>
@@ -277,7 +275,7 @@ export default function AddKeyModal({ nodes, onClose, onSave }: any) {
                                         <div className="text-[13px] font-mono text-zinc-700 dark:text-zinc-200 px-2 py-0.5">{option as string}</div>
                                     )}
                                     emptyLabel={<span className="text-red-500 text-xs font-medium px-2">No matches found</span>}
-                                    renderMenu={(results, menuProps) => (
+                                    renderMenu={(results, { newSelectionPrefix, paginationText, renderMenuItemChildren, ...menuProps }: any) => (
                                         <Menu {...menuProps} className="bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md shadow-xl max-h-40 overflow-y-auto py-1 mt-1 z-[100]">
                                             {results.map((result, index) => (
                                                 <MenuItem key={index} option={result} position={index}>

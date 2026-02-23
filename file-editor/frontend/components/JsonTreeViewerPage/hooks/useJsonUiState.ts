@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { JsonNode } from '../types';
+import { joinPaths, escapeKey } from '@/lib/pathUtils';
 
 const STORAGE_KEY = 'json_tree_expansion_preference';
 
@@ -9,7 +10,7 @@ export function useJsonUiState(nodes: JsonNode[]) {
         const keys = new Set<string>();
         const traverse = (items: JsonNode[], prefix = '') => {
             items.forEach(n => {
-                const currentPath = prefix ? `${prefix}>${n.key}` : n.key;
+                const currentPath = joinPaths(prefix, escapeKey(n.key));
                 if (n.children && n.children.length > 0) {
                     keys.add(currentPath);
                     traverse(n.children, currentPath);

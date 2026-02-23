@@ -17,12 +17,12 @@
                 "multi_type": [
                     "string"
                 ],
-                "item_multi_type": [],
                 "regex": "tw",
                 "regex_enable": true,
                 "children": [],
                 "required": true,
-                "override_strategy": "merge"
+                "override_strategy": "merge",
+                "default_value": null
             },
             {
                 "key": "vip",
@@ -31,12 +31,12 @@
                 "multi_type": [
                     "string"
                 ],
-                "item_multi_type": [],
                 "regex": "172.168.0.0/16",
                 "regex_enable": true,
                 "children": [],
                 "required": true,
-                "override_strategy": "merge"
+                "override_strategy": "merge",
+                "default_value": "<remote cilium_cluster_id (int)>"
             },
             {
                 "key": "fab_vars",
@@ -51,6 +51,44 @@
                 "children": [],
                 "required": true,
                 "override_strategy": "merge"
+            },
+            {
+                "key": "environment",
+                "description": "",
+                "multi_type": [
+                    "string"
+                ],
+                "required": true,
+                "override_hint": true,
+                "children": [],
+                "regex_enable": false,
+                "regex": "{{cluster_network_env}}"
+            },
+            {
+                "key": "bgp",
+                "description": "",
+                "multi_type": [
+                    "enum"
+                ],
+                "required": true,
+                "override_hint": true,
+                "children": [],
+                "regex_enable": false,
+                "regex": "[bgp1,bpg2]"
+            },
+            {
+                "key": "ipv6_city",
+                "description": "",
+                "multi_type": [
+                    "enum"
+                ],
+                "required": true,
+                "override_hint": true,
+                "children": [],
+                "regex_enable": false,
+                "regex": "[tw,us,jp,de]",
+                "override_strategy": "merge",
+                "default_value": null
             }
         ],
         "required": true,

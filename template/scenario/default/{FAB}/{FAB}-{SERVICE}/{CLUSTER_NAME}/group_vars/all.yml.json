@@ -6,16 +6,16 @@
         "multi_type": [
             "string"
         ],
-        "item_multi_type": [],
         "regex": "production",
         "regex_enable": true,
         "children": [],
-        "required": true,
+        "required": false,
         "override_strategy": "merge",
         "plugins": [
             "check_env_function",
             "check_env_char_limit"
-        ]
+        ],
+        "default_value": "null"
     },
     {
         "key": "timezone",
@@ -152,7 +152,30 @@
                         ],
                         "regex": "8.8.8.8|1.1.1.1",
                         "regex_enable": true,
-                        "children": [],
+                        "children": [
+                            {
+                                "key": "tks_ca.crt",
+                                "description": "",
+                                "multi_type": [
+                                    "string"
+                                ],
+                                "required": true,
+                                "override_hint": true,
+                                "children": [],
+                                "regex_enable": false,
+                                "default_value": "----BEGIN CERT----\ndfksldfks;ldfk;lsdkf;s\n....\nfjksdfjlsdjflksdjfl\n----END CERT----"
+                            },
+                            {
+                                "key": "test_obj",
+                                "description": "",
+                                "multi_type": [
+                                    "object"
+                                ],
+                                "required": true,
+                                "override_hint": true,
+                                "children": []
+                            }
+                        ],
                         "required": true,
                         "default_value": {
                             "ip": "100.66.1.1"
@@ -262,5 +285,23 @@
         "required": true,
         "override_hint": true,
         "children": []
+    },
+    {
+        "key": "test_list",
+        "description": "",
+        "multi_type": [
+            "list"
+        ],
+        "item_multi_type": [
+            "string"
+        ],
+        "required": true,
+        "override_hint": true,
+        "children": [],
+        "regex_enable": false,
+        "default_value": [
+            "test1",
+            "test2"
+        ]
     }
 ]

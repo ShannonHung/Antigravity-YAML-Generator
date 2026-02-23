@@ -53,6 +53,15 @@ remove-all-img:
 	docker rmi -f my-frontend my-backend shannonhung/file-editor-frontend:latest shannonhung/file-editor-backend:latest
 
 # Docker push commands
+push-front-x86:
+	docker tag my-frontend-x86 shannonhung/file-editor-frontend:$(TAG)
+	docker push shannonhung/file-editor-frontend:$(TAG)
+
+push-back-x86:
+	docker tag my-backend-x86 shannonhung/file-editor-backend:$(TAG)
+	docker push shannonhung/file-editor-backend:$(TAG)
+
+# Docker push commands
 push-front:
 	docker tag my-frontend shannonhung/file-editor-frontend:$(TAG)
 	docker push shannonhung/file-editor-frontend:$(TAG)

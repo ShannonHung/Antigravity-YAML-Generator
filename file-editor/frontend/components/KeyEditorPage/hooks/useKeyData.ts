@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
+import { joinPaths, splitPath, escapeKey } from '@/lib/pathUtils';
 
 export function useKeyData(filePath: string, targetKey: string) {
     const [loading, setLoading] = useState(true);
@@ -19,7 +20,7 @@ export function useKeyData(filePath: string, targetKey: string) {
             const content = JSON.parse(data.content);
             setFullContent(content);
 
-            const pathParts = targetKey.split('>').filter(p => p !== 'root');
+            const pathParts = splitPath(targetKey).filter(p => p !== 'root');
 
             // Helper to find node
             const findNodeRecursive = (list: any[], path: string[]): any => {
@@ -43,7 +44,7 @@ export function useKeyData(filePath: string, targetKey: string) {
             const keys: { path: string, type: string }[] = [];
             const flatten = (items: any[], prefix = '') => {
                 for (const item of items) {
-                    const currentPath = prefix ? `${prefix}>${item.key}` : item.key;
+                    const currentPath = joinPaths(prefix, escapeKey(item.key));
                     // Determine type (use first if multiple, or specific string representation)
                     const type = item.multi_type ? item.multi_type[0] : (item.type || 'string');
                     keys.push({ path: currentPath, type });

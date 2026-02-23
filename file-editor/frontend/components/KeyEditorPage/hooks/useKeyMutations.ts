@@ -1,4 +1,5 @@
 import { api } from '@/lib/api';
+import { splitPath } from '@/lib/pathUtils';
 
 export function useKeyMutations(
     filePath: string,
@@ -46,7 +47,7 @@ export function useKeyMutations(
 
         try {
             const newContent = JSON.parse(JSON.stringify(fullContent));
-            const pathParts = targetKey.split('.').filter((p: string) => p !== 'root');
+            const pathParts = splitPath(targetKey).filter((p: string) => p !== 'root');
 
             const updateNodeRecursive = (list: any[], path: string[]) => {
                 const [head, ...tail] = path;
@@ -62,7 +63,7 @@ export function useKeyMutations(
                             if (overrideStrategy && overrideStrategy !== 'merge') {
                                 item.override_strategy = overrideStrategy;
                             } else {
-                                delete item.override_strategy; // default is merge, so we can omit it if it's merge
+                                item.override_strategy = 'merge'; // Default behavior instead of deleting
                             }
 
                             if (plugins && plugins.length > 0) {
@@ -88,7 +89,7 @@ export function useKeyMutations(
                                 if (regexPattern) {
                                     item.regex = regexPattern;
                                 } else {
-                                    delete item.regex;
+                                    item.regex = ""; // Persist as empty string instead of deleting
                                 }
                             }
 
@@ -96,7 +97,7 @@ export function useKeyMutations(
                             if (defaultValue !== '') {
                                 item.default_value = finalDefaultValue;
                             } else {
-                                delete item.default_value;
+                                item.default_value = null; // Persist as null instead of deleting
                             }
 
                             // Condition

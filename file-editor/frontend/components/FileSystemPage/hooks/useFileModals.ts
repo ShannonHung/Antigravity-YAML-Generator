@@ -37,7 +37,7 @@ export function useFileModals(activeFolderPath: string, refresh: () => void) {
                         "children": [],
                         "required": false,
                         "override_strategy": "merge",
-                        "description": "global vars section e.g. [all:vars]"
+                        "description": "global vars section"
                     },
                     {
                         "key": "groups",
@@ -46,7 +46,7 @@ export function useFileModals(activeFolderPath: string, refresh: () => void) {
                         "required": true,
                         "default_value": null,
                         "override_strategy": "merge",
-                        "description": "groups section e.g.[nodes]"
+                        "description": "groups section"
                     },
                     {
                         "key": "aggregations",
@@ -54,7 +54,7 @@ export function useFileModals(activeFolderPath: string, refresh: () => void) {
                         "default_value": null,
                         "children": [],
                         "required": false,
-                        "description": "aggregations section e.g. [nodes:children]",
+                        "description": "aggregations section",
                         "override_hint": false,
                         "regex_enable": false
                     }

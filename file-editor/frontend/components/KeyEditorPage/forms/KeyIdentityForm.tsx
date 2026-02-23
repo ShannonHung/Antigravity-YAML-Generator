@@ -72,7 +72,7 @@ export default function KeyIdentityForm({
                                 renderMenuItemChildren={(option) => (
                                     <div className="text-[13px] font-mono text-zinc-700 dark:text-zinc-200 px-2 py-0.5">{option as string}</div>
                                 )}
-                                renderMenu={(results, menuProps) => (
+                                renderMenu={(results, { newSelectionPrefix, paginationText, renderMenuItemChildren, ...menuProps }: any) => (
                                     <Menu {...menuProps} className="bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl shadow-xl max-h-48 overflow-y-auto py-1 mt-2 z-[100]">
                                         {results.map((result, index) => (
                                             <MenuItem key={index} option={result} position={index}>
@@ -111,7 +111,7 @@ export default function KeyIdentityForm({
                                     renderMenuItemChildren={(option) => (
                                         <div className="text-[13px] font-mono text-zinc-700 dark:text-zinc-200 px-2 py-0.5">{option as string}</div>
                                     )}
-                                    renderMenu={(results, menuProps) => (
+                                    renderMenu={(results, { newSelectionPrefix, paginationText, renderMenuItemChildren, ...menuProps }: any) => (
                                         <Menu {...menuProps} className="bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl shadow-xl max-h-48 overflow-y-auto py-1 mt-2 z-[100]">
                                             {results.map((result, index) => (
                                                 <MenuItem key={index} option={result} position={index}>
@@ -231,7 +231,7 @@ export default function KeyIdentityForm({
                                         <button onClick={(e) => { e.stopPropagation(); props.onRemove && props.onRemove(option); }} className="ml-2 hover:text-teal-900 dark:hover:text-teal-100 transition-colors"><X className="w-3.5 h-3.5" /></button>
                                     </div>
                                 )}
-                                renderMenu={(results, menuProps) => (
+                                renderMenu={(results, { newSelectionPrefix, paginationText, renderMenuItemChildren, ...menuProps }: any) => (
                                     <Menu {...menuProps} className="bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl shadow-xl max-h-48 overflow-y-auto py-1 mt-2 z-[100]">
                                         {results.map((result: any, index: number) => (
                                             <MenuItem key={index} option={result} position={index}>

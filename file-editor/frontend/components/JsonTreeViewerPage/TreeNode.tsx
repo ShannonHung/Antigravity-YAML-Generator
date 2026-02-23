@@ -1,5 +1,6 @@
 import { ChevronRight, ChevronDown, AlertTriangle, CheckCircle2, Ban, Edit, Trash2 } from 'lucide-react';
 import { JsonNode } from './types';
+import { joinPaths, escapeKey } from '@/lib/pathUtils';
 import clsx from 'clsx';
 
 interface TreeNodeProps {
@@ -25,7 +26,7 @@ export default function TreeNode({
     inheritedDeprecated = false
 }: TreeNodeProps & { inheritedDeprecated?: boolean }) {
     const hasChildren = node.children && node.children.length > 0;
-    const myPath = parentPath ? `${parentPath}>${node.key}` : node.key;
+    const myPath = joinPaths(parentPath, escapeKey(node.key));
     const isExpanded = expandedKeys.has(myPath);
 
     // Deprecated Status

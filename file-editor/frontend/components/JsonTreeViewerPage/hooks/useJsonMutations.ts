@@ -1,5 +1,6 @@
 import { api } from '@/lib/api';
 import { JsonNode } from '../types';
+import { joinPaths, splitPath, escapeKey } from '@/lib/pathUtils';
 
 export function useJsonMutations(
     filePath: string,
@@ -15,8 +16,9 @@ export function useJsonMutations(
             const removeRecursive = (list: JsonNode[], parentP: string): boolean => {
                 for (let i = 0; i < list.length; i++) {
                     const n = list[i];
-                    const p = parentP ? `${parentP}.${n.key}` : n.key;
-                    if (p === (target.parentPath ? `${target.parentPath}.${target.node.key}` : target.node.key)) {
+                    const p = joinPaths(parentP, escapeKey(n.key));
+                    const targetP = joinPaths(target.parentPath, escapeKey(target.node.key));
+                    if (p === targetP) {
                         list.splice(i, 1);
                         return true;
                     }
@@ -54,7 +56,7 @@ export function useJsonMutations(
             children: []
         };
 
-        const targetPath = data.parentPathString === 'root' ? [] : data.parentPathString.split('.').filter((p: string) => p !== 'root');
+        const targetPath = (!data.parentPathString || data.parentPathString === 'root') ? [] : splitPath(data.parentPathString).filter((p: string) => p !== 'root');
 
         if (targetPath.length === 0) {
             // Add to root

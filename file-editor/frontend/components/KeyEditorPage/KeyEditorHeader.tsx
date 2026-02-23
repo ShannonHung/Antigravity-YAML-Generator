@@ -1,5 +1,6 @@
 import React from 'react';
 import { Save } from 'lucide-react';
+import { unescapePath } from '@/lib/pathUtils';
 
 interface KeyEditorHeaderProps {
     targetKey: string;
@@ -16,7 +17,7 @@ export default function KeyEditorHeader({ targetKey, onClose, onSave }: KeyEdito
                 </div>
                 <div>
                     <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight">Edit Key</h2>
-                    <p className="text-xs text-zinc-500 font-mono mt-0.5">{targetKey}</p>
+                    <p className="text-xs text-zinc-500 font-mono mt-0.5">{unescapePath(targetKey)}</p>
                 </div>
             </div>
 
