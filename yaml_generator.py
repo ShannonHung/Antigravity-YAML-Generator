@@ -602,7 +602,7 @@ def generate_ini_from_schema(nodes: List[SchemaNode], config=None):
                     lines.extend(generate_banner(clean_desc, width=42))
                 else:
                     for desc_line in node.description.splitlines():
-                        lines.append(f"; {desc_line}")
+                        lines.append(f"# {desc_line}")
             lines.append("[all:vars]")
             val = resolve_node_value(node)
             if isinstance(val, dict):
@@ -633,7 +633,7 @@ def generate_ini_from_schema(nodes: List[SchemaNode], config=None):
                         lines.extend(generate_banner(clean_desc, width=42))
                     else:
                         for desc_line in g_schema.description.splitlines():
-                            lines.append(f"; {desc_line}")
+                            lines.append(f"# {desc_line}")
                 hint = get_override_hint(g_schema, override_hint_marker) if g_schema else ""
                 lines.append(f"[{gk}]{hint}")
                 lines.extend(_render_hosts(hosts, g_schema.children if g_schema else []))
@@ -659,7 +659,7 @@ def generate_ini_from_schema(nodes: List[SchemaNode], config=None):
                         lines.extend(generate_banner(clean_desc, width=42))
                     else:
                         for desc_line in c_schema.description.splitlines():
-                            lines.append(f"; {desc_line}")
+                            lines.append(f"# {desc_line}")
                 lines.append(f"[{ak}:children]")
                 # prioritize inner schema default_value, else outer aggr_val
                 children_groups = resolve_node_value(c_schema) if c_schema else None
