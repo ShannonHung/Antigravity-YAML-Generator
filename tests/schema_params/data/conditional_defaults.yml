@@ -1,0 +1,22 @@
+# ==========================================
+# This file need to discuss and confirm with storage team
+# ==========================================
+trident_version: "24.10.0"
+
+
+enable_trident_nas_ssd: false # <=== [Override]
+
+
+enable_trident_san_ssd: false # <=== [Override]
+
+
+trident_san_ssd_svm_list: {} # <=== [Override]
+
+
+trident_nas_ssd_svm_list: # <=== [Override]
+  # * key might be dc1, dc2, dc3 
+  *:
+    managementLIF: ""
+    # qosPolicy: ""
+    # adaptiveQosPolicy: ""
+    # extend_pool: ""

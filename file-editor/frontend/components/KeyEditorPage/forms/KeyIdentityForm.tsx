@@ -247,7 +247,7 @@ export default function KeyIdentityForm({
 
                     {/* Plugins Editor */}
                     <div className="w-full mt-2 pt-4 border-t border-zinc-200 dark:border-zinc-800">
-                        <InfoLabel label="Generator Plugins" tooltip="List of generator plugins to apply to this key." placement="right" />
+                        <InfoLabel label="Precheck Plugins" tooltip="List of generator plugins to apply to this key." placement="right" />
                         <div className="min-h-[42px] transition-all bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl flex items-center flex-wrap px-3 py-2 focus-within:ring-2 focus-within:ring-teal-500/20 focus-within:border-teal-500 hover:border-zinc-300 dark:hover:border-zinc-600">
                             <Typeahead
                                 id="plugins-select-editor"

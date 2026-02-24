@@ -75,6 +75,7 @@
                             "regex": "",
                             "regex_enable": true,
                             "required": true,
+                            "default_value": "100.66.1.1",
                             "children": []
                         }
                     ]

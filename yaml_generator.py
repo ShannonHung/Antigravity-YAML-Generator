@@ -20,6 +20,7 @@ class SchemaNode:
     is_override: bool = False
     regex_enable: bool = False
     regex: Optional[str] = None
+    condition: Optional[Dict[str, Any]] = None
     children: List['SchemaNode'] = field(default_factory=list)
 
     def __getitem__(self, key):
@@ -45,6 +46,7 @@ class SchemaNode:
             is_override=d.get("is_override", False),
             regex_enable=d.get("regex_enable", False),
             regex=d.get("regex"),
+            condition=d.get("condition"),
             children=children
         )
 
@@ -58,6 +60,7 @@ class SchemaNode:
             "default_value": self.default_value,
             "required": self.required,
             "override_strategy": self.override_strategy,
+            "condition": self.condition,
             "override_hint": self.override_hint,
             "regex_enable": self.regex_enable,
             "regex": self.regex,
@@ -218,32 +221,57 @@ def merge_nodes(source_nodes, override_nodes):
             
     return source_nodes
 
-def quoted_str_representer(dumper, data):
+def format_smart_quoted_string(data):
     """
-    Custom representer to enforce strict quoting rules.
+    Format strings with minimal necessary quoting for YAML/INI.
+    Avoid quoting strings containing mere special chars like `/` if they don't break YAML.
     """
+    if data is None: return ""
+    v_str = str(data)
+    
+    # Empty string or purely whitespace needs quotes
+    if not v_str or not v_str.strip():
+        return f'"{v_str}"'
+        
+    # Booleans
+    if re.match(r'^(true|false|yes|no|on|off)$', v_str, re.IGNORECASE):
+        return v_str # Keep them raw so parsers treat them as booleans or bare strings
+        
+    if "\n" in v_str:
+        return yaml.dump(v_str, default_style='|').strip()
+
+    # Needs quoting if it starts/ends with spaces, or starts with restricted chars
+    # We remove '/' from the restricted chars to fulfill user's request
+    restricted_start = ('"', "'", '*', '&', '!', '?', '-', '<', '>', '%', '@', '`')
+    dangerous_chars = ('#', ':', '{', '}', '[', ']', ',')
+    
     needs_quotes = False
     
-    if not data:
+    if v_str.startswith(restricted_start) or v_str.startswith(' ') or v_str.endswith(' '):
         needs_quotes = True
-    elif re.match(r'^(true|false|yes|no|on|off)$', data, re.IGNORECASE):
+    elif any(c in v_str for c in dangerous_chars):
         needs_quotes = True
-    elif re.match(r'^[\d\.]+$', data): # Simple number check
-        needs_quotes = True
-    elif any(c in data for c in ":#[]{}/"):
-        needs_quotes = True
-    
+        
+    if needs_quotes:
+        if not (v_str.startswith('"') and v_str.endswith('"')):
+            return f'"{v_str}"'
+            
+    return v_str
+
+def quoted_str_representer(dumper, data):
+    """
+    Custom representer to enforce strict quoting rules using our smart logic.
+    """
     if "\n" in data:
         return dumper.represent_scalar('tag:yaml.org,2002:str', data, style='|')
-    
-    if needs_quotes:
-        return dumper.represent_scalar('tag:yaml.org,2002:str', data, style='"')
+        
+    formatted = format_smart_quoted_string(data)
+    if formatted.startswith('"') and formatted.endswith('"'):
+        # Strip quotes and let yaml dumper handle it strictly
+        clean_val = formatted[1:-1]
+        return dumper.represent_scalar('tag:yaml.org,2002:str', clean_val, style='"')
     else:
-        # Check if safe to print raw
-        if re.match(r'^[a-zA-Z0-9_\-\.]+$', data):
-             return dumper.represent_scalar('tag:yaml.org,2002:str', data)
-        else:
-             return dumper.represent_scalar('tag:yaml.org,2002:str', data, style='"')
+        return dumper.represent_scalar('tag:yaml.org,2002:str', data)
 
 # Register the custom representer
 yaml.add_representer(str, quoted_str_representer)
@@ -466,6 +494,11 @@ def generate_yaml_from_schema(nodes: List[SchemaNode], indent=0, config=None):
         line_content = f"{prefix}{n_key}:"
         current_hint = get_override_hint(node, override_hint_marker)
         value = resolve_node_value(node)
+        
+        # If node is a list or object, an empty string value usually comes from a default regex fallback.
+        # It should not override children rendering.
+        if ("object" in n_multi_type or "list" in n_multi_type) and value == "":
+            value = None
 
         if "list" in n_multi_type:
             if n_children:
@@ -501,7 +534,8 @@ def generate_yaml_from_schema(nodes: List[SchemaNode], indent=0, config=None):
                      node_lines.append(f"{line_content} {val}{current_hint}")
 
         elif "object" in n_multi_type:
-             if n_children:
+             explicit_default = getattr(node, 'default_value', None) if not isinstance(node, dict) else node.get('default_value')
+             if n_children and explicit_default is None:
                  node_lines.append(f"{line_content}{current_hint}")
                  node_lines.extend(generate_yaml_from_schema(n_children, indent + 1, config))
              else:
@@ -530,15 +564,25 @@ def generate_yaml_from_schema(nodes: List[SchemaNode], indent=0, config=None):
             else:
                  node_lines.append(f"{line_content} {val_str}{current_hint}")
 
+        # Determine Requirement / Conditions
         is_required = getattr(node, 'required', True) if not isinstance(node, dict) else node.get('required', True)
         if hasattr(node, "get") and isinstance(node, dict):
             is_required = node.get('required', True)
+            condition_obj = node.get('condition', None)
         elif hasattr(node, "required"):
             is_required = getattr(node, "required")
+            condition_obj = getattr(node, 'condition', None)
         else:
             is_required = True
+            condition_obj = None
 
-        if is_required is False:
+        has_conditions = False
+        if condition_obj and isinstance(condition_obj, dict):
+            conds = condition_obj.get('conditions', [])
+            if conds and len(conds) > 0:
+                has_conditions = True
+
+        if is_required is False and not has_conditions:
             commented_node_lines = []
             flat_node_lines = []
             for line in node_lines:
@@ -669,6 +713,72 @@ def generate_ini_from_schema(nodes: List[SchemaNode], config=None):
                     lines.extend([str(i) for i in children_groups])
                 elif children_groups:
                     lines.append(str(children_groups))
+                lines.append("")
+
+    # 4. group_vars
+    for node in nodes:
+        if node.key == 'group_vars' and is_node_enabled(node):
+            if node.description:
+                if node.description.startswith("#"):
+                    clean_desc = node.description[1:]
+                    if clean_desc.startswith(" "): clean_desc = clean_desc[1:]
+                    lines.extend(generate_banner(clean_desc, width=42))
+                else:
+                    for desc_line in node.description.splitlines():
+                        lines.append(f"# {desc_line}")
+                        
+            schema_map = {c.key: c for c in node.children}
+            ordered_keys = list(schema_map.keys())
+            
+            group_vars_val = resolve_node_value(node) or {}
+            
+            for gk in group_vars_val:
+                if gk not in ordered_keys: ordered_keys.append(gk)
+                
+            for gk in ordered_keys:
+                g_schema = schema_map.get(gk)
+                if g_schema and not is_node_enabled(g_schema): continue
+                
+                if g_schema and g_schema.description:
+                    if g_schema.description.startswith("#"):
+                        clean_desc = g_schema.description[1:]
+                        if clean_desc.startswith(" "): clean_desc = clean_desc[1:]
+                        lines.extend(generate_banner(clean_desc, width=42))
+                    else:
+                        for desc_line in g_schema.description.splitlines():
+                            lines.append(f"# {desc_line}")
+                            
+                hint = get_override_hint(g_schema, override_hint_marker) if g_schema else ""
+                lines.append(f"[{gk}:vars]{hint}")
+                
+                vars_val = {}
+                if g_schema and g_schema.children:
+                    for ch in g_schema.children:
+                        if ch.key:
+                            ch_val = resolve_node_value(ch)
+                            if ch_val is not None:
+                                vars_val[ch.key] = ch_val
+                                
+                g_val = resolve_node_value(g_schema) if g_schema else None
+                if isinstance(g_val, dict):
+                    vars_val.update(g_val)
+                    
+                parent_val = group_vars_val.get(gk, {})
+                if isinstance(parent_val, dict):
+                    vars_val.update(parent_val)
+                
+                if isinstance(vars_val, dict) and vars_val:
+                    for k, v in vars_val.items():
+                        # INI does not require strict YAML quoting (like around IP addresses).
+                        # We only double quote if the value has spaces, starts with a quote, or contains a comment char `#`.
+                        
+                        if isinstance(v, bool):
+                            v_str = str(v).lower()
+                        else:
+                            v_str = str(v)
+                            
+                        q_v = format_smart_quoted_string(v_str)
+                        lines.append(f"{k}={q_v}")
                 lines.append("")
 
     return lines
@@ -933,7 +1043,7 @@ def validate_node(node_data: Any, file_path: str, node_key: str, is_ini: bool = 
             
     # INI specific root key validation
     if is_ini and "." not in node_key: # node_key here is the top-level key like 'global_vars'
-        allowed_ini_roots = ['aggregations', 'global_vars', 'groups']
+        allowed_ini_roots = ['aggregations', 'groups', 'global_vars', 'group_vars']
         if key not in allowed_ini_roots:
             errors.append(f"{file_path} [{node_key}]: invalid INI root key '{key}'. Must be one of {allowed_ini_roots}.")
 

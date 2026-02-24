@@ -52,5 +52,9 @@ class TestIniAggregations(unittest.TestCase):
         # Ensure multi-line banners are triggered by # prefix and work with \n in INI
         self._generate_and_compare('banner_multiline.ini.json', 'banner_multiline.ini')
 
+    def test_group_vars(self):
+        # Verify the new group_vars block logic outputs as [group:vars] with YAML-styled value formatting
+        self._generate_and_compare('group_vars_full.ini.json', 'group_vars_full.ini')
+
 if __name__ == '__main__':
     unittest.main()

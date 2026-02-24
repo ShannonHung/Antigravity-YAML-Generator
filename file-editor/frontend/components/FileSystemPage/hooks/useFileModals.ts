@@ -31,7 +31,7 @@ export function useFileModals(activeFolderPath: string, refresh: () => void) {
             if (newItemName.endsWith('.ini.yml') || newItemName.endsWith('.ini.json')) {
                 content = JSON.stringify([
                     {
-                        "key": "global_vars",
+                        "key": "group_vars",
                         "multi_type": ["object"],
                         "default_value": null,
                         "children": [],

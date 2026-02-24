@@ -249,41 +249,6 @@
                         "children": []
                     }
                 ]
-            },
-            {
-                "key": "worker",
-                "description": "",
-                "multi_type": [
-                    "object"
-                ],
-                "regex_enable": false,
-                "regex": "",
-                "required": true,
-                "either_required": false,
-                "uniqueness": "cluster",
-                "override_hint": false,
-                "override_strategy": "merge",
-                "default_value": null,
-                "condition": null,
-                "children": [
-                    {
-                        "key": "app_owner",
-                        "description": "",
-                        "multi_type": [
-                            "string"
-                        ],
-                        "regex_enable": false,
-                        "regex": "",
-                        "required": true,
-                        "either_required": false,
-                        "uniqueness": "cluster",
-                        "override_hint": false,
-                        "override_strategy": "merge",
-                        "default_value": "shannon",
-                        "condition": null,
-                        "children": []
-                    }
-                ]
             }
         ]
     }

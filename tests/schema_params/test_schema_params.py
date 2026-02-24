@@ -113,5 +113,9 @@ class TestSchemaParams(unittest.TestCase):
         """Test formatting of list items that are objects (with children) for proper internal alignment."""
         self._generate_and_compare('cilium_remote_clusters.yml.json', 'cilium_remote_clusters.yml')
 
+    def test_conditional_defaults(self):
+        """Test conditionally required optional blocks and explicit default precedence."""
+        self._generate_and_compare('conditional_defaults.yml.json', 'conditional_defaults.yml')
+
 if __name__ == '__main__':
     unittest.main()

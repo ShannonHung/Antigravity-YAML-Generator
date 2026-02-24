@@ -78,7 +78,7 @@
                 "uniqueness": "cluster",
                 "override_hint": false,
                 "override_strategy": "merge",
-                "default_value": "null",
+                "default_value": null,
                 "children": [
                     {
                         "key": "managementLIF",
@@ -93,7 +93,7 @@
                         "uniqueness": "cluster",
                         "override_hint": false,
                         "override_strategy": "merge",
-                        "default_value": "null",
+                        "default_value": null,
                         "children": []
                     },
                     {
@@ -109,7 +109,7 @@
                         "uniqueness": "cluster",
                         "override_hint": false,
                         "override_strategy": "merge",
-                        "default_value": "null",
+                        "default_value": null,
                         "children": []
                     },
                     {
@@ -142,7 +142,7 @@
                         "uniqueness": "cluster",
                         "override_hint": false,
                         "override_strategy": "merge",
-                        "default_value": "null",
+                        "default_value": null,
                         "children": []
                     }
                 ]
@@ -202,7 +202,7 @@
                         "uniqueness": "cluster",
                         "override_hint": false,
                         "override_strategy": "merge",
-                        "default_value": "null",
+                        "default_value": null,
                         "children": []
                     },
                     {
@@ -218,7 +218,7 @@
                         "uniqueness": "cluster",
                         "override_hint": false,
                         "override_strategy": "merge",
-                        "default_value": "null",
+                        "default_value": null,
                         "children": []
                     },
                     {
@@ -251,7 +251,7 @@
                         "uniqueness": "cluster",
                         "override_hint": false,
                         "override_strategy": "merge",
-                        "default_value": "null",
+                        "default_value": null,
                         "children": []
                     }
                 ]

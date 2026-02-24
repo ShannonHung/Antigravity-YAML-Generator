@@ -6,7 +6,7 @@
         "multi_type": [
             "object"
         ],
-        "default_value": {},
+        "default_value": null,
         "children": [
             {
                 "key": "ipv4_pools",
@@ -14,7 +14,7 @@
                 "multi_type": [
                     "object"
                 ],
-                "default_value": {},
+                "default_value": null,
                 "children": [
                     {
                         "key": "infra_wildcard_vip",

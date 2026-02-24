@@ -5,7 +5,7 @@ import { Typeahead, Menu, MenuItem } from 'react-bootstrap-typeahead';
 import 'react-bootstrap-typeahead/css/Typeahead.css';
 import { useEditorConfig } from '../FileSystemPage/hooks/EditorConfigContext';
 import { JsonNode } from './types';
-import { joinPaths, escapeKey, unescapePath } from '@/lib/pathUtils';
+import { joinPaths, escapeKey, unescapePath, splitPath } from '@/lib/pathUtils';
 
 // Helper to flatten valid parents
 const getValidParents = (nodes: JsonNode[], parentPath: string = ''): string[] => {
@@ -104,6 +104,33 @@ export default function AddKeyModal({ nodes, onClose, onSave }: any) {
         if (!keyName.trim()) {
             setKeyError("Key name is required");
             isValid = false;
+        } else {
+            // Duplicate Key Check
+            let siblingNodes = nodes;
+            if (parentPathString && parentPathString !== 'root') {
+                const pathParts = splitPath(parentPathString).filter((p: string) => p !== 'root');
+
+                // Traverse exactly to the parent
+                let currentNodes = nodes;
+                let foundParent = true;
+                for (const part of pathParts) {
+                    const found = currentNodes.find((n: JsonNode) => n.key === part);
+                    if (found) {
+                        currentNodes = found.children || [];
+                    } else {
+                        foundParent = false;
+                        break;
+                    }
+                }
+                if (foundParent) {
+                    siblingNodes = currentNodes;
+                }
+            }
+
+            if (siblingNodes.some((n: JsonNode) => n.key === keyName.trim())) {
+                setKeyError(`A key named "${keyName.trim()}" already exists at this level`);
+                isValid = false;
+            }
         }
 
         // validate Type
