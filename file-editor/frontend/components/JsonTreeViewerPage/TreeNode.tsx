@@ -1,4 +1,4 @@
-import { ChevronRight, ChevronDown, AlertTriangle, CheckCircle2, Ban, Edit, Trash2 } from 'lucide-react';
+import { ChevronRight, ChevronDown, AlertTriangle, CheckCircle2, Ban, Edit, Trash2, Plus } from 'lucide-react';
 import { JsonNode } from './types';
 import { joinPaths, escapeKey } from '@/lib/pathUtils';
 import clsx from 'clsx';
@@ -11,6 +11,7 @@ interface TreeNodeProps {
     toggleExpand: (key: string) => void;
     onDelete: (node: JsonNode, parentPath: string) => void;
     onEdit: (keyPath: string) => void;
+    onAddChild: (parentPath: string, initialTypes?: string[]) => void;
     parentPath: string;
 }
 
@@ -22,6 +23,7 @@ export default function TreeNode({
     toggleExpand,
     onDelete,
     onEdit,
+    onAddChild,
     parentPath,
     inheritedDeprecated = false
 }: TreeNodeProps & { inheritedDeprecated?: boolean }) {
@@ -32,6 +34,11 @@ export default function TreeNode({
     // Deprecated Status
     const isSelfDeprecated = node.required === null || inheritedDeprecated;
     const isEffectiveDeprecated = isSelfDeprecated || inheritedDeprecated;
+
+    // Determine if this node can accept children
+    const isObject = node.multi_type?.includes('object');
+    const isListOfObjects = node.multi_type?.includes('list') && node.item_multi_type?.includes('object');
+    const canHaveChildren = isObject || isListOfObjects;
 
     // Format Type
     let typeDisplay = node.type || '-';
@@ -153,6 +160,15 @@ export default function TreeNode({
                 {/* Actions Column - Always Visible (Greyed Out) */}
                 <td className="py-2.5 px-4 w-24">
                     <div className="flex items-center justify-end space-x-1">
+                        {canHaveChildren && (
+                            <button
+                                onClick={(e) => { e.stopPropagation(); onAddChild(myPath, node.item_multi_type || []); }}
+                                className="p-1.5 text-zinc-400 hover:text-emerald-600 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded transition-colors opacity-60 hover:opacity-100"
+                                title="Add Child Key"
+                            >
+                                <Plus className="w-3.5 h-3.5" />
+                            </button>
+                        )}
                         <button
                             onClick={(e) => { e.stopPropagation(); onEdit(myPath); }}
                             className="p-1.5 text-zinc-400 hover:text-blue-600 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded transition-colors opacity-60 hover:opacity-100"
@@ -181,6 +197,7 @@ export default function TreeNode({
                         toggleExpand={toggleExpand}
                         onDelete={onDelete}
                         onEdit={onEdit}
+                        onAddChild={onAddChild}
                         parentPath={myPath}
                         inheritedDeprecated={isEffectiveDeprecated}
                     />

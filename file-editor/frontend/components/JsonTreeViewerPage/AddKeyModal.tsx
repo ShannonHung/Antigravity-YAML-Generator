@@ -62,11 +62,11 @@ const InfoLabel = ({ label, tooltip, placement = 'right' }: { label: string, too
     </div>
 );
 
-export default function AddKeyModal({ nodes, onClose, onSave }: any) {
+export default function AddKeyModal({ nodes, onClose, onSave, initialParentPath, initialTypes }: any) {
     const { DATA_TYPES, ITEM_DATA_TYPES } = useEditorConfig();
-    const [parentPath, setParentPath] = useState<string[]>([]);
+    const [parentPath, setParentPath] = useState<string[]>(initialParentPath ? [initialParentPath] : []);
     const [keyName, setKeyName] = useState('');
-    const [types, setTypes] = useState<string[]>([]);
+    const [types, setTypes] = useState<string[]>(initialTypes && initialTypes.length > 0 ? initialTypes : []);
     const [itemTypes, setItemTypes] = useState<string[]>([]);
     const [desc, setDesc] = useState('');
     const [req, setReq] = useState<boolean | null>(true);
@@ -185,39 +185,46 @@ export default function AddKeyModal({ nodes, onClose, onSave }: any) {
                     {/* Parent Selector (Single Typeahead) - HIGH Z-INDEX */}
                     <div className="relative z-20 hover:z-[60]">
                         <InfoLabel label="Parent" tooltip="The location in the JSON structure where this key will be added." placement="right" />
-                        <Typeahead
-                            id="parent-select"
-                            options={validParents}
-                            selected={parentPath}
-                            onChange={(s) => {
-                                setParentPath(s as string[]);
-                                if (parentError) setParentError(null);
-                            }}
-                            placeholder="Root (leave empty) or search path..."
-                            inputProps={{
-                                className: clsx(
-                                    'w-full px-3 py-2 bg-white dark:bg-zinc-800 border rounded-md outline-none focus:ring-2 focus:ring-blue-500 text-xs transition-colors',
-                                    parentError ? 'border-red-500 focus:ring-red-500' : 'border-zinc-200 dark:border-zinc-700'
-                                )
-                            }}
-                            renderMenuItemChildren={(option) => (
-                                <div className="text-xs font-mono text-zinc-700 dark:text-zinc-200 px-2 py-1">{unescapePath(option as string)}</div>
-                            )}
-                            emptyLabel={
-                                <span className="text-red-500 text-xs font-medium px-2">No matches found</span>
-                            }
-                            renderMenu={(results, { newSelectionPrefix, paginationText, renderMenuItemChildren, ...menuProps }: any) => (
-                                <Menu {...menuProps} className="bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md shadow-lg max-h-48 overflow-y-auto">
-                                    {results.map((result, index) => (
-                                        <MenuItem key={index} option={result} position={index}>
-                                            <div className="text-xs font-mono text-zinc-700 dark:text-zinc-200 px-3 py-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-700 cursor-pointer">
-                                                {unescapePath(result as string)}
-                                            </div>
-                                        </MenuItem>
-                                    ))}
-                                </Menu>
-                            )}
-                        />
+                        {initialParentPath ? (
+                            <div className="flex items-center space-x-2 px-3 py-2 bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700 rounded-md">
+                                <span className="text-xs font-mono text-emerald-600 dark:text-emerald-400 flex-1 truncate">{unescapePath(initialParentPath)}</span>
+                                <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-[2px] rounded bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30 flex-shrink-0">Auto</span>
+                            </div>
+                        ) : (
+                            <Typeahead
+                                id="parent-select"
+                                options={validParents}
+                                selected={parentPath}
+                                onChange={(s) => {
+                                    setParentPath(s as string[]);
+                                    if (parentError) setParentError(null);
+                                }}
+                                placeholder="Root (leave empty) or search path..."
+                                inputProps={{
+                                    className: clsx(
+                                        'w-full px-3 py-2 bg-white dark:bg-zinc-800 border rounded-md outline-none focus:ring-2 focus:ring-blue-500 text-xs transition-colors',
+                                        parentError ? 'border-red-500 focus:ring-red-500' : 'border-zinc-200 dark:border-zinc-700'
+                                    )
+                                }}
+                                renderMenuItemChildren={(option) => (
+                                    <div className="text-xs font-mono text-zinc-700 dark:text-zinc-200 px-2 py-1">{unescapePath(option as string)}</div>
+                                )}
+                                emptyLabel={
+                                    <span className="text-red-500 text-xs font-medium px-2">No matches found</span>
+                                }
+                                renderMenu={(results, { newSelectionPrefix, paginationText, renderMenuItemChildren, ...menuProps }: any) => (
+                                    <Menu {...menuProps} className="bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md shadow-lg max-h-48 overflow-y-auto">
+                                        {results.map((result, index) => (
+                                            <MenuItem key={index} option={result} position={index}>
+                                                <div className="text-xs font-mono text-zinc-700 dark:text-zinc-200 px-3 py-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-700 cursor-pointer">
+                                                    {unescapePath(result as string)}
+                                                </div>
+                                            </MenuItem>
+                                        ))}
+                                    </Menu>
+                                )}
+                            />
+                        )}
                         {parentError && <p className="text-[10px] text-red-500 mt-1">{parentError}</p>}
                     </div>
 

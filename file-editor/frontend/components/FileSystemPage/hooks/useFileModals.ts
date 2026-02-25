@@ -31,30 +31,30 @@ export function useFileModals(activeFolderPath: string, refresh: () => void) {
             if (newItemName.endsWith('.ini.yml') || newItemName.endsWith('.ini.json')) {
                 content = JSON.stringify([
                     {
-                        "key": "group_vars",
-                        "multi_type": ["object"],
-                        "default_value": null,
-                        "children": [],
-                        "required": false,
-                        "override_strategy": "merge",
-                        "description": "global vars section"
-                    },
-                    {
                         "key": "groups",
                         "multi_type": ["object"],
                         "children": [],
                         "required": true,
                         "default_value": null,
                         "override_strategy": "merge",
-                        "description": "groups section"
+                        "description": "# groups section [node]"
+                    },
+                    {
+                        "key": "group_vars",
+                        "multi_type": ["object"],
+                        "default_value": null,
+                        "children": [],
+                        "required": true,
+                        "override_strategy": "merge",
+                        "description": "# global vars section [node:vars]"
                     },
                     {
                         "key": "aggregations",
                         "multi_type": ["object"],
                         "default_value": null,
                         "children": [],
-                        "required": false,
-                        "description": "aggregations section",
+                        "required": true,
+                        "description": "# aggregations section [node:children]",
                         "override_hint": false,
                         "regex_enable": false
                     }

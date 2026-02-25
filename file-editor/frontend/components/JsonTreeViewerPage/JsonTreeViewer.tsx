@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
 
 // Hooks
@@ -51,6 +51,22 @@ export default function JsonTreeViewer({ content, fileName, filePath, onClose, o
 
     // 5. Theme
     const { darkMode, toggleDarkMode } = useTheme();
+
+    // 6. Quick Add Child state
+    const [quickAddParentPath, setQuickAddParentPath] = useState<string | null>(null);
+    const [quickAddInitialTypes, setQuickAddInitialTypes] = useState<string[]>([]);
+
+    const handleAddChild = (parentPath: string, initialTypes: string[] = []) => {
+        setQuickAddParentPath(parentPath);
+        setQuickAddInitialTypes(initialTypes);
+        setIsAddKeyModalOpen(true);
+    };
+
+    const handleCloseAddKeyModal = () => {
+        setIsAddKeyModalOpen(false);
+        setQuickAddParentPath(null);
+        setQuickAddInitialTypes([]);
+    };
 
     if (error) {
         return <div className="p-8 text-red-500">{error}</div>;
@@ -104,6 +120,7 @@ export default function JsonTreeViewer({ content, fileName, filePath, onClose, o
                                         toggleExpand={toggleExpand}
                                         onDelete={(n, p) => setDeleteTarget({ node: n, parentPath: p })}
                                         onEdit={onEditKey}
+                                        onAddChild={handleAddChild}
                                         parentPath=""
                                     />
                                 ))
@@ -119,7 +136,9 @@ export default function JsonTreeViewer({ content, fileName, filePath, onClose, o
             {isAddKeyModalOpen && (
                 <AddKeyModal
                     nodes={nodes}
-                    onClose={() => setIsAddKeyModalOpen(false)}
+                    initialParentPath={quickAddParentPath}
+                    initialTypes={quickAddInitialTypes}
+                    onClose={handleCloseAddKeyModal}
                     onSave={handleSaveNewKey}
                 />
             )}

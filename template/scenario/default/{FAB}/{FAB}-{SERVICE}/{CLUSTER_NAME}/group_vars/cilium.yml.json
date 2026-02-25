@@ -62,7 +62,7 @@
                 "uniqueness": "cluster",
                 "override_hint": true,
                 "override_strategy": "merge",
-                "default_value": "null",
+                "default_value": null,
                 "children": [
                     {
                         "key": "id",
@@ -100,7 +100,8 @@
                     }
                 ],
                 "item_multi_type": [
-                    "object"
+                    "object",
+                    "string"
                 ]
             }
         ]
