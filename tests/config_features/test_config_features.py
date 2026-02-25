@@ -78,10 +78,10 @@ class TestConfigFeatures(unittest.TestCase):
         mock_env_invalid = {
              self.app_config.scenario_env_key: "base"
         }
-        with self.assertRaises(SystemExit) as cm:
+        with self.assertRaises(yaml_generator.ConfigGeneratorError) as cm:
             yaml_generator.validate_required_env_vars(self.app_config, active_scenarios, mock_env_invalid)
             
-        self.assertEqual(cm.exception.code, 1, "Failed to exit when default environment variables are missing")
+        self.assertIn("Missing required environment variables", str(cm.exception))
 
 if __name__ == '__main__':
     unittest.main()

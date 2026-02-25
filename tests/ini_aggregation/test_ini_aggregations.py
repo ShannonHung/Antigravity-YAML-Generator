@@ -36,6 +36,10 @@ class TestIniAggregations(unittest.TestCase):
         # Verify the generator does not return immediately after encountering the first aggregation child group
         self._generate_and_compare('aggregations.ini.json', 'aggregations.ini')
 
+    def test_ini_aggregation_child(self):
+        # Verify the generator does not return immediately after encountering the first aggregation child group
+        self._generate_and_compare('aggregations_child.ini.json', 'aggregations_child.ini')
+
     def test_global_vars(self):
         # Verify output structure and simple substitution when block is global_vars
         self._generate_and_compare('global_vars.ini.json', 'global_vars.ini')

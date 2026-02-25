@@ -1,0 +1,56 @@
+[
+    {
+        "key": "parent1",
+        "description": "",
+        "multi_type": [
+            "object"
+        ],
+        "regex_enable": false,
+        "regex": "",
+        "required": true,
+        "either_required": false,
+        "uniqueness": "cluster",
+        "override_hint": false,
+        "override_strategy": "merge",
+        "default_value": {
+            "custom_key": "custom_val"
+        },
+        "condition": null,
+        "children": [
+            {
+                "key": "name",
+                "description": "",
+                "multi_type": [
+                    "string"
+                ],
+                "regex_enable": false,
+                "regex": "",
+                "required": true,
+                "either_required": false,
+                "uniqueness": "cluster",
+                "override_hint": false,
+                "override_strategy": "merge",
+                "default_value": "shannon",
+                "condition": null,
+                "children": []
+            },
+            {
+                "key": "birthday",
+                "description": "",
+                "multi_type": [
+                    "string"
+                ],
+                "regex_enable": false,
+                "regex": "",
+                "required": true,
+                "either_required": false,
+                "uniqueness": "cluster",
+                "override_hint": false,
+                "override_strategy": "merge",
+                "default_value": "2025.6.1",
+                "condition": null,
+                "children": []
+            }
+        ]
+    }
+]

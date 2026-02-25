@@ -1,0 +1,516 @@
+[
+    {
+        "key": "group_vars",
+        "multi_type": [
+            "object"
+        ],
+        "default_value": null,
+        "children": [
+            {
+                "key": "k8s-nodes",
+                "description": "",
+                "multi_type": [
+                    "object"
+                ],
+                "regex_enable": false,
+                "regex": "",
+                "required": false,
+                "either_required": false,
+                "uniqueness": "cluster",
+                "override_hint": false,
+                "override_strategy": "merge",
+                "default_value": null,
+                "condition": null,
+                "children": [
+                    {
+                        "key": "l4m_fs_size",
+                        "description": "",
+                        "multi_type": [
+                            "string"
+                        ],
+                        "regex_enable": false,
+                        "regex": "",
+                        "required": true,
+                        "either_required": false,
+                        "uniqueness": "cluster",
+                        "override_hint": false,
+                        "override_strategy": "merge",
+                        "default_value": "200G",
+                        "condition": null,
+                        "children": []
+                    },
+                    {
+                        "key": "lvm_img_size",
+                        "description": "",
+                        "multi_type": [
+                            "string"
+                        ],
+                        "regex_enable": false,
+                        "regex": "",
+                        "required": true,
+                        "either_required": false,
+                        "uniqueness": "cluster",
+                        "override_hint": false,
+                        "override_strategy": "merge",
+                        "default_value": "200G",
+                        "condition": null,
+                        "children": []
+                    }
+                ]
+            },
+            {
+                "key": "test_new",
+                "description": "",
+                "multi_type": [
+                    "object"
+                ],
+                "regex_enable": false,
+                "regex": "",
+                "required": true,
+                "either_required": false,
+                "uniqueness": "cluster",
+                "override_hint": true,
+                "override_strategy": "merge",
+                "default_value": null,
+                "children": [
+                    {
+                        "key": "root_ip",
+                        "description": "",
+                        "multi_type": [
+                            "ip"
+                        ],
+                        "regex_enable": false,
+                        "regex": "",
+                        "required": true,
+                        "either_required": false,
+                        "uniqueness": "cluster",
+                        "override_hint": true,
+                        "override_strategy": "merge",
+                        "default_value": "10.0.0.1/16",
+                        "condition": null,
+                        "children": []
+                    }
+                ]
+            }
+        ],
+        "required": true,
+        "override_strategy": "merge",
+        "description": "# global vars section",
+        "either_required": false,
+        "uniqueness": "cluster",
+        "override_hint": false,
+        "regex_enable": false,
+        "regex": ""
+    },
+    {
+        "key": "groups",
+        "multi_type": [
+            "object"
+        ],
+        "children": [
+            {
+                "key": "bastion",
+                "description": "",
+                "multi_type": [
+                    "list"
+                ],
+                "item_multi_type": [
+                    "object"
+                ],
+                "regex_enable": false,
+                "regex": "",
+                "required": true,
+                "either_required": false,
+                "uniqueness": "cluster",
+                "override_hint": true,
+                "override_strategy": "merge",
+                "default_value": null,
+                "condition": null,
+                "children": [
+                    {
+                        "key": "hostname",
+                        "description": "",
+                        "multi_type": [
+                            "string"
+                        ],
+                        "regex_enable": false,
+                        "regex": "",
+                        "required": true,
+                        "either_required": false,
+                        "uniqueness": "cluster",
+                        "override_hint": false,
+                        "override_strategy": "merge",
+                        "default_value": "localhost",
+                        "children": []
+                    },
+                    {
+                        "key": "router_id",
+                        "description": "",
+                        "multi_type": [
+                            "ip"
+                        ],
+                        "regex_enable": false,
+                        "regex": "",
+                        "required": true,
+                        "either_required": false,
+                        "uniqueness": "cluster",
+                        "override_hint": false,
+                        "override_strategy": "merge",
+                        "default_value": "10.x.x.x",
+                        "children": []
+                    },
+                    {
+                        "key": "ssh_id",
+                        "description": "",
+                        "multi_type": [
+                            "ip"
+                        ],
+                        "regex_enable": false,
+                        "regex": "",
+                        "required": true,
+                        "either_required": false,
+                        "uniqueness": "cluster",
+                        "override_hint": false,
+                        "override_strategy": "merge",
+                        "default_value": "192.x.x.x",
+                        "children": []
+                    }
+                ]
+            },
+            {
+                "key": "node",
+                "description": "",
+                "multi_type": [
+                    "list"
+                ],
+                "item_multi_type": [
+                    "object"
+                ],
+                "regex_enable": false,
+                "regex": "",
+                "required": true,
+                "either_required": false,
+                "uniqueness": "cluster",
+                "override_hint": true,
+                "override_strategy": "merge",
+                "default_value": null,
+                "condition": null,
+                "children": [
+                    {
+                        "key": "hostname",
+                        "description": "",
+                        "multi_type": [
+                            "string"
+                        ],
+                        "regex_enable": false,
+                        "regex": "",
+                        "required": true,
+                        "either_required": false,
+                        "uniqueness": "cluster",
+                        "override_hint": false,
+                        "override_strategy": "merge",
+                        "default_value": "node-k8s-001",
+                        "children": []
+                    },
+                    {
+                        "key": "priority",
+                        "description": "",
+                        "multi_type": [
+                            "number"
+                        ],
+                        "regex_enable": false,
+                        "regex": "",
+                        "required": true,
+                        "either_required": false,
+                        "uniqueness": "cluster",
+                        "override_hint": false,
+                        "override_strategy": "merge",
+                        "default_value": "100",
+                        "children": []
+                    }
+                ]
+            },
+            {
+                "key": "master",
+                "description": "",
+                "multi_type": [
+                    "list"
+                ],
+                "item_multi_type": [
+                    "object"
+                ],
+                "regex_enable": false,
+                "regex": "",
+                "required": true,
+                "either_required": false,
+                "uniqueness": "cluster",
+                "override_hint": true,
+                "override_strategy": "merge",
+                "default_value": null,
+                "condition": null,
+                "children": [
+                    {
+                        "key": "hostname",
+                        "description": "",
+                        "multi_type": [
+                            "string"
+                        ],
+                        "regex_enable": false,
+                        "regex": "",
+                        "required": true,
+                        "either_required": false,
+                        "uniqueness": "cluster",
+                        "override_hint": false,
+                        "override_strategy": "merge",
+                        "default_value": "node-ms-001",
+                        "children": []
+                    }
+                ]
+            },
+            {
+                "key": "worker",
+                "description": "",
+                "multi_type": [
+                    "list"
+                ],
+                "item_multi_type": [
+                    "object"
+                ],
+                "regex_enable": false,
+                "regex": "",
+                "required": true,
+                "either_required": false,
+                "uniqueness": "cluster",
+                "override_hint": true,
+                "override_strategy": "merge",
+                "default_value": null,
+                "condition": null,
+                "children": [
+                    {
+                        "key": "hostname",
+                        "description": "",
+                        "multi_type": [
+                            "string"
+                        ],
+                        "regex_enable": false,
+                        "regex": "",
+                        "required": true,
+                        "either_required": false,
+                        "uniqueness": "cluster",
+                        "override_hint": false,
+                        "override_strategy": "merge",
+                        "default_value": "node-ap-001",
+                        "children": []
+                    }
+                ]
+            },
+            {
+                "key": "ceph-management",
+                "description": "",
+                "multi_type": [
+                    "list"
+                ],
+                "item_multi_type": [
+                    "object"
+                ],
+                "regex_enable": false,
+                "regex": "",
+                "required": true,
+                "either_required": false,
+                "uniqueness": "cluster",
+                "override_hint": true,
+                "override_strategy": "merge",
+                "default_value": null,
+                "condition": null,
+                "children": [
+                    {
+                        "key": "hostname",
+                        "description": "",
+                        "multi_type": [
+                            "string"
+                        ],
+                        "regex_enable": false,
+                        "regex": "",
+                        "required": true,
+                        "either_required": false,
+                        "uniqueness": "cluster",
+                        "override_hint": false,
+                        "override_strategy": "merge",
+                        "default_value": "node-ceph-001",
+                        "children": []
+                    }
+                ]
+            },
+            {
+                "key": "dummy",
+                "description": "",
+                "multi_type": [
+                    "list"
+                ],
+                "item_multi_type": [
+                    "object"
+                ],
+                "regex_enable": false,
+                "regex": "",
+                "required": true,
+                "either_required": false,
+                "uniqueness": "cluster",
+                "override_hint": false,
+                "override_strategy": "merge",
+                "default_value": null,
+                "condition": null,
+                "children": [
+                    {
+                        "key": "hostname",
+                        "description": "",
+                        "multi_type": [
+                            "string"
+                        ],
+                        "regex_enable": false,
+                        "regex": "",
+                        "required": true,
+                        "either_required": false,
+                        "uniqueness": "cluster",
+                        "override_hint": false,
+                        "override_strategy": "merge",
+                        "default_value": "localhost",
+                        "children": []
+                    },
+                    {
+                        "key": "ansible_connection",
+                        "description": "",
+                        "multi_type": [
+                            "string"
+                        ],
+                        "regex_enable": false,
+                        "regex": "",
+                        "required": true,
+                        "either_required": false,
+                        "uniqueness": "cluster",
+                        "override_hint": false,
+                        "override_strategy": "merge",
+                        "default_value": "local",
+                        "condition": null,
+                        "children": []
+                    }
+                ]
+            }
+        ],
+        "required": true,
+        "default_value": null,
+        "override_strategy": "merge",
+        "description": "# groups section",
+        "either_required": false,
+        "uniqueness": "cluster",
+        "override_hint": false,
+        "regex_enable": false,
+        "regex": ""
+    },
+    {
+        "key": "aggregations",
+        "multi_type": [
+            "object"
+        ],
+        "default_value": null,
+        "children": [
+            {
+                "key": "k8s-nodes",
+                "description": "",
+                "multi_type": [
+                    "list"
+                ],
+                "item_multi_type": [
+                    "object"
+                ],
+                "regex_enable": false,
+                "regex": "",
+                "required": true,
+                "either_required": false,
+                "uniqueness": "cluster",
+                "override_hint": false,
+                "override_strategy": "merge",
+                "default_value": null,
+                "children": [
+                    {
+                        "key": "master",
+                        "description": "",
+                        "multi_type": [
+                            "object"
+                        ],
+                        "regex_enable": false,
+                        "regex": "",
+                        "required": true,
+                        "either_required": false,
+                        "uniqueness": "cluster",
+                        "override_hint": false,
+                        "override_strategy": "merge",
+                        "default_value": null,
+                        "condition": null,
+                        "children": []
+                    },
+                    {
+                        "key": "worker",
+                        "description": "",
+                        "multi_type": [
+                            "object"
+                        ],
+                        "regex_enable": false,
+                        "regex": "",
+                        "required": true,
+                        "either_required": false,
+                        "uniqueness": "cluster",
+                        "override_hint": false,
+                        "override_strategy": "merge",
+                        "default_value": null,
+                        "children": []
+                    }
+                ]
+            },
+            {
+                "key": "ceph",
+                "description": "",
+                "multi_type": [
+                    "list"
+                ],
+                "regex_enable": false,
+                "regex": "",
+                "required": true,
+                "either_required": false,
+                "uniqueness": "cluster",
+                "override_hint": false,
+                "override_strategy": "merge",
+                "default_value": null,
+                "children": [
+                    {
+                        "key": "ceph-management",
+                        "description": "",
+                        "multi_type": [
+                            "object"
+                        ],
+                        "regex_enable": false,
+                        "regex": "",
+                        "required": true,
+                        "either_required": false,
+                        "uniqueness": "cluster",
+                        "override_hint": false,
+                        "override_strategy": "merge",
+                        "default_value": null,
+                        "condition": null,
+                        "children": []
+                    }
+                ],
+                "item_multi_type": [
+                    "object"
+                ]
+            }
+        ],
+        "required": true,
+        "description": "# aggregations section",
+        "override_hint": false,
+        "regex_enable": false,
+        "either_required": false,
+        "uniqueness": "cluster",
+        "override_strategy": "merge",
+        "regex": ""
+    }
+]

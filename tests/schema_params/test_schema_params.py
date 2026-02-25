@@ -82,16 +82,16 @@ class TestSchemaParams(unittest.TestCase):
         # 10: multi_type vs item_multi_type logic.
         # If multi_type has BOTH 'object' and 'list', yaml_generator throws an error and exits.
         
-        invalid_node = [{
-            "key": "bad_node",
-            "required": True,
-            "multi_type": ["object", "list"]
-        }]
+        invalid_node = [yaml_generator.SchemaNode(
+            key="bad_node",
+            required=True,
+            multi_type=["object", "list"]
+        )]
         
-        with self.assertRaises(SystemExit) as cm:
+        with self.assertRaises(yaml_generator.ConfigGeneratorError) as cm:
             yaml_generator.generate_yaml_from_schema(invalid_node, config=self.raw_config)
             
-        self.assertEqual(cm.exception.code, 1, "Failed to exit when 'object' and 'list' coexist in multi_type")
+        self.assertIn("cannot be both 'object' and 'list'", str(cm.exception))
 
     def test_empty_containers(self):
         # 11: Ensure empty objects {} and lists [] are on the same line as the key
@@ -116,6 +116,14 @@ class TestSchemaParams(unittest.TestCase):
     def test_conditional_defaults(self):
         """Test conditionally required optional blocks and explicit default precedence."""
         self._generate_and_compare('conditional_defaults.yml.json', 'conditional_defaults.yml')
+
+    def test_object_default_priority(self):
+        """Test that explicit empty/null default_value triggers children, but other values override children."""
+        self._generate_and_compare('object_empty_default.yml.json', 'object_empty_default.yml')
+        self._generate_and_compare('object_null_default.yml.json', 'object_null_default.yml')
+        self._generate_and_compare('object_custom_default.yml.json', 'object_custom_default.yml')
+        self._generate_and_compare('object_null_list_default.yml.json', 'object_list_default.yml')
+        self._generate_and_compare('object_dict_default.yml.json', 'object_list_default.yml')
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,0 +1,63 @@
+[
+    {
+        "key": "ap_vip",
+        "description": "",
+        "multi_type": [
+            "object"
+        ],
+        "regex_enable": false,
+        "regex": "",
+        "required": true,
+        "either_required": false,
+        "uniqueness": "cluster",
+        "override_hint": false,
+        "override_strategy": "merge",
+        "default_value": {
+            "ipv4_ip_pools": [],
+            "ipv6_ip_pools": []
+        },
+        "condition": null,
+        "children": [
+            {
+                "key": "ipv4_ip_pools",
+                "description": "",
+                "multi_type": [
+                    "list"
+                ],
+                "item_multi_type": [
+                    "ip"
+                ],
+                "regex_enable": false,
+                "regex": "",
+                "required": true,
+                "either_required": false,
+                "uniqueness": "cluster",
+                "override_hint": false,
+                "override_strategy": "merge",
+                "default_value": [],
+                "condition": null,
+                "children": []
+            },
+            {
+                "key": "ipv6_ip_pools",
+                "description": "",
+                "multi_type": [
+                    "list"
+                ],
+                "item_multi_type": [
+                    "ip"
+                ],
+                "regex_enable": false,
+                "regex": "",
+                "required": true,
+                "either_required": false,
+                "uniqueness": "cluster",
+                "override_hint": false,
+                "override_strategy": "merge",
+                "default_value": [],
+                "condition": null,
+                "children": []
+            }
+        ]
+    }
+]

@@ -79,10 +79,10 @@ class TestEnvTriggers(unittest.TestCase):
         }
         active_scenarios = yaml_generator.determine_active_scenarios(self.app_config, mock_env)
         
-        with self.assertRaises(SystemExit) as cm:
+        with self.assertRaises(yaml_generator.ConfigGeneratorError) as cm:
             yaml_generator.validate_required_env_vars(self.app_config, active_scenarios, mock_env)
             
-        self.assertEqual(cm.exception.code, 1, "Failed to halt generator when a triggered ENV scenario is missing its required_env_vars")
+        self.assertIn("Missing required environment variables", str(cm.exception))
 
     def test_env_trigger_logic_and(self):
         # Case 1: Partial match (should NOT trigger)

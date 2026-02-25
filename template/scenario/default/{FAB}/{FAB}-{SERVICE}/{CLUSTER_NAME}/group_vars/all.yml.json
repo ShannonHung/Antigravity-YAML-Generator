@@ -15,7 +15,9 @@
             "check_env_function",
             "check_env_char_limit"
         ],
-        "default_value": "null"
+        "default_value": null,
+        "either_required": false,
+        "uniqueness": "cluster"
     },
     {
         "key": "timezone",
@@ -38,7 +40,7 @@
         "multi_type": [
             "object"
         ],
-        "regex": null,
+        "regex": "",
         "regex_enable": false,
         "children": [
             {
@@ -89,7 +91,10 @@
             }
         ],
         "required": true,
-        "override_strategy": "merge"
+        "override_strategy": "merge",
+        "either_required": false,
+        "uniqueness": "cluster",
+        "default_value": ""
     },
     {
         "key": "dns",

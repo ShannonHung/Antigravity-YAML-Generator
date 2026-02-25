@@ -180,13 +180,16 @@ Strict validation rules are enforced across all templates to ensure data integri
 
 ### 2. Strict INI Rules (`.ini.json`)
 
-To ensure compatibility with the INI generator, `.ini.json` files follow additional constraints:
+To ensure compatibility with the INI generator, `.ini.json` files follow additional constraints before generating the file:
 
-*   **Root Key Restriction**: The root `key` must be one of: `aggregations`, `global_vars`, or `groups`. Any other key will be rejected.
-*   **Type Constraints**:
-    *   All direct children of `aggregations` and `groups` must be declared as `multi_type: ["list"]`.
-    *   All direct children of `groups` must additionally have `item_multi_type: ["object"]`.
-*   **Mandatory hostname**: Any node under `groups` that contains `children` MUST include a child with `key: "hostname"`. This ensures each host in the INI has a primary identifier.
+1.  **Root Key Restriction**: The first layer (root `key`) cannot have any parameters other than `group_vars`, `global_vars`, `groups`, and `aggregations`.
+2.  **Type Constraints**:
+    *   `group_vars`, `groups`, and `aggregations` must all have `multi_type: ["object"]`.
+    *   The `children` under `group_vars` must have `multi_type: ["object"]`.
+    *   The `children` under `groups` must have `multi_type: ["list"]` and `item_multi_type: ["object"]`.
+    *   The `children` under `aggregations` must have `multi_type: ["list"]` and `item_multi_type: ["object"]`.
+    *   Additionally, the `children` of `children` under `aggregations` must also have `multi_type: ["object"]`.
+3.  **Mandatory hostname**: Any node under `groups` that contains `children` MUST include a child with `key: "hostname"`. This ensures each host in the INI has a primary identifier.
 
 ---
 
