@@ -7,16 +7,14 @@ COPY requirements.txt .
 
 RUN pip install --no-cache-dir -r requirements.txt
 
-RUN groupadd -g 1000 appuser && \
-    useradd -u 1000 -g appuser -m appuser
-
 # Copy application code
-COPY --chown=appuser:appuser . .
+COPY . .
 
-RUN chown -R appuser:appuser /app
+# Allow any runtime UID to write to the template directory
+RUN mkdir -p /app/template && chmod -R 777 /app/template
 
-# Ensure template directory exists and is empty
-RUN mkdir -p template && rm -rf template/*
+# Ensure template directory starts empty
+RUN rm -rf /app/template/*
 
 # Expose port
 EXPOSE 8000

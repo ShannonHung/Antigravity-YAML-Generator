@@ -1,3 +1,7 @@
+# Auto-detect current user's UID/GID for correct file permissions in Docker
+export UID := $(shell id -u)
+export GID := $(shell id -g)
+
 .PHONY: gen
 # generate yaml files
 gen:
@@ -43,10 +47,10 @@ build-back-x86:
 	docker buildx build --platform linux/amd64 -t my-backend-x86 ./file-editor/backend
 
 web-dev:
-	docker-compose up -d
+	UID=$(UID) GID=$(GID) docker-compose up -d
 
 web-dev-down:
-	docker-compose down
+	UID=$(UID) GID=$(GID) docker-compose down
 
 # Docker image remove
 remove-all-img: 
@@ -72,7 +76,7 @@ push-back:
 
 # Production commands
 web-prod:
-	docker-compose -f docker-compose-prod.yml up -d
+	UID=$(UID) GID=$(GID) docker-compose -f docker-compose-prod.yml up -d
 
 web-prod-down:
-	docker-compose -f docker-compose-prod.yml down
+	UID=$(UID) GID=$(GID) docker-compose -f docker-compose-prod.yml down
