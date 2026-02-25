@@ -61,7 +61,7 @@ export function useKeyForm(initialData: any) {
         }
 
         // Default Value
-        if (initialData.default_value !== undefined) {
+        if (initialData.default_value !== undefined && initialData.default_value !== null) {
             if (typeof initialData.default_value === 'object') {
                 setDefaultValue(JSON.stringify(initialData.default_value, null, 4));
             } else {

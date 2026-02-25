@@ -15,8 +15,8 @@ export function useKeyMutations(
         } = formData;
 
         // 1. Process Default Value
-        let finalDefaultValue: any = defaultValue;
-        if (defaultValue) {
+        let finalDefaultValue: any = defaultValue === '' ? null : defaultValue;
+        if (defaultValue && defaultValue !== '') {
             const trimmed = String(defaultValue).trim();
             let parsed = false;
 
@@ -36,6 +36,8 @@ export function useKeyMutations(
                     finalDefaultValue = trimmed === 'true';
                 } else if (!isNaN(Number(trimmed)) && trimmed !== '') {
                     finalDefaultValue = Number(trimmed);
+                } else if (trimmed === 'null') {
+                    finalDefaultValue = null;
                 } else {
                     finalDefaultValue = defaultValue; // Store raw string
                 }

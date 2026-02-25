@@ -46,8 +46,8 @@ export function useJsonMutations(
     const handleSaveNewKey = async (data: any) => {
         // Data contains: { parentPathString: "root.ntp", key, types, itemTypes, desc, required }
         const newNodes = JSON.parse(JSON.stringify(nodes));
-        let finalDefaultValue: any = null;
-        if (data.defaultValue) {
+        let finalDefaultValue: any = data.defaultValue === '' ? null : data.defaultValue;
+        if (data.defaultValue && data.defaultValue !== '') {
             const trimmed = String(data.defaultValue).trim();
             let parsed = false;
 
@@ -67,6 +67,8 @@ export function useJsonMutations(
                     finalDefaultValue = trimmed === 'true';
                 } else if (!isNaN(Number(trimmed)) && trimmed !== '') {
                     finalDefaultValue = Number(trimmed);
+                } else if (trimmed === 'null') {
+                    finalDefaultValue = null;
                 } else {
                     finalDefaultValue = data.defaultValue; // Store raw string
                 }
