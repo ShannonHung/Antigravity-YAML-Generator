@@ -44,7 +44,7 @@ export default function FileListView({
                         <th className="px-4 py-3 cursor-pointer hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors" onClick={() => setSortField('name')}>
                             Name {sortField === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}
                         </th>
-                        <th className="px-4 py-3 w-48 cursor-pointer hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors" onClick={() => setSortField('mtime')}>
+                        <th className="px-4 py-3 w-64 cursor-pointer hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors" onClick={() => setSortField('mtime')}>
                             Modified {sortField === 'mtime' && (sortOrder === 'asc' ? '↑' : '↓')}
                         </th>
                         <th className="px-4 py-3 w-32 cursor-pointer hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors" onClick={() => setSortField('size')}>
