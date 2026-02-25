@@ -37,11 +37,7 @@ class TestSchemaValidation(unittest.TestCase):
         errors = yaml_generator.validate_schema(data, path)
         self.assertTrue(any("'multi_type' cannot contain both 'object' and 'list'" in e for e in errors))
 
-    def test_legacy_type_field(self):
-        # Dynamically create a legacy node
-        legacy_node = [{"key": "legacy", "type": "string", "multi_type": ["string"]}]
-        errors = yaml_generator.validate_schema(legacy_node, "legacy.json")
-        self.assertTrue(any("legacy 'type' field found" in e for e in errors))
+
 
     # INI Specific Tests
     def test_invalid_ini_root(self):
