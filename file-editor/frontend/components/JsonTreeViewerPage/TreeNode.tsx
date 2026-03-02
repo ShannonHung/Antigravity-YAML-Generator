@@ -62,7 +62,7 @@ export default function TreeNode({
 
                 {/* Key Column */}
                 <td className="py-2.5 px-4 whitespace-nowrap relative">
-                    <div className="flex items-center" style={{ paddingLeft: `${depth * 20}px` }}>
+                    <div className="flex items-center gap-2 flex-wrap" style={{ paddingLeft: `${depth * 20}px` }}>
                         {hasChildren ? (
                             <button
                                 onClick={() => toggleExpand(myPath)}
@@ -88,13 +88,20 @@ export default function TreeNode({
                             >
                                 Override
                             </span>
+                        )}{node.override_strategy === 'replace' && (
+                            <span
+                                className="px-1.5 py-[2px] rounded text-[9px] font-bold uppercase tracking-wider bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400 border border-red-200 dark:border-red-500/30 cursor-help"
+                                title="Override Strategy: Replace (children will be replaced entirely, not merged)"
+                            >
+                                Replace
+                            </span>
                         )}
                     </div>
                 </td>
 
                 {/* Type Column */}
                 <td className="py-2.5 px-4 text-xs md:text-sm text-blue-600 dark:text-blue-400 font-mono w-48">
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                         {node.regex_enable && (
                             <div className="relative group/tooltip inline-block">
                                 <AlertTriangle className="w-3 h-3 text-yellow-500 cursor-help" />

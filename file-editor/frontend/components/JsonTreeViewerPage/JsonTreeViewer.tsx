@@ -138,6 +138,7 @@ export default function JsonTreeViewer({ content, fileName, filePath, onClose, o
                     nodes={nodes}
                     initialParentPath={quickAddParentPath}
                     initialTypes={quickAddInitialTypes}
+                    fileName={fileName}
                     onClose={handleCloseAddKeyModal}
                     onSave={handleSaveNewKey}
                 />

@@ -44,16 +44,16 @@ export function useFileModals(activeFolderPath: string, refresh: () => void) {
                         "multi_type": ["object"],
                         "default_value": null,
                         "children": [],
-                        "required": true,
+                        "required": false,
                         "override_strategy": "merge",
-                        "description": "# global vars section [node:vars]"
+                        "description": "# group_vars section [node:vars]"
                     },
                     {
                         "key": "aggregations",
                         "multi_type": ["object"],
                         "default_value": null,
                         "children": [],
-                        "required": true,
+                        "required": false,
                         "description": "# aggregations section [node:children]",
                         "override_hint": false,
                         "regex_enable": false

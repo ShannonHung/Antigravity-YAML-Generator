@@ -62,12 +62,31 @@ const InfoLabel = ({ label, tooltip, placement = 'right' }: { label: string, too
     </div>
 );
 
-export default function AddKeyModal({ nodes, onClose, onSave, initialParentPath, initialTypes }: any) {
+export default function AddKeyModal({ nodes, onClose, onSave, initialParentPath, initialTypes, fileName }: any) {
     const { DATA_TYPES, ITEM_DATA_TYPES } = useEditorConfig();
     const [parentPath, setParentPath] = useState<string[]>(initialParentPath ? [initialParentPath] : []);
     const [keyName, setKeyName] = useState('');
-    const [types, setTypes] = useState<string[]>(initialTypes && initialTypes.length > 0 ? initialTypes : []);
-    const [itemTypes, setItemTypes] = useState<string[]>([]);
+
+    // Compute INI type constraints based on root parent key
+    const iniConstraint = useMemo(() => {
+        if (!initialParentPath || !fileName?.endsWith('.ini.json')) return null;
+        const rootKey = splitPath(initialParentPath).filter((p: string) => p !== 'root')[0];
+        if (rootKey === 'groups' || rootKey === 'aggregations') {
+            return { types: ['list'], itemTypes: ['object'] };
+        }
+        if (rootKey === 'group_vars') {
+            return { types: ['object'], itemTypes: [] };
+        }
+        return null;
+    }, [initialParentPath, fileName]);
+
+    const [types, setTypes] = useState<string[]>(
+        iniConstraint ? iniConstraint.types
+            : initialTypes && initialTypes.length > 0 ? initialTypes : []
+    );
+    const [itemTypes, setItemTypes] = useState<string[]>(
+        iniConstraint ? iniConstraint.itemTypes : []
+    );
     const [desc, setDesc] = useState('');
     const [req, setReq] = useState<boolean | null>(true);
     const [defaultValue, setDefaultValue] = useState('');
@@ -250,75 +269,41 @@ export default function AddKeyModal({ nodes, onClose, onSave, initialParentPath,
                     {/* Redesigned Type Selector (Typeahead) */}
                     <div className="relative z-10">
                         <InfoLabel label="Type" tooltip="The data type(s) allowed for this key." placement="right" />
-                        <div className={clsx(
-                            "transition-all bg-white dark:bg-zinc-800 border rounded-md flex items-center flex-wrap px-2 py-1 focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500",
-                            typeError ? "border-red-500" : "border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600"
-                        )}>
-                            <Typeahead
-                                id="type-select"
-                                multiple
-                                options={DATA_TYPES}
-                                selected={types}
-                                onChange={(s) => {
-                                    const selected = s as string[];
-                                    if (selected.includes('enum')) {
-                                        setTypes(['enum']);
-                                    } else {
-                                        setTypes(selected);
-                                    }
-                                    if (typeError) setTypeError(null);
-                                }}
-                                placeholder={types.length === 0 ? "Search types..." : ""}
-                                className="flex-1"
-                                inputProps={{
-                                    className: 'bg-transparent border-none outline-none text-[13px] py-1 px-2 w-full text-zinc-900 dark:text-zinc-100 min-w-[100px]',
-                                }}
-                                renderToken={(option, props, index) => (
-                                    <div key={index} className="bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-300 text-[11px] px-2.5 py-1 rounded-md flex items-center font-mono border border-blue-100 dark:border-blue-500/20 m-1 shadow-sm">
-                                        {option as string}
-                                        <button onClick={(e) => { e.stopPropagation(); props.onRemove && props.onRemove(option); }} className="ml-2 hover:text-blue-900 dark:hover:text-blue-100 transition-colors"><X className="w-3.5 h-3.5" /></button>
-                                    </div>
-                                )}
-                                renderMenuItemChildren={(option) => (
-                                    <div className="text-[13px] font-mono text-zinc-700 dark:text-zinc-200 px-2 py-0.5">{option as string}</div>
-                                )}
-                                emptyLabel={<span className="text-red-500 text-xs font-medium px-2">No matches found</span>}
-                                renderMenu={(results, { newSelectionPrefix, paginationText, renderMenuItemChildren, ...menuProps }: any) => (
-                                    <Menu {...menuProps} className="bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md shadow-xl max-h-48 overflow-y-auto py-1 mt-1 z-[100]">
-                                        {results.map((result, index) => (
-                                            <MenuItem key={index} option={result} position={index}>
-                                                <div className="text-[13px] font-mono text-zinc-700 dark:text-zinc-200 px-3 py-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-700/50 cursor-pointer border-l-2 border-transparent hover:border-blue-500 transition-all">
-                                                    {result as string}
-                                                </div>
-                                            </MenuItem>
-                                        ))}
-                                    </Menu>
-                                )}
-                            />
-                        </div>
-                        {typeError && <p className="text-[10px] text-red-500 mt-1">{typeError}</p>}
-                    </div>
-
-                    {/* Redesigned Item Type (if list) (Typeahead) */}
-                    {types.includes('list') && (
-                        <div className="pl-3 border-l-2 border-blue-500/20 py-1 relative z-0 hover:z-[60]">
-                            <InfoLabel label="List Item Type" tooltip="The data type(s) allowed for items within this list." placement="right" />
-                            <div className="min-h-[38px] transition-all bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md flex items-center flex-wrap px-2 py-1 hover:border-zinc-300 dark:hover:border-zinc-600 focus-within:ring-2 focus-within:ring-purple-500/20 focus-within:border-purple-500">
+                        {iniConstraint ? (
+                            <div className="flex items-center gap-2 px-3 py-2 bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700 rounded-md">
+                                {iniConstraint.types.map((t: string) => (
+                                    <span key={t} className="bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-300 text-[11px] px-2.5 py-1 rounded-md font-mono border border-blue-100 dark:border-blue-500/20 shadow-sm">{t}</span>
+                                ))}
+                                <span className="ml-auto text-[9px] font-bold uppercase tracking-wider px-1.5 py-[2px] rounded bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-500/30 flex-shrink-0">Locked</span>
+                            </div>
+                        ) : (
+                            <div className={clsx(
+                                "transition-all bg-white dark:bg-zinc-800 border rounded-md flex items-center flex-wrap px-2 py-1 focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500",
+                                typeError ? "border-red-500" : "border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600"
+                            )}>
                                 <Typeahead
-                                    id="item-type-select"
+                                    id="type-select"
                                     multiple
-                                    options={ITEM_DATA_TYPES}
-                                    selected={itemTypes}
-                                    onChange={(s) => setItemTypes(s as string[])}
-                                    placeholder={itemTypes.length === 0 ? "Search item types..." : ""}
+                                    options={DATA_TYPES}
+                                    selected={types}
+                                    onChange={(s) => {
+                                        const selected = s as string[];
+                                        if (selected.includes('enum')) {
+                                            setTypes(['enum']);
+                                        } else {
+                                            setTypes(selected);
+                                        }
+                                        if (typeError) setTypeError(null);
+                                    }}
+                                    placeholder={types.length === 0 ? "Search types..." : ""}
                                     className="flex-1"
                                     inputProps={{
                                         className: 'bg-transparent border-none outline-none text-[13px] py-1 px-2 w-full text-zinc-900 dark:text-zinc-100 min-w-[100px]',
                                     }}
                                     renderToken={(option, props, index) => (
-                                        <div key={index} className="bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-300 text-[11px] px-2.5 py-1 rounded-md flex items-center font-mono border border-purple-100 dark:border-purple-500/20 m-1 shadow-sm">
+                                        <div key={index} className="bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-300 text-[11px] px-2.5 py-1 rounded-md flex items-center font-mono border border-blue-100 dark:border-blue-500/20 m-1 shadow-sm">
                                             {option as string}
-                                            <button onClick={(e) => { e.stopPropagation(); props.onRemove && props.onRemove(option); }} className="ml-2 hover:text-purple-900 dark:hover:text-purple-100 transition-colors"><X className="w-3.5 h-3.5" /></button>
+                                            <button onClick={(e) => { e.stopPropagation(); props.onRemove && props.onRemove(option); }} className="ml-2 hover:text-blue-900 dark:hover:text-blue-100 transition-colors"><X className="w-3.5 h-3.5" /></button>
                                         </div>
                                     )}
                                     renderMenuItemChildren={(option) => (
@@ -326,10 +311,10 @@ export default function AddKeyModal({ nodes, onClose, onSave, initialParentPath,
                                     )}
                                     emptyLabel={<span className="text-red-500 text-xs font-medium px-2">No matches found</span>}
                                     renderMenu={(results, { newSelectionPrefix, paginationText, renderMenuItemChildren, ...menuProps }: any) => (
-                                        <Menu {...menuProps} className="bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md shadow-xl max-h-40 overflow-y-auto py-1 mt-1 z-[100]">
+                                        <Menu {...menuProps} className="bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md shadow-xl max-h-48 overflow-y-auto py-1 mt-1 z-[100]">
                                             {results.map((result, index) => (
                                                 <MenuItem key={index} option={result} position={index}>
-                                                    <div className="text-[13px] font-mono text-zinc-700 dark:text-zinc-200 px-3 py-1.5 hover:bg-purple-50 dark:hover:bg-purple-900/30 cursor-pointer border-l-2 border-transparent hover:border-blue-500 transition-all">
+                                                    <div className="text-[13px] font-mono text-zinc-700 dark:text-zinc-200 px-3 py-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-700/50 cursor-pointer border-l-2 border-transparent hover:border-blue-500 transition-all">
                                                         {result as string}
                                                     </div>
                                                 </MenuItem>
@@ -338,6 +323,58 @@ export default function AddKeyModal({ nodes, onClose, onSave, initialParentPath,
                                     )}
                                 />
                             </div>
+                        )}
+                        {typeError && <p className="text-[10px] text-red-500 mt-1">{typeError}</p>}
+                    </div>
+
+                    {/* Redesigned Item Type (if list) (Typeahead) */}
+                    {types.includes('list') && (
+                        <div className="pl-3 border-l-2 border-blue-500/20 py-1 relative z-0 hover:z-[60]">
+                            <InfoLabel label="List Item Type" tooltip="The data type(s) allowed for items within this list." placement="right" />
+                            {iniConstraint && iniConstraint.itemTypes.length > 0 ? (
+                                <div className="flex items-center gap-2 px-3 py-2 bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700 rounded-md">
+                                    {iniConstraint.itemTypes.map((t: string) => (
+                                        <span key={t} className="bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-300 text-[11px] px-2.5 py-1 rounded-md font-mono border border-purple-100 dark:border-purple-500/20 shadow-sm">{t}</span>
+                                    ))}
+                                    <span className="ml-auto text-[9px] font-bold uppercase tracking-wider px-1.5 py-[2px] rounded bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-500/30 flex-shrink-0">Locked</span>
+                                </div>
+                            ) : (
+                                <div className="min-h-[38px] transition-all bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md flex items-center flex-wrap px-2 py-1 hover:border-zinc-300 dark:hover:border-zinc-600 focus-within:ring-2 focus-within:ring-purple-500/20 focus-within:border-purple-500">
+                                    <Typeahead
+                                        id="item-type-select"
+                                        multiple
+                                        options={ITEM_DATA_TYPES}
+                                        selected={itemTypes}
+                                        onChange={(s) => setItemTypes(s as string[])}
+                                        placeholder={itemTypes.length === 0 ? "Search item types..." : ""}
+                                        className="flex-1"
+                                        inputProps={{
+                                            className: 'bg-transparent border-none outline-none text-[13px] py-1 px-2 w-full text-zinc-900 dark:text-zinc-100 min-w-[100px]',
+                                        }}
+                                        renderToken={(option, props, index) => (
+                                            <div key={index} className="bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-300 text-[11px] px-2.5 py-1 rounded-md flex items-center font-mono border border-purple-100 dark:border-purple-500/20 m-1 shadow-sm">
+                                                {option as string}
+                                                <button onClick={(e) => { e.stopPropagation(); props.onRemove && props.onRemove(option); }} className="ml-2 hover:text-purple-900 dark:hover:text-purple-100 transition-colors"><X className="w-3.5 h-3.5" /></button>
+                                            </div>
+                                        )}
+                                        renderMenuItemChildren={(option) => (
+                                            <div className="text-[13px] font-mono text-zinc-700 dark:text-zinc-200 px-2 py-0.5">{option as string}</div>
+                                        )}
+                                        emptyLabel={<span className="text-red-500 text-xs font-medium px-2">No matches found</span>}
+                                        renderMenu={(results, { newSelectionPrefix, paginationText, renderMenuItemChildren, ...menuProps }: any) => (
+                                            <Menu {...menuProps} className="bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md shadow-xl max-h-40 overflow-y-auto py-1 mt-1 z-[100]">
+                                                {results.map((result, index) => (
+                                                    <MenuItem key={index} option={result} position={index}>
+                                                        <div className="text-[13px] font-mono text-zinc-700 dark:text-zinc-200 px-3 py-1.5 hover:bg-purple-50 dark:hover:bg-purple-900/30 cursor-pointer border-l-2 border-transparent hover:border-blue-500 transition-all">
+                                                            {result as string}
+                                                        </div>
+                                                    </MenuItem>
+                                                ))}
+                                            </Menu>
+                                        )}
+                                    />
+                                </div>
+                            )}
                         </div>
                     )}
 

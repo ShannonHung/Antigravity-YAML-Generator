@@ -70,7 +70,7 @@
                 "either_required": false,
                 "uniqueness": "cluster",
                 "override_hint": true,
-                "override_strategy": "merge",
+                "override_strategy": "replace",
                 "default_value": null,
                 "children": [
                     {
@@ -94,7 +94,7 @@
             }
         ],
         "required": true,
-        "override_strategy": "merge",
+        "override_strategy": "replace",
         "description": "# global vars section",
         "either_required": false,
         "uniqueness": "cluster",
