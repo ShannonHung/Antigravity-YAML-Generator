@@ -70,7 +70,10 @@ export default function AddKeyModal({ nodes, onClose, onSave, initialParentPath,
     // Compute INI type constraints based on root parent key
     const iniConstraint = useMemo(() => {
         if (!initialParentPath || !fileName?.endsWith('.ini.json')) return null;
-        const rootKey = splitPath(initialParentPath).filter((p: string) => p !== 'root')[0];
+        const pathParts = splitPath(initialParentPath).filter((p: string) => p !== 'root');
+        // Only apply at EXACTLY the root level (e.g. 'groups', NOT 'groups.bastion')
+        if (pathParts.length !== 1) return null;
+        const rootKey = pathParts[0];
         if (rootKey === 'groups' || rootKey === 'aggregations') {
             return { types: ['list'], itemTypes: ['object'] };
         }

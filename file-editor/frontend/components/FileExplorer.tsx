@@ -87,7 +87,8 @@ export default function FileExplorer() {
 
   const handleFileClick = (file: any) => {
     const filePath = activeFolderPath === '/' ? `/${file.name}` : `${activeFolderPath}/${file.name}`;
-    navigateTo(filePath);
+    const hasNoExtension = !file.name.includes('.');
+    navigateTo(filePath, undefined, hasNoExtension ? true : undefined);
   };
 
   return (

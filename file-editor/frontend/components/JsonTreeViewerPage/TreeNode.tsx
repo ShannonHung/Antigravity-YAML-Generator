@@ -169,7 +169,7 @@ export default function TreeNode({
                     <div className="flex items-center justify-end space-x-1">
                         {canHaveChildren && (
                             <button
-                                onClick={(e) => { e.stopPropagation(); onAddChild(myPath, node.item_multi_type || []); }}
+                                onClick={(e) => { e.stopPropagation(); onAddChild(myPath, (node.item_multi_type || []).includes('object') ? [] : (node.item_multi_type || [])); }}
                                 className="p-1.5 text-zinc-400 hover:text-emerald-600 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded transition-colors opacity-60 hover:opacity-100"
                                 title="Add Child Key"
                             >
