@@ -55,9 +55,18 @@ export default function JsonTreeViewer({ content, fileName, filePath, onClose, o
     // 6. Quick Add Child state
     const [quickAddParentPath, setQuickAddParentPath] = useState<string | null>(null);
     const [quickAddInitialTypes, setQuickAddInitialTypes] = useState<string[]>([]);
+    const [quickAddInsertAfterKey, setQuickAddInsertAfterKey] = useState<string | undefined>(undefined);
 
     const handleAddChild = (parentPath: string, initialTypes: string[] = []) => {
         setQuickAddParentPath(parentPath);
+        setQuickAddInsertAfterKey(undefined);
+        setQuickAddInitialTypes(initialTypes);
+        setIsAddKeyModalOpen(true);
+    };
+
+    const handleAddSibling = (parentPath: string, insertAfterKey: string, initialTypes: string[] = []) => {
+        setQuickAddParentPath(parentPath);
+        setQuickAddInsertAfterKey(insertAfterKey);
         setQuickAddInitialTypes(initialTypes);
         setIsAddKeyModalOpen(true);
     };
@@ -65,6 +74,7 @@ export default function JsonTreeViewer({ content, fileName, filePath, onClose, o
     const handleCloseAddKeyModal = () => {
         setIsAddKeyModalOpen(false);
         setQuickAddParentPath(null);
+        setQuickAddInsertAfterKey(undefined);
         setQuickAddInitialTypes([]);
     };
 
@@ -121,6 +131,7 @@ export default function JsonTreeViewer({ content, fileName, filePath, onClose, o
                                         onDelete={(n, p) => setDeleteTarget({ node: n, parentPath: p })}
                                         onEdit={onEditKey}
                                         onAddChild={handleAddChild}
+                                        onAddSibling={handleAddSibling}
                                         parentPath=""
                                     />
                                 ))
@@ -137,6 +148,7 @@ export default function JsonTreeViewer({ content, fileName, filePath, onClose, o
                 <AddKeyModal
                     nodes={nodes}
                     initialParentPath={quickAddParentPath}
+                    initialInsertAfterKey={quickAddInsertAfterKey}
                     initialTypes={quickAddInitialTypes}
                     fileName={fileName}
                     onClose={handleCloseAddKeyModal}

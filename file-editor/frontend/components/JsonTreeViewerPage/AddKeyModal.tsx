@@ -62,7 +62,7 @@ const InfoLabel = ({ label, tooltip, placement = 'right' }: { label: string, too
     </div>
 );
 
-export default function AddKeyModal({ nodes, onClose, onSave, initialParentPath, initialTypes, fileName }: any) {
+export default function AddKeyModal({ nodes, onClose, onSave, initialParentPath, initialInsertAfterKey, initialTypes, fileName }: any) {
     const { DATA_TYPES, ITEM_DATA_TYPES } = useEditorConfig();
     const [parentPath, setParentPath] = useState<string[]>(initialParentPath ? [initialParentPath] : []);
     const [keyName, setKeyName] = useState('');
@@ -181,6 +181,7 @@ export default function AddKeyModal({ nodes, onClose, onSave, initialParentPath,
         if (isValid) {
             onSave({
                 parentPathString,
+                insertAfterKey: initialInsertAfterKey,
                 key: keyName,
                 types,
                 itemTypes,

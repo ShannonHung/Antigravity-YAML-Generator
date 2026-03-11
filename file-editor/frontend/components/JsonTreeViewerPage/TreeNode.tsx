@@ -1,4 +1,5 @@
-import { ChevronRight, ChevronDown, AlertTriangle, CheckCircle2, Ban, Edit, Trash2, Plus } from 'lucide-react';
+import { ChevronRight, ChevronDown, AlertTriangle, CheckCircle2, Ban, Edit, Trash2, Plus, MoreHorizontal, ArrowDownToLine } from 'lucide-react';
+import { Menu, MenuButton, MenuItems, MenuItem } from '@headlessui/react';
 import { JsonNode } from './types';
 import { joinPaths, escapeKey } from '@/lib/pathUtils';
 import clsx from 'clsx';
@@ -12,6 +13,7 @@ interface TreeNodeProps {
     onDelete: (node: JsonNode, parentPath: string) => void;
     onEdit: (keyPath: string) => void;
     onAddChild: (parentPath: string, initialTypes?: string[]) => void;
+    onAddSibling: (parentPath: string, insertAfterKey: string, initialTypes?: string[]) => void;
     parentPath: string;
 }
 
@@ -24,6 +26,7 @@ export default function TreeNode({
     onDelete,
     onEdit,
     onAddChild,
+    onAddSibling,
     parentPath,
     inheritedDeprecated = false
 }: TreeNodeProps & { inheritedDeprecated?: boolean }) {
@@ -165,31 +168,60 @@ export default function TreeNode({
                 </td>
 
                 {/* Actions Column - Always Visible (Greyed Out) */}
-                <td className="py-2.5 px-4 w-24">
-                    <div className="flex items-center justify-end space-x-1">
-                        {canHaveChildren && (
-                            <button
-                                onClick={(e) => { e.stopPropagation(); onAddChild(myPath, (node.item_multi_type || []).includes('object') ? [] : (node.item_multi_type || [])); }}
-                                className="p-1.5 text-zinc-400 hover:text-emerald-600 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded transition-colors opacity-60 hover:opacity-100"
-                                title="Add Child Key"
+                <td className="py-2.5 px-4 w-24 relative">
+                    <div className="flex items-center justify-end">
+                        <Menu as="div" className="relative inline-block text-left">
+                            <MenuButton className="p-1.5 text-zinc-400 hover:text-blue-600 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded transition-colors focus:outline-none">
+                                <MoreHorizontal className="w-4 h-4" />
+                            </MenuButton>
+
+                            <MenuItems
+                                transition
+                                anchor="bottom end"
+                                className="z-[100] w-40 rounded-md bg-white dark:bg-zinc-800 shadow-xl ring-1 ring-black/5 focus:outline-none transition duration-100 ease-out data-[closed]:scale-95 data-[closed]:opacity-0 data-[enter]:duration-200 data-[leave]:duration-75 text-xs text-zinc-700 dark:text-zinc-300 font-medium border border-zinc-200 dark:border-zinc-700 mt-1"
                             >
-                                <Plus className="w-3.5 h-3.5" />
-                            </button>
-                        )}
-                        <button
-                            onClick={(e) => { e.stopPropagation(); onEdit(myPath); }}
-                            className="p-1.5 text-zinc-400 hover:text-blue-600 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded transition-colors opacity-60 hover:opacity-100"
-                            title="Edit"
-                        >
-                            <Edit className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                            onClick={(e) => { e.stopPropagation(); onDelete(node, parentPath); }}
-                            className="p-1.5 text-zinc-400 hover:text-red-600 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded transition-colors opacity-60 hover:opacity-100"
-                            title="Delete"
-                        >
-                            <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                                <div className="py-1">
+                                    {canHaveChildren && (
+                                        <MenuItem>
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); onAddChild(myPath, (node.item_multi_type || []).includes('object') ? [] : (node.item_multi_type || [])); }}
+                                                className="group flex w-full items-center px-4 py-2 hover:bg-zinc-100 dark:hover:bg-zinc-700/50 hover:text-emerald-600 dark:hover:text-emerald-400"
+                                            >
+                                                <Plus className="mr-2 h-3.5 w-3.5" />
+                                                Add Child Key
+                                            </button>
+                                        </MenuItem>
+                                    )}
+                                    <MenuItem>
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); onAddSibling(parentPath, node.key, (node.item_multi_type || []).includes('object') ? [] : (node.item_multi_type || [])); }}
+                                            className="group flex w-full items-center px-4 py-2 hover:bg-zinc-100 dark:hover:bg-zinc-700/50 hover:text-blue-600 dark:hover:text-blue-400"
+                                        >
+                                            <ArrowDownToLine className="mr-2 h-3.5 w-3.5" />
+                                            Add Key Below
+                                        </button>
+                                    </MenuItem>
+                                    <MenuItem>
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); onEdit(myPath); }}
+                                            className="group flex w-full items-center px-4 py-2 hover:bg-zinc-100 dark:hover:bg-zinc-700/50 hover:text-indigo-600 dark:hover:text-indigo-400"
+                                        >
+                                            <Edit className="mr-2 h-3.5 w-3.5" />
+                                            Edit Key
+                                        </button>
+                                    </MenuItem>
+                                    <MenuItem>
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); onDelete(node, parentPath); }}
+                                            className="group flex w-full items-center px-4 py-2 hover:bg-zinc-100 dark:hover:bg-zinc-700/50 hover:text-red-600 dark:hover:text-red-400"
+                                        >
+                                            <Trash2 className="mr-2 h-3.5 w-3.5" />
+                                            Delete Key
+                                        </button>
+                                    </MenuItem>
+                                </div>
+                            </MenuItems>
+                        </Menu>
                     </div>
                 </td>
             </tr>
@@ -205,6 +237,7 @@ export default function TreeNode({
                         onDelete={onDelete}
                         onEdit={onEdit}
                         onAddChild={onAddChild}
+                        onAddSibling={onAddSibling}
                         parentPath={myPath}
                         inheritedDeprecated={isEffectiveDeprecated}
                     />

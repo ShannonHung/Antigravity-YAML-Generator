@@ -96,24 +96,43 @@ export function useJsonMutations(
 
         if (targetPath.length === 0) {
             // Add to root
-            newNodes.push(newNode);
+            if (data.insertAfterKey) {
+                const insertIdx = newNodes.findIndex((n: JsonNode) => n.key === data.insertAfterKey);
+                if (insertIdx !== -1) {
+                    newNodes.splice(insertIdx + 1, 0, newNode);
+                } else {
+                    newNodes.push(newNode);
+                }
+            } else {
+                newNodes.push(newNode);
+            }
         } else {
             // Traverse
-            const findAndPush = (list: JsonNode[], path: string[]): boolean => {
+            const findAndInsert = (list: JsonNode[], path: string[]): boolean => {
                 const [head, ...tail] = path;
-                for (const n of list) {
+                for (let i = 0; i < list.length; i++) {
+                    const n = list[i];
                     if (n.key === head) {
                         if (tail.length === 0) {
                             if (!n.children) n.children = [];
-                            n.children.push(newNode);
+                            if (data.insertAfterKey) {
+                                const insertIdx = n.children.findIndex(child => child.key === data.insertAfterKey);
+                                if (insertIdx !== -1) {
+                                    n.children.splice(insertIdx + 1, 0, newNode);
+                                } else {
+                                    n.children.push(newNode);
+                                }
+                            } else {
+                                n.children.push(newNode);
+                            }
                             return true;
                         }
-                        if (n.children && findAndPush(n.children, tail)) return true;
+                        if (n.children && findAndInsert(n.children, tail)) return true;
                     }
                 }
                 return false;
             };
-            findAndPush(newNodes, targetPath);
+            findAndInsert(newNodes, targetPath);
         }
 
         try {

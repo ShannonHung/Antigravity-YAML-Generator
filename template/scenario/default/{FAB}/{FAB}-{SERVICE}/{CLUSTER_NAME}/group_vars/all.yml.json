@@ -58,6 +58,23 @@
                 "override_strategy": "merge"
             },
             {
+                "key": "test_insert",
+                "description": "",
+                "multi_type": [
+                    "string"
+                ],
+                "regex_enable": false,
+                "regex": "",
+                "required": true,
+                "either_required": false,
+                "uniqueness": "cluster",
+                "override_hint": true,
+                "override_strategy": "merge",
+                "default_value": null,
+                "condition": null,
+                "children": []
+            },
+            {
                 "key": "servers",
                 "description": "ntp server list",
                 "override_hint": false,
