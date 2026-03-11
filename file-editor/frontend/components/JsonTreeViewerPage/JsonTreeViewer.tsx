@@ -115,7 +115,7 @@ export default function JsonTreeViewer({ content, fileName, filePath, onClose, o
                                 <th onClick={() => handleSort('type')} className="py-3 px-6 font-medium text-sm text-zinc-500 dark:text-zinc-400 w-48 cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">Type</th>
                                 <th onClick={() => handleSort('required')} className="py-3 px-6 font-medium text-sm text-zinc-500 dark:text-zinc-400 w-24 text-center cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">Req</th>
                                 <th onClick={() => handleSort('description')} className="py-3 px-6 font-medium text-sm text-zinc-500 dark:text-zinc-400 cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">Description</th>
-                                <th className="py-3 px-6 font-medium text-sm text-zinc-500 dark:text-zinc-400 w-24 text-right">Action</th>
+                                <th className="py-3 px-6 font-medium text-sm text-zinc-500 dark:text-zinc-400 w-24 text-center">Action</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800 bg-white dark:bg-zinc-950">

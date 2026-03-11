@@ -169,7 +169,7 @@ export default function TreeNode({
 
                 {/* Actions Column - Always Visible (Greyed Out) */}
                 <td className="py-2.5 px-4 w-24 relative">
-                    <div className="flex items-center justify-end">
+                    <div className="flex items-center justify-center">
                         <Menu as="div" className="relative inline-block text-left">
                             <MenuButton className="p-1.5 text-zinc-400 hover:text-blue-600 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded transition-colors focus:outline-none">
                                 <MoreHorizontal className="w-4 h-4" />
