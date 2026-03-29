@@ -8,6 +8,13 @@ banner_single: value1
 # First line
 # Second line
 # ==========================================
+banner_multi_hash: value2
+
+
+# ==========================================
+# First line
+# ==========================================
+# Second line
 banner_multi: value2
 
 

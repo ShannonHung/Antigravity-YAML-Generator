@@ -6,6 +6,12 @@
         "required": true
     },
     {
+        "key": "banner_multi_hash",
+        "description": "# First line\n# Second line",
+        "default_value": "value2",
+        "required": true
+    },
+    {
         "key": "banner_multi",
         "description": "# First line\nSecond line",
         "default_value": "value2",

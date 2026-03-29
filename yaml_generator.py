@@ -661,14 +661,30 @@ def _generate_yaml_comments(desc: str, indent: int) -> List[str]:
     """
     Internal: Convert a description string into YAML comment lines.
     Business case: We rely on inline documentation. If a description starts with `#`, we escalate it to a major banner block.
+    Lines starting with `#` are grouped into banners; consecutive `#`-prefixed lines share one banner.
+    Lines without `#` prefix become regular comments outside the banner.
     """
     lines = []
     prefix = "  " * indent
     if not desc:
         return lines
     if desc.startswith("#"):
-        clean_desc = desc[1:].lstrip(" ")
-        lines.extend(generate_banner(clean_desc, indent=indent))
+        desc_lines = desc.splitlines()
+        banner_group = []
+        for desc_line in desc_lines:
+            if desc_line.startswith("#"):
+                # Accumulate banner lines (strip leading # and spaces)
+                banner_group.append(desc_line[1:].lstrip(" "))
+            else:
+                # Flush any accumulated banner group first
+                if banner_group:
+                    lines.extend(generate_banner("\n".join(banner_group), indent=indent))
+                    banner_group = []
+                # Emit as a regular comment
+                lines.append(f"{prefix}# {desc_line}")
+        # Flush remaining banner group
+        if banner_group:
+            lines.extend(generate_banner("\n".join(banner_group), indent=indent))
     else:
         for desc_line in desc.splitlines():
             lines.append(f"{prefix}# {desc_line}")
