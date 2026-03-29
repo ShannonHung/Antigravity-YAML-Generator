@@ -27,3 +27,11 @@ export const DEFAULT_PLUGINS = [
     "check_env_char_limit",
     "check_node_function"
 ];
+
+export const UNIQUENESS_OPTIONS = [
+    "cluster",
+    "region",
+    "fab"
+];
+
+export const DEFAULT_BACKEND_URL = "http://localhost:8000";

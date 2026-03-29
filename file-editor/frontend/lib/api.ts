@@ -1,4 +1,14 @@
-const API_BASE_URL = 'http://localhost:8000/api/files';
+import { DEFAULT_BACKEND_URL } from '@/config/editorConfig';
+
+let _backendUrl = DEFAULT_BACKEND_URL;
+
+export function setBackendUrl(url: string) {
+    _backendUrl = url;
+}
+
+function getApiBaseUrl() {
+    return `${_backendUrl}/api/files`;
+}
 
 export interface FileInfo {
     name: string;
@@ -10,13 +20,13 @@ export interface FileInfo {
 
 export const api = {
     listFiles: async (path: string = '/'): Promise<FileInfo[]> => {
-        const res = await fetch(`${API_BASE_URL}?path=${encodeURIComponent(path)}&t=${Date.now()}`);
+        const res = await fetch(`${getApiBaseUrl()}?path=${encodeURIComponent(path)}&t=${Date.now()}`);
         if (!res.ok) throw new Error('Failed to fetch files');
         return res.json();
     },
 
     createFolder: async (path: string, name: string) => {
-        const res = await fetch(`${API_BASE_URL}/folder`, {
+        const res = await fetch(`${getApiBaseUrl()}/folder`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ path, name }),
@@ -29,7 +39,7 @@ export const api = {
     },
 
     createFile: async (path: string, content: string) => {
-        const res = await fetch(`${API_BASE_URL}/file`, {
+        const res = await fetch(`${getApiBaseUrl()}/file`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ path, content }),
@@ -42,7 +52,7 @@ export const api = {
     },
 
     deleteItem: async (path: string) => {
-        const res = await fetch(`${API_BASE_URL}?path=${encodeURIComponent(path)}`, {
+        const res = await fetch(`${getApiBaseUrl()}?path=${encodeURIComponent(path)}`, {
             method: 'DELETE',
         });
         if (!res.ok) {
@@ -53,7 +63,7 @@ export const api = {
     },
 
     getFileContent: async (path: string): Promise<{ content: string }> => {
-        const res = await fetch(`${API_BASE_URL}/content?path=${encodeURIComponent(path)}&t=${Date.now()}`);
+        const res = await fetch(`${getApiBaseUrl()}/content?path=${encodeURIComponent(path)}&t=${Date.now()}`);
         if (!res.ok) {
             const error = await res.json();
             throw new Error(error.detail || 'Failed to read file');
@@ -62,7 +72,7 @@ export const api = {
     },
 
     renameItem: async (path: string, newName: string) => {
-        const res = await fetch(`${API_BASE_URL}/rename`, {
+        const res = await fetch(`${getApiBaseUrl()}/rename`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ path, new_name: newName }),

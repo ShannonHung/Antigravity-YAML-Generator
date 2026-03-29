@@ -44,6 +44,9 @@ function getEditorConfig(): Partial<EditorConfig> {
   const envUniquenessOptions = parseEnvArray(process.env.UNIQUENESS_OPTIONS);
   if (envUniquenessOptions) config.UNIQUENESS_OPTIONS = envUniquenessOptions;
 
+  const envBackendUrl = process.env.BACKEND_URL;
+  if (envBackendUrl) config.BACKEND_URL = envBackendUrl;
+
   return config;
 }
 

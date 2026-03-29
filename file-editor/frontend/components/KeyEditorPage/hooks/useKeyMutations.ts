@@ -78,7 +78,7 @@ export function useKeyMutations(
                             if (types.includes('list')) {
                                 item.item_multi_type = itemTypes;
                             } else {
-                                delete item.item_multi_type;
+                                item.item_multi_type = [];
                             }
 
                             // Regex / Enum
@@ -105,7 +105,7 @@ export function useKeyMutations(
                             if (!required && condition && condition.conditions.length > 0) {
                                 item.condition = condition;
                             } else {
-                                delete item.condition;
+                                item.condition = null;
                             }
 
                             return;

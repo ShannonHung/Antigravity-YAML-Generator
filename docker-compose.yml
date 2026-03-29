@@ -7,7 +7,7 @@ services:
       context: ./file-editor/backend
     user: "${UID:-1000}:${GID:-1000}"
     ports:
-      - "8000:8000"
+      - "5487:8000"
     volumes:
       - ${TEMPLATE_DIR:-./template}:/app/template
     environment:
@@ -23,5 +23,7 @@ services:
       - DATA_TYPES=${EDITOR_DATA_TYPES:-}
       - ITEM_DATA_TYPES=${EDITOR_ITEM_DATA_TYPES:-}
       - DEFAULT_PLUGINS=${EDITOR_DEFAULT_PLUGINS:-}
+      - UNIQUENESS_OPTIONS=${EDITOR_UNIQUENESS_OPTIONS:-}
+      - BACKEND_URL=${EDITOR_BACKEND_URL:-http://localhost:5487}
     depends_on:
       - backend
