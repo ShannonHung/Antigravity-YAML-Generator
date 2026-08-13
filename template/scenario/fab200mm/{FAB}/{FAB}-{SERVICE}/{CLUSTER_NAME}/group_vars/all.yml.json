@@ -1,0 +1,17 @@
+[
+  {
+    "key": "env",
+    "description": "",
+    "multi_type": ["string"],
+    "regex_enable": false,
+    "regex": "",
+    "required": null,
+    "either_required": false,
+    "uniqueness": "cluster",
+    "override_hint": false,
+    "override_strategy": "merge",
+    "default_value": null,
+    "condition": null,
+    "children": []
+  }
+]

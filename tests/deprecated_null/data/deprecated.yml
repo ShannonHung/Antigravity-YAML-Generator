@@ -1,0 +1,5 @@
+# this key stays
+keep_me: hello
+
+# optional stays but commented
+# optional_key: maybe

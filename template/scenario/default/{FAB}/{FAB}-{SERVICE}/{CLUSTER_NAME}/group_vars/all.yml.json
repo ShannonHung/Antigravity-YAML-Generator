@@ -9,7 +9,7 @@
         "regex": "production",
         "regex_enable": true,
         "children": [],
-        "required": false,
+        "required": true,
         "override_strategy": "merge",
         "plugins": [
             "check_env_function",
@@ -17,7 +17,9 @@
         ],
         "default_value": null,
         "either_required": false,
-        "uniqueness": "cluster"
+        "uniqueness": "cluster",
+        "item_multi_type": [],
+        "condition": null
     },
     {
         "key": "timezone",
@@ -212,7 +214,13 @@
         "override_strategy": "replace",
         "plugins": [
             "check_env_function"
-        ]
+        ],
+        "either_required": false,
+        "uniqueness": "cluster",
+        "item_multi_type": [],
+        "regex": "",
+        "default_value": null,
+        "condition": null
     },
     {
         "key": "dns_v2",

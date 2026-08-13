@@ -1,0 +1,27 @@
+[
+    {
+        "key": "keep_me",
+        "description": "this key stays",
+        "multi_type": ["string"],
+        "default_value": "hello",
+        "required": true,
+        "children": []
+    },
+    {
+        "key": "old_key",
+        "description": "this deprecated key must NOT appear at all",
+        "multi_type": ["string"],
+        "default_value": "leftover",
+        "regex": ".*",
+        "required": null,
+        "children": []
+    },
+    {
+        "key": "optional_key",
+        "description": "optional stays but commented",
+        "multi_type": ["string"],
+        "default_value": "maybe",
+        "required": false,
+        "children": []
+    }
+]

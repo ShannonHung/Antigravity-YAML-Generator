@@ -1,0 +1,16 @@
+{
+    "override_hint_style": "# <=== [Override]",
+    "senario_env_key": "SCENARIO_TYPE",
+    "top_level_spacing": 1,
+    "default_env_vars": [],
+    "senarios": [
+        {
+            "value": "default",
+            "path": "tests/deprecated_null/data",
+            "required_env_vars": [],
+            "trigger": {
+                "source": "default"
+            }
+        }
+    ]
+}

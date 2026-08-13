@@ -1,0 +1,61 @@
+{
+    "senario_env_key": "SCENARIO_TYPE",
+    "default_base": "general_cluster",
+    "default_env_vars": [],
+    "senarios": [
+        {
+            "value": "general_cluster",
+            "path": "tests/scenario_base/data/general",
+            "required_env_vars": [],
+            "is_base": true,
+            "trigger": {
+                "source": "user"
+            }
+        },
+        {
+            "value": "tvm",
+            "path": "tests/scenario_base/data/tvm",
+            "required_env_vars": [],
+            "is_base": true,
+            "trigger": {
+                "source": "user"
+            }
+        },
+        {
+            "value": "f200",
+            "path": "tests/scenario_base/data/f200",
+            "required_env_vars": [],
+            "priority": 1,
+            "base": "general_cluster",
+            "trigger": {
+                "source": "env",
+                "logic": "and",
+                "conditions": [
+                    {
+                        "key": "FAB",
+                        "regex": "200mm"
+                    }
+                ]
+            }
+        },
+        {
+            "value": "tvm_overlay",
+            "path": "tests/scenario_base/data/tvm_overlay",
+            "required_env_vars": [],
+            "priority": 5,
+            "base": "tvm",
+            "trigger": {
+                "source": "user"
+            }
+        },
+        {
+            "value": "implicit_overlay",
+            "path": "tests/scenario_base/data/implicit",
+            "required_env_vars": [],
+            "priority": 3,
+            "trigger": {
+                "source": "user"
+            }
+        }
+    ]
+}

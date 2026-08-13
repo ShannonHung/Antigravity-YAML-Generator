@@ -657,6 +657,26 @@ def is_node_enabled(node_data: Any) -> bool:
         return False
     return True
 
+def is_node_deprecated(node_data: Any) -> bool:
+    """
+    Determine if a node is deprecated and must be omitted entirely.
+
+    Why: A `required` value of exactly `null` (JSON null -> Python None) marks a key as
+    deprecated. Unlike an optional node (`required: false`), a deprecated node produces NO
+    output at all -- not even its description/comment or a commented-out placeholder -- and
+    its children are dropped too. `required: false` and `required: ""` keep their existing
+    behavior; only a strict `None` triggers this.
+
+    Args:
+        node_data (Any): The schema node or dictionary.
+
+    Returns:
+        bool: True if the node should be dropped completely.
+    """
+    if isinstance(node_data, dict):
+        return node_data.get('required', True) is None
+    return node_data.required is None
+
 def _generate_yaml_comments(desc: str, indent: int) -> List[str]:
     """
     Internal: Convert a description string into YAML comment lines.
@@ -827,6 +847,8 @@ def generate_yaml_from_schema(nodes: List[Any], indent: int = 0, config: Optiona
     
     is_first = True
     for node in nodes:
+        if is_node_deprecated(node):
+            continue
         if not is_node_enabled(node):
             continue
             
@@ -949,7 +971,7 @@ def _generate_ini_global_vars(nodes: List[Any], lines: List[str]):
     variables are serialized securely as key-value pairs without breaking INI formatting.
     """
     for node in nodes:
-        if node.key == 'global_vars' and is_node_enabled(node):
+        if node.key == 'global_vars' and not is_node_deprecated(node) and is_node_enabled(node):
             is_req = node.required
             c_cond = node.condition
             has_cond = bool(c_cond and isinstance(c_cond, dict) and c_cond.get('conditions'))
@@ -974,7 +996,7 @@ def _generate_ini_groups(nodes: List[Any], override_hint_marker: str, lines: Lis
     for inline host variables.
     """
     for node in nodes:
-        if node.key == 'groups' and is_node_enabled(node):
+        if node.key == 'groups' and not is_node_deprecated(node) and is_node_enabled(node):
             is_req = node.required
             c_cond = node.condition
             has_cond = bool(c_cond and isinstance(c_cond, dict) and c_cond.get('conditions'))
@@ -987,8 +1009,9 @@ def _generate_ini_groups(nodes: List[Any], override_hint_marker: str, lines: Lis
                 
             for gk in ordered_keys:
                 g_schema = schema_map.get(gk)
+                if g_schema and is_node_deprecated(g_schema): continue
                 if g_schema and not is_node_enabled(g_schema): continue
-                
+
                 hosts = groups_val.get(gk, [])
                 child_lines = []
                 desc_lines = _generate_ini_comments_from_desc(g_schema)
@@ -1018,7 +1041,7 @@ def _generate_ini_aggregations(nodes: List[Any], lines: List[str]):
     under a parent `k8s-nodes` group) by rendering lists of group names correctly.
     """
     for node in nodes:
-        if node.key == 'aggregations' and is_node_enabled(node):
+        if node.key == 'aggregations' and not is_node_deprecated(node) and is_node_enabled(node):
             is_req = node.required
             c_cond = node.condition
             has_cond = bool(c_cond and isinstance(c_cond, dict) and c_cond.get('conditions'))
@@ -1031,8 +1054,9 @@ def _generate_ini_aggregations(nodes: List[Any], lines: List[str]):
             
             for ak in ordered_keys:
                 c_schema = schema_map.get(ak)
+                if c_schema and is_node_deprecated(c_schema): continue
                 if c_schema and not is_node_enabled(c_schema): continue
-                
+
                 child_lines = []
                 desc_lines = _generate_ini_comments_from_desc(c_schema)
                 child_lines.extend(desc_lines)
@@ -1071,7 +1095,7 @@ def _generate_ini_group_vars(nodes: List[Any], override_hint_marker: str, lines:
     dynamically formatting and quoting values safely before appending them to the block.
     """
     for node in nodes:
-        if node.key == 'group_vars' and is_node_enabled(node):
+        if node.key == 'group_vars' and not is_node_deprecated(node) and is_node_enabled(node):
             is_req = node.required
             c_cond = node.condition
             has_cond = bool(c_cond and isinstance(c_cond, dict) and c_cond.get('conditions'))
@@ -1084,8 +1108,9 @@ def _generate_ini_group_vars(nodes: List[Any], override_hint_marker: str, lines:
                 
             for gk in ordered_keys:
                 g_schema = schema_map.get(gk)
+                if g_schema and is_node_deprecated(g_schema): continue
                 if g_schema and not is_node_enabled(g_schema): continue
-                
+
                 child_lines = []
                 desc_lines = _generate_ini_comments_from_desc(g_schema)
                 child_lines.extend(desc_lines)
@@ -1098,6 +1123,7 @@ def _generate_ini_group_vars(nodes: List[Any], override_hint_marker: str, lines:
                 g_schema_children = g_schema.children if g_schema else []
                 if g_schema and g_schema_children:
                     for ch in g_schema_children:
+                        if is_node_deprecated(ch): continue
                         if ch.key:
                             ch_val = resolve_node_value(ch)
                             if ch_val is not None:
@@ -1197,6 +1223,8 @@ class ScenarioConfig:
     trigger: ScenarioTrigger
     required_env_vars: List[EnvVarDef] = field(default_factory=list)
     priority: int = 999
+    is_base: bool = False
+    base: Optional[str] = None
     config: Dict[str, Any] = field(default_factory=dict)
 
     @classmethod
@@ -1209,6 +1237,8 @@ class ScenarioConfig:
             trigger=trigger,
             required_env_vars=req_vars,
             priority=data.get("priority", 999),
+            is_base=bool(data.get("is_base", False)),
+            base=data.get("base"),
             config=data
         )
 
@@ -1219,6 +1249,7 @@ class AppConfig:
     top_level_spacing: int = 2
     default_env_vars: List[EnvVarDef] = field(default_factory=list)
     scenarios: List[ScenarioConfig] = field(default_factory=list)
+    default_base: Optional[str] = None
     raw_config: Dict[str, Any] = field(default_factory=dict)
 
     @classmethod
@@ -1230,6 +1261,7 @@ class AppConfig:
             override_hint_style=raw.get("override_hint_style", "# <=== [Override]"),
             scenario_env_key=raw.get("senario_env_key", "SCENARIO_TYPE"),
             top_level_spacing=raw.get("top_level_spacing", 2),
+            default_base=raw.get("default_base"),
             raw_config=raw
         )
         
@@ -1254,40 +1286,112 @@ def validate_config_scenarios(app_config: AppConfig) -> None:
                  print(f"\033[91m[ERROR] Config Error in scenario '{sc.value}': source 'env' must have 'conditions'.\033[0m")
                  sys.exit(1)
 
+    # --- Base / overlay model validation ---------------------------------
+    base_values = {sc.value for sc in app_config.scenarios if sc.is_base}
+
+    for sc in app_config.scenarios:
+        if sc.is_base and sc.base is not None:
+            print(f"\033[91m[ERROR] Config Error in scenario '{sc.value}': a scenario with 'is_base: true' must not also declare 'base'.\033[0m")
+            sys.exit(1)
+        if sc.base is not None and sc.base not in base_values:
+            print(f"\033[91m[ERROR] Config Error in scenario '{sc.value}': 'base' points to '{sc.base}', which is not a scenario with 'is_base: true'.\033[0m")
+            sys.exit(1)
+
+    if app_config.default_base is not None and app_config.default_base not in base_values:
+        print(f"\033[91m[ERROR] Config Error: 'default_base' points to '{app_config.default_base}', which is not a scenario with 'is_base: true'.\033[0m")
+        sys.exit(1)
+
+def _is_scenario_triggered(sc: ScenarioConfig, app_config: AppConfig, env: Dict[str, str]) -> bool:
+    """
+    Evaluate a single scenario's trigger against the environment, independent of
+    any base/overlay filtering.
+    """
+    src = sc.trigger.source
+    user_selection = env.get(app_config.scenario_env_key)
+
+    if src == TriggerSource.DEFAULT:
+        return True
+    if src == TriggerSource.USER:
+        return user_selection == sc.value
+    if src == TriggerSource.ENV:
+        if not sc.trigger.conditions:
+            return False
+        matches = [
+            bool(re.search(cond.regex, env.get(cond.key, "")))
+            for cond in sc.trigger.conditions
+        ]
+        if sc.trigger.logic == TriggerLogic.OR:
+            return any(matches)
+        return all(matches)
+    return False
+
+
+def _is_base_scenario(sc: ScenarioConfig) -> bool:
+    """
+    A scenario acts as a base if it explicitly declares `is_base`, or (for
+    backward compatibility) if it uses the legacy `source: default` trigger.
+    """
+    return sc.is_base or sc.trigger.source == TriggerSource.DEFAULT
+
+
+def _resolve_base_value(sc: ScenarioConfig, default_base: Optional[str]) -> Optional[str]:
+    """
+    Resolve which base chain an overlay scenario stacks onto. A scenario that
+    omits `base` implicitly inherits `default_base`.
+    """
+    if _is_base_scenario(sc):
+        return None
+    return sc.base if sc.base is not None else default_base
+
+
 def determine_active_scenarios(app_config: AppConfig, env: Dict[str, str]) -> List[ScenarioConfig]:
     """
-    Evaluate scenario triggers against system context to determine which run.
+    Determine which scenarios run this invocation, using the base/overlay model.
+
+    1. Collect every triggered scenario.
+    2. Pick this run's base: a triggered base scenario if one is selected,
+       otherwise `default_base`. A base is a scenario with `is_base: true` (or a
+       legacy `source: default` trigger).
+    3. Keep the base itself plus any triggered overlay whose resolved base equals
+       this run's base; every other triggered scenario is silently excluded.
+    4. Sort descending by priority so the base is applied first (lowest layer).
     """
+    triggered = [
+        sc for sc in app_config.scenarios
+        if _is_scenario_triggered(sc, app_config, env)
+    ]
+
+    # Choose this run's base: a triggered base scenario wins.
+    base_scenario = next((sc for sc in triggered if _is_base_scenario(sc)), None)
+
+    # If nothing base-like was triggered, fall back to `default_base` and force
+    # it active -- this is the "nothing selected -> run the default base" flow.
+    if base_scenario is None and app_config.default_base is not None:
+        base_scenario = next(
+            (sc for sc in app_config.scenarios
+             if sc.value == app_config.default_base), None)
+        if base_scenario is not None and base_scenario not in triggered:
+            triggered.append(base_scenario)
+
+    active_base_value = base_scenario.value if base_scenario else app_config.default_base
+
+    # An overlay that omits `base` inherits `default_base`. For legacy configs
+    # that predate `default_base`, fall back to the chosen base so base-less
+    # overlays still stack onto it (preserving the original always-inherit flow).
+    fallback_base = app_config.default_base
+    if fallback_base is None:
+        fallback_base = active_base_value
+
     active = []
-    user_selection = env.get(app_config.scenario_env_key)
-    
-    for sc in app_config.scenarios:
-        is_active = False
-        src = sc.trigger.source
-        
-        if src == TriggerSource.DEFAULT:
-            is_active = True
-        elif src == TriggerSource.USER:
-            if user_selection == sc.value:
-                is_active = True
-        elif src == TriggerSource.ENV:
-            if not sc.trigger.conditions:
-                is_active = False
-            else:
-                matches = []
-                for cond in sc.trigger.conditions:
-                    val = env.get(cond.key, "")
-                    matches.append(bool(re.search(cond.regex, val)))
-                
-                if sc.trigger.logic == TriggerLogic.AND:
-                    is_active = all(matches)
-                elif sc.trigger.logic == TriggerLogic.OR:
-                    is_active = any(matches)
-        
-        if is_active:
-            # Overwrite priority for default
-            if src == TriggerSource.DEFAULT:
-                 sc.priority = 9999
+    for sc in triggered:
+        if _is_base_scenario(sc):
+            # Only the chosen base joins; a non-selected base is excluded.
+            if sc is base_scenario:
+                sc.priority = 9999
+                active.append(sc)
+            continue
+        # Overlays join only if they stack onto this run's base chain.
+        if _resolve_base_value(sc, fallback_base) == active_base_value:
             active.append(sc)
 
     # Sort Descending Priority (Base -> P2 -> P1)

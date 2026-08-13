@@ -1,0 +1,139 @@
+import unittest
+import os
+import sys
+import copy
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import yaml_generator
+
+
+class TestScenarioBase(unittest.TestCase):
+    """Base/overlay model: a run picks exactly one base (the selected `is_base`
+    scenario, else `default_base`); only overlays whose resolved base equals that
+    base join the merge, and every other triggered scenario is silently excluded."""
+
+    def setUp(self):
+        self.config_path = os.path.join(
+            os.path.dirname(__file__), 'config_scenario_base.json')
+        self.raw_config = yaml_generator.load_json(self.config_path)
+
+    def _active(self, env):
+        # Re-parse per call: determine_active_scenarios mutates priority in place.
+        app_config = yaml_generator.parse_config(copy.deepcopy(self.raw_config))
+        scenarios = yaml_generator.determine_active_scenarios(app_config, env)
+        return [sc.value for sc in scenarios]
+
+    def test_default_base_used_when_no_base_selected(self):
+        # Nothing selected -> default_base (general_cluster) is the base.
+        names = self._active({})
+        self.assertIn("general_cluster", names)
+        self.assertNotIn("tvm", names)
+
+    def test_selecting_general_cluster_gives_only_that_base(self):
+        names = self._active({"SCENARIO_TYPE": "general_cluster"})
+        self.assertIn("general_cluster", names)
+        self.assertNotIn("tvm", names)
+
+    def test_selecting_tvm_excludes_default_base(self):
+        # tvm is is_base -> it replaces general_cluster entirely.
+        names = self._active({"SCENARIO_TYPE": "tvm"})
+        self.assertIn("tvm", names)
+        self.assertNotIn("general_cluster", names)
+
+    def test_overlay_stacks_only_on_matching_base(self):
+        # tvm_overlay declares base: tvm -> joins only when tvm is the base.
+        names = self._active({"SCENARIO_TYPE": "tvm"})
+        # tvm_overlay is source: user and NOT selected, so it isn't triggered here.
+        self.assertNotIn("tvm_overlay", names)
+
+    def test_env_overlay_joins_matching_base(self):
+        # f200 (base: general_cluster) is env-triggered by FAB=200mm.
+        names = self._active({"SCENARIO_TYPE": "general_cluster", "FAB": "200mm"})
+        self.assertIn("general_cluster", names)
+        self.assertIn("f200", names)
+
+    def test_env_overlay_excluded_when_base_differs(self):
+        # Same FAB=200mm trigger, but base is tvm now -> f200's base
+        # (general_cluster) differs, so it is silently excluded.
+        names = self._active({"SCENARIO_TYPE": "tvm", "FAB": "200mm"})
+        self.assertIn("tvm", names)
+        self.assertNotIn("f200", names)
+        self.assertNotIn("general_cluster", names)
+
+    def test_implicit_base_overlay_follows_default_base(self):
+        # implicit_overlay omits `base` -> inherits default_base (general_cluster).
+        with_general = self._active({"SCENARIO_TYPE": "general_cluster"})
+        # It is source: user and not selected, so not triggered under this env.
+        self.assertNotIn("implicit_overlay", with_general)
+
+    def test_base_scenario_gets_lowest_priority(self):
+        # The chosen base is forced to priority 9999 (applied first / lowest layer),
+        # and sorting is descending so base comes first.
+        app_config = yaml_generator.parse_config(copy.deepcopy(self.raw_config))
+        scenarios = yaml_generator.determine_active_scenarios(
+            app_config, {"SCENARIO_TYPE": "general_cluster", "FAB": "200mm"})
+        self.assertEqual(scenarios[0].value, "general_cluster")
+        self.assertEqual(scenarios[0].priority, 9999)
+        # f200 (priority 1) comes after the base.
+        self.assertEqual(scenarios[-1].value, "f200")
+
+
+class TestScenarioBaseValidation(unittest.TestCase):
+    """Config-level validation of the base/overlay model."""
+
+    def _validate(self, raw):
+        app_config = yaml_generator.parse_config(raw)
+        yaml_generator.validate_config_scenarios(app_config)
+
+    def _base_raw(self, scenarios, default_base=None):
+        raw = {"senario_env_key": "SCENARIO_TYPE", "senarios": scenarios}
+        if default_base is not None:
+            raw["default_base"] = default_base
+        return raw
+
+    def test_base_pointing_to_nonexistent_base_fails(self):
+        raw = self._base_raw([
+            {"value": "over", "path": "p", "base": "ghost",
+             "trigger": {"source": "user"}},
+        ])
+        with self.assertRaises(SystemExit):
+            self._validate(raw)
+
+    def test_base_pointing_to_non_base_scenario_fails(self):
+        # 'target' exists but is not is_base -> invalid base target.
+        raw = self._base_raw([
+            {"value": "target", "path": "p", "trigger": {"source": "user"}},
+            {"value": "over", "path": "p", "base": "target",
+             "trigger": {"source": "user"}},
+        ])
+        with self.assertRaises(SystemExit):
+            self._validate(raw)
+
+    def test_is_base_with_base_field_fails(self):
+        raw = self._base_raw([
+            {"value": "b", "path": "p", "is_base": True, "base": "b",
+             "trigger": {"source": "user"}},
+        ])
+        with self.assertRaises(SystemExit):
+            self._validate(raw)
+
+    def test_default_base_pointing_to_non_base_fails(self):
+        raw = self._base_raw([
+            {"value": "b", "path": "p", "trigger": {"source": "user"}},
+        ], default_base="b")
+        with self.assertRaises(SystemExit):
+            self._validate(raw)
+
+    def test_valid_base_config_passes(self):
+        raw = self._base_raw([
+            {"value": "b", "path": "p", "is_base": True,
+             "trigger": {"source": "user"}},
+            {"value": "over", "path": "p", "base": "b",
+             "trigger": {"source": "user"}},
+        ], default_base="b")
+        # Should not raise.
+        self._validate(raw)
+
+
+if __name__ == '__main__':
+    unittest.main()

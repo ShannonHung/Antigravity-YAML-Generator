@@ -105,11 +105,36 @@ Priority rules apply if multiple scenarios overlap.
 
 ---
 
+### 3.1 Base / Overlay Model
+
+Scenarios are split into **bases** and **overlays**. Exactly one base is active per run; overlays stack on top of it.
+
+* **`is_base: true`** marks a scenario as a *base* (a standalone root template — e.g. `general_cluster` or `tvm`). A base never stacks onto another scenario.
+* **`base: "<value>"`** on an overlay declares which base chain it stacks onto. The referenced value must be a scenario with `is_base: true`.
+* Omitting `base` on an overlay means it inherits **`default_base`** (a top-level config field naming the base used when the user selects none).
+
+**Selection rules:**
+
+1. If the user selects an `is_base` scenario (e.g. `SCENARIO_TYPE=tvm`), that scenario becomes the base and any other base (including `default_base`) is **not** activated.
+2. If no base is selected, `default_base` is activated as the base.
+3. An overlay joins the merge **only if** its resolved base equals the active base. A triggered overlay whose base differs (e.g. an `env`-triggered overlay bound to `general_cluster` while `tvm` is the active base) is **silently excluded**.
+4. The active base is applied first (lowest layer); overlays merge on top in priority order.
+
+This lets a scenario like `tvm` act as an alternative default template that fully replaces `general_cluster`, while other scenarios opt in to a specific base via `base`.
+
+> **Backward compatibility**: a legacy `trigger.source: "default"` scenario is still treated as a base, and overlays without a `base` field still stack onto the active base as before.
+
+**Validation**: `base` must reference an existing `is_base` scenario; a scenario cannot be both `is_base` and declare `base`; and `default_base` must reference an `is_base` scenario.
+
+---
+
 ### 4. Generation & Skipping Rules
+
+* **Deprecated (`required: null`)**: A node whose `required` is exactly `null` is treated as *deprecated* and produces **no output whatsoever** — not its value, not its description/comment, not a commented-out placeholder — and any `children` are dropped with it. This applies to both `.yml` and `.ini` output.
 
 * Skip output if:
 
-  * `required` is `null` (deprecated)
+  * `required` is `null` (deprecated — see above)
   * `required` is `""`
   * key missing entirely
 
@@ -190,6 +215,27 @@ To ensure compatibility with the INI generator, `.ini.json` files follow additio
     *   The `children` under `aggregations` must have `multi_type: ["list"]` and `item_multi_type: ["object"]`.
     *   Additionally, the `children` of `children` under `aggregations` must also have `multi_type: ["object"]`.
 3.  **Mandatory hostname**: Any node under `groups` that contains `children` MUST include a child with `key: "hostname"`. This ensures each host in the INI has a primary identifier.
+
+### 3. Config Validation (`config.json`)
+
+Before any files are generated, `config.json` itself is validated. This runs on **both** `make gen` (generation) and `make check` (validation only), *before* any output is produced. It is **fail-fast**: the first error found prints a red `[ERROR]` message and aborts the run with exit code `1` — no files are written. Fix one error and re-run to surface the next.
+
+**Trigger rules:**
+
+| Condition | Error message |
+| --- | --- |
+| A `user` or `default` scenario declares `conditions` | `Config Error in scenario '<value>': source '<source>' must not have 'conditions'.` |
+| An `env` scenario has no `conditions` | `Config Error in scenario '<value>': source 'env' must have 'conditions'.` |
+
+**Base / overlay rules:**
+
+| Condition | Error message |
+| --- | --- |
+| A scenario sets `is_base: true` **and** declares `base` | `Config Error in scenario '<value>': a scenario with 'is_base: true' must not also declare 'base'.` |
+| An overlay's `base` points to a value that is not an `is_base` scenario (missing or not a base) | `Config Error in scenario '<value>': 'base' points to '<base>', which is not a scenario with 'is_base: true'.` |
+| `default_base` points to a value that is not an `is_base` scenario | `Config Error: 'default_base' points to '<value>', which is not a scenario with 'is_base: true'.` |
+
+> **Note**: validation catches *structural / reference* errors, not *semantic* ones. A `base` that references the **wrong but valid** base passes validation — it simply merges onto a different chain than intended. Inspect the `Active Scenarios (in order of application)` output that `make` prints to confirm the resolved layering. Because an overlay's `base` may only point to an `is_base` scenario (and a base can never itself declare `base`), base chains are only one level deep, so circular references are structurally impossible.
 
 ---
 

@@ -1,0 +1,40 @@
+[
+    {
+        "key": "network",
+        "description": "network settings",
+        "multi_type": ["object"],
+        "required": true,
+        "children": [
+            {
+                "key": "gateway",
+                "multi_type": ["string"],
+                "default_value": "10.0.0.1",
+                "required": true,
+                "children": []
+            },
+            {
+                "key": "legacy_dns",
+                "description": "deprecated nested key must vanish",
+                "multi_type": ["string"],
+                "default_value": "8.8.8.8",
+                "required": null,
+                "children": []
+            }
+        ]
+    },
+    {
+        "key": "legacy_block",
+        "description": "whole deprecated object with children must vanish",
+        "multi_type": ["object"],
+        "required": null,
+        "children": [
+            {
+                "key": "inner",
+                "multi_type": ["string"],
+                "default_value": "x",
+                "required": true,
+                "children": []
+            }
+        ]
+    }
+]

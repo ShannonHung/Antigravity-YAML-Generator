@@ -1,0 +1,18 @@
+[
+    {
+        "key": "env",
+        "description": "environment name",
+        "multi_type": ["string"],
+        "default_value": "prod",
+        "required": true,
+        "children": []
+    },
+    {
+        "key": "region",
+        "description": "region",
+        "multi_type": ["string"],
+        "default_value": "tw",
+        "required": true,
+        "children": []
+    }
+]

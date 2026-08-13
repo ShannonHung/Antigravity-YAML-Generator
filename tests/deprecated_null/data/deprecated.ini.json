@@ -1,0 +1,53 @@
+[
+    {
+        "key": "group_vars",
+        "multi_type": ["object"],
+        "required": true,
+        "children": [
+            {
+                "key": "l4lb",
+                "multi_type": ["object"],
+                "required": true,
+                "children": [
+                    {
+                        "key": "l4lb_enable",
+                        "multi_type": ["bool"],
+                        "default_value": true,
+                        "required": true,
+                        "children": []
+                    },
+                    {
+                        "key": "old_flag",
+                        "description": "deprecated var must vanish",
+                        "multi_type": ["bool"],
+                        "default_value": false,
+                        "required": null,
+                        "children": []
+                    },
+                    {
+                        "key": "l4lb_ip",
+                        "multi_type": ["ip"],
+                        "default_value": "100.0.0.1",
+                        "required": true,
+                        "children": []
+                    }
+                ]
+            },
+            {
+                "key": "old_group",
+                "description": "deprecated group section must vanish",
+                "multi_type": ["object"],
+                "required": null,
+                "children": [
+                    {
+                        "key": "whatever",
+                        "multi_type": ["string"],
+                        "default_value": "x",
+                        "required": true,
+                        "children": []
+                    }
+                ]
+            }
+        ]
+    }
+]

@@ -1,0 +1,12 @@
+[
+    {
+        "key": "env",
+        "description": "",
+        "multi_type": ["string"],
+        "regex": "",
+        "required": null,
+        "override_strategy": "merge",
+        "default_value": null,
+        "children": []
+    }
+]
