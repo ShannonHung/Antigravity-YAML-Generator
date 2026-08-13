@@ -41,27 +41,38 @@ class TestScenarioBase(unittest.TestCase):
         self.assertNotIn("general_cluster", names)
 
     def test_overlay_stacks_only_on_matching_base(self):
-        # tvm_overlay declares base: tvm -> joins only when tvm is the base.
+        # tvm_overlay declares applies_to: tvm -> joins only when tvm is the base.
         names = self._active({"SCENARIO_TYPE": "tvm"})
         # tvm_overlay is source: user and NOT selected, so it isn't triggered here.
         self.assertNotIn("tvm_overlay", names)
 
     def test_env_overlay_joins_matching_base(self):
-        # f200 (base: general_cluster) is env-triggered by FAB=200mm.
+        # f200 (applies_to includes general_cluster) is env-triggered by FAB=200mm.
         names = self._active({"SCENARIO_TYPE": "general_cluster", "FAB": "200mm"})
         self.assertIn("general_cluster", names)
         self.assertIn("f200", names)
 
-    def test_env_overlay_excluded_when_base_differs(self):
-        # Same FAB=200mm trigger, but base is tvm now -> f200's base
-        # (general_cluster) differs, so it is silently excluded.
-        names = self._active({"SCENARIO_TYPE": "tvm", "FAB": "200mm"})
-        self.assertIn("tvm", names)
-        self.assertNotIn("f200", names)
-        self.assertNotIn("general_cluster", names)
+    def test_multi_base_overlay_joins_each_listed_base(self):
+        # f200 has applies_to: ["general_cluster", "tvm"] -> it joins BOTH base
+        # runs (they are separate invocations; base is still single each time).
+        under_general = self._active({"SCENARIO_TYPE": "general_cluster", "FAB": "200mm"})
+        self.assertIn("general_cluster", under_general)
+        self.assertIn("f200", under_general)
+        self.assertNotIn("tvm", under_general)
+
+        under_tvm = self._active({"SCENARIO_TYPE": "tvm", "FAB": "200mm"})
+        self.assertIn("tvm", under_tvm)
+        self.assertIn("f200", under_tvm)
+        self.assertNotIn("general_cluster", under_tvm)
+
+    def test_overlay_excluded_when_base_not_in_applies_to(self):
+        # tvm_overlay has applies_to: "tvm" only. Under general_cluster it must
+        # NOT join even if triggered. (It is user-triggered, so trigger it too.)
+        names = self._active({"SCENARIO_TYPE": "general_cluster"})
+        self.assertNotIn("tvm_overlay", names)
 
     def test_implicit_base_overlay_follows_default_base(self):
-        # implicit_overlay omits `base` -> inherits default_base (general_cluster).
+        # implicit_overlay omits `applies_to` -> inherits default_base (general_cluster).
         with_general = self._active({"SCENARIO_TYPE": "general_cluster"})
         # It is source: user and not selected, so not triggered under this env.
         self.assertNotIn("implicit_overlay", with_general)
@@ -91,27 +102,38 @@ class TestScenarioBaseValidation(unittest.TestCase):
             raw["default_base"] = default_base
         return raw
 
-    def test_base_pointing_to_nonexistent_base_fails(self):
+    def test_applies_to_pointing_to_nonexistent_base_fails(self):
         raw = self._base_raw([
-            {"value": "over", "path": "p", "base": "ghost",
+            {"value": "over", "path": "p", "applies_to": "ghost",
              "trigger": {"source": "user"}},
         ])
         with self.assertRaises(SystemExit):
             self._validate(raw)
 
-    def test_base_pointing_to_non_base_scenario_fails(self):
-        # 'target' exists but is not is_base -> invalid base target.
+    def test_applies_to_pointing_to_non_base_scenario_fails(self):
+        # 'target' exists but is not is_base -> invalid applies_to target.
         raw = self._base_raw([
             {"value": "target", "path": "p", "trigger": {"source": "user"}},
-            {"value": "over", "path": "p", "base": "target",
+            {"value": "over", "path": "p", "applies_to": "target",
              "trigger": {"source": "user"}},
         ])
         with self.assertRaises(SystemExit):
             self._validate(raw)
 
-    def test_is_base_with_base_field_fails(self):
+    def test_applies_to_list_with_one_invalid_base_fails(self):
+        # A list where any entry is not an is_base scenario must fail.
         raw = self._base_raw([
-            {"value": "b", "path": "p", "is_base": True, "base": "b",
+            {"value": "b", "path": "p", "is_base": True,
+             "trigger": {"source": "user"}},
+            {"value": "over", "path": "p", "applies_to": ["b", "ghost"],
+             "trigger": {"source": "user"}},
+        ])
+        with self.assertRaises(SystemExit):
+            self._validate(raw)
+
+    def test_is_base_with_applies_to_field_fails(self):
+        raw = self._base_raw([
+            {"value": "b", "path": "p", "is_base": True, "applies_to": "b",
              "trigger": {"source": "user"}},
         ])
         with self.assertRaises(SystemExit):
@@ -124,11 +146,13 @@ class TestScenarioBaseValidation(unittest.TestCase):
         with self.assertRaises(SystemExit):
             self._validate(raw)
 
-    def test_valid_base_config_passes(self):
+    def test_valid_config_passes(self):
         raw = self._base_raw([
             {"value": "b", "path": "p", "is_base": True,
              "trigger": {"source": "user"}},
-            {"value": "over", "path": "p", "base": "b",
+            {"value": "b2", "path": "p", "is_base": True,
+             "trigger": {"source": "user"}},
+            {"value": "over", "path": "p", "applies_to": ["b", "b2"],
              "trigger": {"source": "user"}},
         ], default_base="b")
         # Should not raise.

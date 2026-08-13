@@ -26,7 +26,7 @@
             "path": "tests/scenario_base/data/f200",
             "required_env_vars": [],
             "priority": 1,
-            "base": "general_cluster",
+            "applies_to": ["general_cluster", "tvm"],
             "trigger": {
                 "source": "env",
                 "logic": "and",
@@ -43,7 +43,7 @@
             "path": "tests/scenario_base/data/tvm_overlay",
             "required_env_vars": [],
             "priority": 5,
-            "base": "tvm",
+            "applies_to": ["tvm"],
             "trigger": {
                 "source": "user"
             }

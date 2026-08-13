@@ -1224,13 +1224,22 @@ class ScenarioConfig:
     required_env_vars: List[EnvVarDef] = field(default_factory=list)
     priority: int = 999
     is_base: bool = False
-    base: Optional[str] = None
+    # Which base(s) this overlay applies to. Accepts a string or list in config;
+    # normalized to a list here. Empty means "inherit default_base".
+    applies_to: List[str] = field(default_factory=list)
     config: Dict[str, Any] = field(default_factory=dict)
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'ScenarioConfig':
         trigger = ScenarioTrigger.from_dict(data.get("trigger", {}))
         req_vars = [EnvVarDef.from_dict(ev) for ev in data.get("required_env_vars", [])]
+        raw_applies = data.get("applies_to")
+        if raw_applies is None:
+            applies_to = []
+        elif isinstance(raw_applies, str):
+            applies_to = [raw_applies]
+        else:
+            applies_to = list(raw_applies)
         return cls(
             value=data.get("value", ""),
             path=data.get("path", ""),
@@ -1238,7 +1247,7 @@ class ScenarioConfig:
             required_env_vars=req_vars,
             priority=data.get("priority", 999),
             is_base=bool(data.get("is_base", False)),
-            base=data.get("base"),
+            applies_to=applies_to,
             config=data
         )
 
@@ -1290,12 +1299,13 @@ def validate_config_scenarios(app_config: AppConfig) -> None:
     base_values = {sc.value for sc in app_config.scenarios if sc.is_base}
 
     for sc in app_config.scenarios:
-        if sc.is_base and sc.base is not None:
-            print(f"\033[91m[ERROR] Config Error in scenario '{sc.value}': a scenario with 'is_base: true' must not also declare 'base'.\033[0m")
+        if sc.is_base and sc.applies_to:
+            print(f"\033[91m[ERROR] Config Error in scenario '{sc.value}': a scenario with 'is_base: true' must not also declare 'applies_to'.\033[0m")
             sys.exit(1)
-        if sc.base is not None and sc.base not in base_values:
-            print(f"\033[91m[ERROR] Config Error in scenario '{sc.value}': 'base' points to '{sc.base}', which is not a scenario with 'is_base: true'.\033[0m")
-            sys.exit(1)
+        for target in sc.applies_to:
+            if target not in base_values:
+                print(f"\033[91m[ERROR] Config Error in scenario '{sc.value}': 'applies_to' points to '{target}', which is not a scenario with 'is_base: true'.\033[0m")
+                sys.exit(1)
 
     if app_config.default_base is not None and app_config.default_base not in base_values:
         print(f"\033[91m[ERROR] Config Error: 'default_base' points to '{app_config.default_base}', which is not a scenario with 'is_base: true'.\033[0m")
@@ -1334,14 +1344,17 @@ def _is_base_scenario(sc: ScenarioConfig) -> bool:
     return sc.is_base or sc.trigger.source == TriggerSource.DEFAULT
 
 
-def _resolve_base_value(sc: ScenarioConfig, default_base: Optional[str]) -> Optional[str]:
+def _resolve_applies_to(sc: ScenarioConfig, default_base: Optional[str]) -> set:
     """
-    Resolve which base chain an overlay scenario stacks onto. A scenario that
-    omits `base` implicitly inherits `default_base`.
+    Resolve which base chain(s) an overlay scenario applies to, as a set. An
+    overlay may list multiple bases (`applies_to`); it joins any run whose active
+    base is one of them. Omitting `applies_to` inherits the single `default_base`.
     """
     if _is_base_scenario(sc):
-        return None
-    return sc.base if sc.base is not None else default_base
+        return set()
+    if sc.applies_to:
+        return set(sc.applies_to)
+    return {default_base} if default_base is not None else set()
 
 
 def determine_active_scenarios(app_config: AppConfig, env: Dict[str, str]) -> List[ScenarioConfig]:
@@ -1352,8 +1365,9 @@ def determine_active_scenarios(app_config: AppConfig, env: Dict[str, str]) -> Li
     2. Pick this run's base: a triggered base scenario if one is selected,
        otherwise `default_base`. A base is a scenario with `is_base: true` (or a
        legacy `source: default` trigger).
-    3. Keep the base itself plus any triggered overlay whose resolved base equals
-       this run's base; every other triggered scenario is silently excluded.
+    3. Keep the base itself plus any triggered overlay whose `applies_to` set
+       contains this run's base; every other triggered scenario is silently
+       excluded.
     4. Sort descending by priority so the base is applied first (lowest layer).
     """
     triggered = [
@@ -1375,9 +1389,9 @@ def determine_active_scenarios(app_config: AppConfig, env: Dict[str, str]) -> Li
 
     active_base_value = base_scenario.value if base_scenario else app_config.default_base
 
-    # An overlay that omits `base` inherits `default_base`. For legacy configs
-    # that predate `default_base`, fall back to the chosen base so base-less
-    # overlays still stack onto it (preserving the original always-inherit flow).
+    # An overlay that omits `applies_to` inherits `default_base`. For legacy
+    # configs that predate `default_base`, fall back to the chosen base so
+    # base-less overlays still stack onto it (preserving the always-inherit flow).
     fallback_base = app_config.default_base
     if fallback_base is None:
         fallback_base = active_base_value
@@ -1390,8 +1404,8 @@ def determine_active_scenarios(app_config: AppConfig, env: Dict[str, str]) -> Li
                 sc.priority = 9999
                 active.append(sc)
             continue
-        # Overlays join only if they stack onto this run's base chain.
-        if _resolve_base_value(sc, fallback_base) == active_base_value:
+        # Overlays join only if this run's base is one of their applies_to bases.
+        if active_base_value in _resolve_applies_to(sc, fallback_base):
             active.append(sc)
 
     # Sort Descending Priority (Base -> P2 -> P1)

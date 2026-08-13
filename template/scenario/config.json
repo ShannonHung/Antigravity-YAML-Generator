@@ -37,7 +37,7 @@
       "path": "template/scenario/fab200mm",
       "required_env_vars": [],
       "priority": 1,
-      "base": "general_cluster",
+      "applies_to": ["general_cluster", "tvm"],
       "trigger": {
         "source": "env",
         "logic": "and",
@@ -72,7 +72,7 @@
       "path": "template/scenario/multitenant",
       "required_env_vars": [],
       "priority": 3,
-      "base": "general_cluster",
+      "applies_to": ["general_cluster"],
       "trigger": {
         "source": "user"
       }
@@ -87,7 +87,7 @@
         }
       ],
       "priority": 999,
-      "base": "general_cluster",
+      "applies_to": ["general_cluster"],
       "trigger": {
         "source": "user"
       }

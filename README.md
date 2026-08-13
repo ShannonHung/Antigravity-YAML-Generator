@@ -110,21 +110,21 @@ Priority rules apply if multiple scenarios overlap.
 Scenarios are split into **bases** and **overlays**. Exactly one base is active per run; overlays stack on top of it.
 
 * **`is_base: true`** marks a scenario as a *base* (a standalone root template — e.g. `general_cluster` or `tvm`). A base never stacks onto another scenario.
-* **`base: "<value>"`** on an overlay declares which base chain it stacks onto. The referenced value must be a scenario with `is_base: true`.
-* Omitting `base` on an overlay means it inherits **`default_base`** (a top-level config field naming the base used when the user selects none).
+* **`applies_to`** on an overlay declares which base(s) it applies to. It accepts **a string** (`"general_cluster"`) or **a list** (`["general_cluster", "tvm"]`). Every referenced value must be a scenario with `is_base: true`.
+* Omitting `applies_to` on an overlay means it inherits **`default_base`** (a top-level config field naming the base used when the user selects none).
 
 **Selection rules:**
 
-1. If the user selects an `is_base` scenario (e.g. `SCENARIO_TYPE=tvm`), that scenario becomes the base and any other base (including `default_base`) is **not** activated.
+1. If the user selects an `is_base` scenario (e.g. `SCENARIO_TYPE=tvm`), that scenario becomes the base and any other base (including `default_base`) is **not** activated. **Exactly one base is active per run** — bases never mix.
 2. If no base is selected, `default_base` is activated as the base.
-3. An overlay joins the merge **only if** its resolved base equals the active base. A triggered overlay whose base differs (e.g. an `env`-triggered overlay bound to `general_cluster` while `tvm` is the active base) is **silently excluded**.
+3. An overlay joins the merge **only if** the active base is one of its `applies_to` bases (OR semantics). A triggered overlay whose `applies_to` does not include the active base (e.g. an overlay that applies only to `general_cluster` while `tvm` is the active base) is **silently excluded**.
 4. The active base is applied first (lowest layer); overlays merge on top in priority order.
 
-This lets a scenario like `tvm` act as an alternative default template that fully replaces `general_cluster`, while other scenarios opt in to a specific base via `base`.
+This lets a scenario like `tvm` act as an alternative default template that fully replaces `general_cluster`, while overlays opt in to one or more bases via `applies_to`. An overlay listing multiple bases (e.g. `f200` with `applies_to: ["general_cluster", "tvm"]`) is reused across each of those bases' separate runs — it does **not** cause the bases to be merged together.
 
-> **Backward compatibility**: a legacy `trigger.source: "default"` scenario is still treated as a base, and overlays without a `base` field still stack onto the active base as before.
+> **Backward compatibility**: a legacy `trigger.source: "default"` scenario is still treated as a base, and overlays without an `applies_to` field still stack onto the active base as before.
 
-**Validation**: `base` must reference an existing `is_base` scenario; a scenario cannot be both `is_base` and declare `base`; and `default_base` must reference an `is_base` scenario.
+**Validation**: every value in `applies_to` must reference an existing `is_base` scenario; a scenario cannot be both `is_base` and declare `applies_to`; and `default_base` must reference an `is_base` scenario.
 
 ---
 
@@ -231,11 +231,11 @@ Before any files are generated, `config.json` itself is validated. This runs on 
 
 | Condition | Error message |
 | --- | --- |
-| A scenario sets `is_base: true` **and** declares `base` | `Config Error in scenario '<value>': a scenario with 'is_base: true' must not also declare 'base'.` |
-| An overlay's `base` points to a value that is not an `is_base` scenario (missing or not a base) | `Config Error in scenario '<value>': 'base' points to '<base>', which is not a scenario with 'is_base: true'.` |
+| A scenario sets `is_base: true` **and** declares `applies_to` | `Config Error in scenario '<value>': a scenario with 'is_base: true' must not also declare 'applies_to'.` |
+| Any value in an overlay's `applies_to` is not an `is_base` scenario (missing or not a base) | `Config Error in scenario '<value>': 'applies_to' points to '<target>', which is not a scenario with 'is_base: true'.` |
 | `default_base` points to a value that is not an `is_base` scenario | `Config Error: 'default_base' points to '<value>', which is not a scenario with 'is_base: true'.` |
 
-> **Note**: validation catches *structural / reference* errors, not *semantic* ones. A `base` that references the **wrong but valid** base passes validation — it simply merges onto a different chain than intended. Inspect the `Active Scenarios (in order of application)` output that `make` prints to confirm the resolved layering. Because an overlay's `base` may only point to an `is_base` scenario (and a base can never itself declare `base`), base chains are only one level deep, so circular references are structurally impossible.
+> **Note**: validation catches *structural / reference* errors, not *semantic* ones. An `applies_to` that references the **wrong but valid** base passes validation — it simply applies to a different base than intended. Inspect the `Active Scenarios (in order of application)` output that `make` prints to confirm the resolved layering. Because `applies_to` may only point to `is_base` scenarios (and a base can never itself declare `applies_to`), base chains are only one level deep, so circular references are structurally impossible.
 
 ---
 
