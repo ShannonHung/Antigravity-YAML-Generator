@@ -83,7 +83,8 @@
       "required_env_vars": [
         {
           "key": "EXAMPLE_VARs",
-          "description": "This is an exmaple scenario."
+          "description": "This is an exmaple scenario.",
+          "value": "example-default-value"
         }
       ],
       "priority": 999,
