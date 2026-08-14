@@ -79,23 +79,52 @@ try:
 except Exception as e:
     sys.exit(1)
 
+scenarios = config.get('senarios', [])
+by_value = {s['value']: s for s in scenarios}
+default_base = config.get('default_base')
+
+def is_base(s):
+    # A scenario acts as a base if it declares is_base, or uses the legacy
+    # 'source: default' trigger (mirrors _is_base_scenario in yaml_generator.py).
+    return s.get('is_base', False) or s.get('trigger', {}).get('source') == 'default'
+
+selected = by_value.get(scenario)
+
+# Resolve this run's active base. When the selected scenario is itself a base,
+# it is the base; otherwise the selected scenario is an overlay and the active
+# base falls back to default_base (e.g. selecting 'multitenant' -> the run is
+# 'general_cluster + multitenant', so general_cluster's env vars are required).
+if selected is not None and is_base(selected):
+    base_value = scenario
+else:
+    base_value = default_base
+
+# Collect env vars from every scenario that will actually run: the active base
+# plus the selected overlay. This matches validate_required_env_vars, which
+# fails the generator if any active scenario's required_env_vars are missing.
+active_values = []
+if base_value:
+    active_values.append(base_value)
+if scenario not in active_values:
+    active_values.append(scenario)
+
 vars_map = {} # Key -> Description
 
 def add_vars(var_list):
     for v in var_list:
         if isinstance(v, dict):
-            vars_map[v['key']] = v.get('description', '')
+            vars_map.setdefault(v['key'], v.get('description', ''))
         else:
-            vars_map[v] = ''
+            vars_map.setdefault(v, '')
 
 # 1. Default Vars
 add_vars(config.get('default_env_vars', []))
 
-# 2. Scenario Vars
-for s in config.get('senarios', []):
-    if s['value'] == scenario:
+# 2. Active scenario Vars (base first, then the selected overlay)
+for val in active_values:
+    s = by_value.get(val)
+    if s:
         add_vars(s.get('required_env_vars', []))
-        break
 
 for key, desc in vars_map.items():
     # Simple sanitization for pipe delimiter
