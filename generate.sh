@@ -13,6 +13,7 @@ check_dependencies() {
     # Colors
     YELLOW='\033[1;33m'
     RED='\033[0;31m'
+    GREEN='\033[0;32m'
     NC='\033[0m' # No Color
 
     if ! command -v python3 &> /dev/null; then
@@ -108,14 +109,14 @@ if base_value:
 if scenario not in active_values:
     active_values.append(scenario)
 
-vars_map = {} # Key -> Description
+vars_map = {} # Key -> (description, value)
 
 def add_vars(var_list):
     for v in var_list:
         if isinstance(v, dict):
-            vars_map.setdefault(v['key'], v.get('description', ''))
+            vars_map.setdefault(v['key'], (v.get('description', ''), v.get('value', '')))
         else:
-            vars_map.setdefault(v, '')
+            vars_map.setdefault(v, ('', ''))
 
 # 1. Default Vars
 add_vars(config.get('default_env_vars', []))
@@ -126,27 +127,41 @@ for val in active_values:
     if s:
         add_vars(s.get('required_env_vars', []))
 
-for key, desc in vars_map.items():
-    # Simple sanitization for pipe delimiter
+for key, (desc, value) in vars_map.items():
+    # Emit key|description|value. Sanitize the pipe delimiter and newlines out of
+    # the description; keep value raw (it is the last field, so read -r keeps any
+    # embedded pipes intact) apart from stripping newlines. A non-empty value is
+    # auto-filled by the prompt loop instead of asking the user.
     clean_desc = desc.replace('|', '-').replace('\n', '\\\\n')
-    print(f\"{key}|{clean_desc}\")
+    clean_value = str(value).replace('\n', '\\\\n')
+    print(f\"{key}|{clean_desc}|{clean_value}\")
 " > "$TEMP_VARS"
 
 echo "--------------------------------------------------"
 echo "Configure Environment Variables for $SCENARIO"
 echo "--------------------------------------------------"
 
-while IFS='|' read -r -u 3 VAR DESC; do
+while IFS='|' read -r -u 3 VAR DESC VALUE; do
     # Clear existing variable to force re-entry
     unset $VAR
 
     if [ -n "$DESC" ]; then
         echo -e "Description: $DESC"
     fi
-    
+
+    # If the config supplies a non-empty default value, auto-fill it: show the
+    # key + value so the user can see what was applied, then move to the next var
+    # without prompting.
+    if [ -n "$VALUE" ]; then
+        export $VAR="$VALUE"
+        echo -e "$VAR: $VALUE ${GREEN}(auto-filled default)${NC}"
+        echo "" # Newline for readability
+        continue
+    fi
+
     while true; do
         read -p "$VAR: " USER_VAL
-        
+
         if [ -n "$USER_VAL" ]; then
             export $VAR="$USER_VAL"
             break
